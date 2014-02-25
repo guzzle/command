@@ -16,7 +16,7 @@ use GuzzleHttp\Command\ServiceClientInterface;
 class CommandErrorEvent extends AbstractCommandEvent
 {
     /** @var ErrorEvent */
-    private $event;
+    private $errorEvent;
 
     /**
      * @param CommandInterface       $command Command of the event
@@ -30,7 +30,8 @@ class CommandErrorEvent extends AbstractCommandEvent
     ) {
         $this->command = $command;
         $this->client = $client;
-        $this->error = $e;
+        $this->errorEvent = $e;
+        $this->request = $e->getRequest();
     }
 
     /**
@@ -40,7 +41,7 @@ class CommandErrorEvent extends AbstractCommandEvent
      */
     public function getRequestErrorEvent()
     {
-        return $this->event;
+        return $this->errorEvent;
     }
 
     /**
