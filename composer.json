@@ -1,0 +1,10 @@
+{
+  "require": {
+    "guzzle/guzzle": "dev-guzzle4"
+  },
+  "autoload": {
+    "psr-4": {
+      "GuzzleHttp\\Command\\": "src/"
+    }
+  }
+}
