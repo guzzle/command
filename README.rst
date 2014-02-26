@@ -66,6 +66,8 @@ listeners.
 
 Values can be set using a similar notation.
 
+.. code-block:: php
+
     $client->setConfig('name', 'value');
     // Set by nested path, creating sub-arrays as needed
     $value = $client->setConfig('foo/baz/bar', 'value');
@@ -75,29 +77,32 @@ Event System
 
 Commands emit three events:
 
-#. "prepare": Emitted before executing a command. One of the event listeners
-   MUST inject a ``GuzzleHttp\Message\RequestInterface`` object onto the
-   emitted ``GuzzleHttp\Command\Event\PrepareEvent`` object.
+prepare
+    Emitted before executing a command. One of the event listeners
+    MUST inject a ``GuzzleHttp\Message\RequestInterface`` object onto the
+    emitted ``GuzzleHttp\Command\Event\PrepareEvent`` object.
 
-   An event listener MAY inject a result onto the event using ``setResult()``.
-   Injecting a result MUST prevent the command from sending a request, and MUST
-   trigger the "process" event so that subsequent listeners can modify the
-   result of a command as needed.
+    An event listener MAY inject a result onto the event using ``setResult()``.
+    Injecting a result MUST prevent the command from sending a request, and MUST
+    trigger the "process" event so that subsequent listeners can modify the
+    result of a command as needed.
 
-#. "process": Emitted after a HTTP response has been received for the command
-   OR when a result is injected into an emitted "prepare" or "error" event.
-   Event listeners MAY modify the result of the command using the
-   ``setResult()`` method of the ``GuzzleHttp\Command\Event\ProcessEvent``.
-   Because this event is also emitted when a result is injected onto a
-   PrepareEvent and CommandErrorEvent, there may not be a request or response
-   available to the event.
+process
+    Emitted after a HTTP response has been received for the command
+    OR when a result is injected into an emitted "prepare" or "error" event.
+    Event listeners MAY modify the result of the command using the
+    ``setResult()`` method of the ``GuzzleHttp\Command\Event\ProcessEvent``.
+    Because this event is also emitted when a result is injected onto a
+    PrepareEvent and CommandErrorEvent, there may not be a request or response
+    available to the event.
 
-#. "error": Emitted when an error occurs after receiving an HTTP response. You
-   MAY inject a result onto the ``GuzzleHttp\Command\Event\CommandErrorEvent``,
-   which will prevent an exception from being thrown. When a result is injected,
-   the "process" event is triggered. When the CommandErrorEvent is not
-   intercepted with a result, then a
-   ``GuzzleHttp\Command\Exception\CommandException`` is thrown.
+error
+    Emitted when an error occurs after receiving an HTTP response. You
+    MAY inject a result onto the ``GuzzleHttp\Command\Event\CommandErrorEvent``,
+    which will prevent an exception from being thrown. When a result is injected,
+    the "process" event is triggered. When the CommandErrorEvent is not
+    intercepted with a result, then a
+    ``GuzzleHttp\Command\Exception\CommandException`` is thrown.
 
 Implementations are encouraged to use the
 ``GuzzleHttp\Command\Event\EventWrapper`` class to help with implementing the
