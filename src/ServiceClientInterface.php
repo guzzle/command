@@ -4,6 +4,7 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Event\HasEmitterInterface;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Command\Exception\CommandException;
 
 /**
  * Web service client interface.
