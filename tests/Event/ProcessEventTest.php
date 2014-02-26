@@ -8,6 +8,7 @@ use GuzzleHttp\Message\Response;
 
 /**
  * @covers \GuzzleHttp\Command\Event\ProcessEvent
+ * @covers \GuzzleHttp\Command\Event\AbstractCommandEvent
  */
 class ProcessEventTest extends \PHPUnit_Framework_TestCase
 {

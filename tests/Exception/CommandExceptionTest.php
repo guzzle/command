@@ -1,13 +1,13 @@
 <?php
 
-namespace GuzzleHttp\Tests\Command;
+namespace GuzzleHttp\Tests\Command\CommandException;
 
-use GuzzleHttp\Command\CommandException;
+use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 
 /**
- * @covers \GuzzleHttp\Command\CommandException
+ * @covers \GuzzleHttp\Command\Exception\CommandException
  */
 class CommandExceptionTest extends \PHPUnit_Framework_TestCase
 {

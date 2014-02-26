@@ -7,6 +7,7 @@ use GuzzleHttp\Message\Request;
 
 /**
  * @covers \GuzzleHttp\Command\Event\PrepareEvent
+ * @covers \GuzzleHttp\Command\Event\AbstractCommandEvent
  */
 class PrepareEventTest extends \PHPUnit_Framework_TestCase
 {

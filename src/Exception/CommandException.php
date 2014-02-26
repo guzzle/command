@@ -1,7 +1,9 @@
 <?php
 
-namespace GuzzleHttp\Command;
+namespace GuzzleHttp\Command\Exception;
 
+use GuzzleHttp\Command\ServiceClientInterface;
+use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Message\ResponseInterface;
 

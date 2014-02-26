@@ -10,7 +10,8 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Message\Request;
 
 /**
- * @covers \GuzzleHttp\Command\Event\ErrorEvent
+ * @covers \GuzzleHttp\Command\Event\CommandErrorEvent
+ * @covers \GuzzleHttp\Command\Event\AbstractCommandEvent
  */
 class ErrorEventTest extends \PHPUnit_Framework_TestCase
 {
