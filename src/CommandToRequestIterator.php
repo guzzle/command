@@ -2,6 +2,7 @@
 
 namespace GuzzleHttp\Command;
 
+use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Command\Event\EventWrapper;
 use GuzzleHttp\Event\CompleteEvent;
@@ -88,13 +89,44 @@ class CommandToRequestIterator implements \Iterator
         }
 
         $command = $this->commands->current();
-
         if (!($command instanceof CommandInterface)) {
             throw new \RuntimeException('All commands provided to the ' . __CLASS__
                 . ' must implement GuzzleHttp\\Command\\CommandInterface.'
                 . ' Encountered a ' . gettype($command) . ' value.');
         }
 
+        $event = $this->prepareCommand($command);
+
+        // Handle the command being intercepted with a result by going to the
+        // next command and returning it's validity
+        if ($event->getResult() !== null) {
+            $this->commands->next();
+            return $this->valid();
+        }
+
+        $this->processCurrentRequest($event);
+
+        return true;
+    }
+
+    public function rewind()
+    {
+        $this->currentRequest = null;
+
+        if (!($this->commands instanceof \Generator)) {
+            $this->commands->rewind();
+        }
+    }
+
+    /**
+     * Prepare a command using the provided options.
+     *
+     * @param CommandInterface $command Command to prepare
+     *
+     * @return PrepareEvent
+     */
+    private function prepareCommand(CommandInterface $command)
+    {
         if (isset($this->options['prepare'])) {
             $command->getEmitter()->on('prepare', $this->options['prepare'], -9999);
         }
@@ -107,16 +139,20 @@ class CommandToRequestIterator implements \Iterator
             $command->getEmitter()->on('error', $this->options['error'], -9999);
         }
 
-        $event = EventWrapper::prepareCommand($command, $this->client);
+        return EventWrapper::prepareCommand($command, $this->client);
+    }
 
-        // Handle the command being intercepted with a result by going to the
-        // next command and returning it's validity
-        if ($event->getResult() !== null) {
-            $this->commands->next();
-            return $this->valid();
-        }
-
+    /**
+     * Set the current request of the iterator and hook the request's event
+     * system up to the command's event system.
+     *
+     * @param PrepareEvent $event Event invoked that prepared a request
+     */
+    private function processCurrentRequest(PrepareEvent $event)
+    {
+        $command = $event->getCommand();
         $this->currentRequest = $event->getRequest();
+
         // Emit the command's process event when the request completes
         $this->currentRequest->getEmitter()->on(
             'complete',
@@ -129,16 +165,5 @@ class CommandToRequestIterator implements \Iterator
                 );
             }
         );
-
-        return true;
-    }
-
-    public function rewind()
-    {
-        $this->currentRequest = null;
-
-        if (!($this->commands instanceof \Generator)) {
-            $this->commands->rewind();
-        }
     }
 }
