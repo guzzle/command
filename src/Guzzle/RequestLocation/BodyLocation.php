@@ -3,7 +3,7 @@
 namespace GuzzleHttp\Command\Guzzle\RequestLocation;
 
 use GuzzleHttp\Command\Guzzle\GuzzleCommandInterface;
-use GuzzleHttp\Command\Guzzle\Description\Parameter;
+use GuzzleHttp\Command\Guzzle\Parameter;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Stream\Stream;
 

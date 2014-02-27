@@ -7,7 +7,7 @@ use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Exception\CommandException;
-use GuzzleHttp\Command\Guzzle\Description\GuzzleDescription;
+use GuzzleHttp\Command\Guzzle\Description;
 use GuzzleHttp\Command\Guzzle\GuzzleClient;
 use GuzzleHttp\Event\BeforeEvent;
 
@@ -19,7 +19,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
     public function testHasConfig()
     {
         $client = new Client();
-        $description = new GuzzleDescription([]);
+        $description = new Description([]);
         $guzzle = new GuzzleClient($client, $description, [
             'foo' => 'bar',
             'baz' => ['bam' => 'boo']
@@ -39,7 +39,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
     public function testAddsSubscribersWhenTrue()
     {
         $client = new Client();
-        $description = new GuzzleDescription([]);
+        $description = new Description([]);
         $guzzle = new GuzzleClient($client, $description, [
             'validate' => true,
             'process' => true
@@ -51,7 +51,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
     public function testDisablesSubscribersWhenFalse()
     {
         $client = new Client();
-        $description = new GuzzleDescription([]);
+        $description = new Description([]);
         $guzzle = new GuzzleClient($client, $description, [
             'validate' => false,
             'process' => false
@@ -66,7 +66,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
         $client = new Client();
-        $description = new GuzzleDescription([]);
+        $description = new Description([]);
         $guzzle = new GuzzleClient($client, $description, [
             'command_factory' => function () use ($mock) {
                 $this->assertCount(3, func_get_args());
@@ -82,7 +82,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
         $client = new Client();
-        $description = new GuzzleDescription([]);
+        $description = new Description([]);
         $guzzle = $this->getMockBuilder('GuzzleHttp\\Command\\Guzzle\\GuzzleClient')
             ->setConstructorArgs([
                 $client, $description, [
@@ -109,14 +109,14 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
     public function testThrowsWhenFactoryReturnsNull()
     {
         $client = new Client();
-        $description = new GuzzleDescription([]);
+        $description = new Description([]);
         $guzzle = new GuzzleClient($client, $description);
         $guzzle->getCommand('foo');
     }
 
     public function testDefaultFactoryChecksWithUppercaseToo()
     {
-        $description = new GuzzleDescription([
+        $description = new Description([
             'operations' => ['Foo' => [], 'bar' => []]
         ]);
         $c = new GuzzleClient(new Client(), $description);
@@ -134,7 +134,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testPassesCommandExceptionsThrough()
     {
-        $description = new GuzzleDescription(['operations' => ['Foo' => []]]);
+        $description = new Description(['operations' => ['Foo' => []]]);
         $guzzle = new GuzzleClient(new Client(), $description);
         $command = $guzzle->getCommand('foo');
         $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
@@ -154,7 +154,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
      */
     public function testWrapsExceptionsInCommandExceptions()
     {
-        $description = new GuzzleDescription(['operations' => ['Foo' => []]]);
+        $description = new Description(['operations' => ['Foo' => []]]);
         $guzzle = new GuzzleClient(new Client(), $description);
         $command = $guzzle->getCommand('foo');
         $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
@@ -165,7 +165,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
 
     public function testReturnsInterceptedResult()
     {
-        $description = new GuzzleDescription(['operations' => ['Foo' => []]]);
+        $description = new Description(['operations' => ['Foo' => []]]);
         $guzzle = new GuzzleClient(new Client(), $description);
         $command = $guzzle->getCommand('foo');
         $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
@@ -180,7 +180,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
         $client->getEmitter()->on('before', function (BeforeEvent $event) {
             $event->intercept(new Response(201));
         });
-        $description = new GuzzleDescription([
+        $description = new Description([
             'operations' => [
                 'Foo' => ['responseModel' => 'Bar']
             ],
@@ -209,7 +209,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
             ->setMethods(['sendAll'])
             ->getMock();
 
-        $description = new GuzzleDescription(['operations' => ['Foo' => []]]);
+        $description = new Description(['operations' => ['Foo' => []]]);
         $guzzle = new GuzzleClient($client, $description);
         $command = $guzzle->getCommand('foo');
         $request = $client->createRequest('GET', '/');

@@ -2,8 +2,8 @@
 
 namespace GuzzleHttp\Command\Guzzle\RequestLocation;
 
-use GuzzleHttp\Command\Guzzle\Description\Operation;
-use GuzzleHttp\Command\Guzzle\Description\Parameter;
+use GuzzleHttp\Command\Guzzle\Operation;
+use GuzzleHttp\Command\Guzzle\Parameter;
 use GuzzleHttp\Command\Guzzle\GuzzleCommandInterface;
 use GuzzleHttp\Message\RequestInterface;
 

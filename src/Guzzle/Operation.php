@@ -1,18 +1,19 @@
 <?php
 
-namespace GuzzleHttp\Command\Guzzle\Description;
+namespace GuzzleHttp\Command\Guzzle;
+use GuzzleHttp\ToArrayInterface;
 
 /**
  * Guzzle operation
  */
-class Operation
+class Operation implements ToArrayInterface
 {
     /** @var array Hashmap of properties that can be specified */
     private static $properties = ['name' => true, 'httpMethod' => true,
-        'uri' => true, 'class' => true, 'responseModel' => true,
-        'notes' => true, 'summary' => true, 'documentationUrl' => true,
-        'deprecated' => true, 'data' => true, 'parameters' => true,
-        'additionalParameters' => true, 'errorResponses' => true];
+        'uri' => true, 'responseModel' => true, 'notes' => true,
+        'summary' => true, 'documentationUrl' => true, 'deprecated' => true,
+        'data' => true, 'parameters' => true, 'additionalParameters' => true,
+        'errorResponses' => true];
 
     /** @var array Parameters */
     private $parameters = [];
@@ -47,7 +48,7 @@ class Operation
     /** @var array Array of errors that could occur when running the command */
     private $errorResponses;
 
-    /** @var GuzzleDescription */
+    /** @var Description */
     private $description;
 
     /** @var array Extra operation information */
@@ -79,10 +80,10 @@ class Operation
      *   option is passed to the operation that is not in the schema
      *
      * @param array             $config      Array of configuration data
-     * @param GuzzleDescription $description Service description used to resolve models if $ref tags are found
+     * @param Description $description Service description used to resolve models if $ref tags are found
      * @throws \InvalidArgumentException
      */
-    public function __construct(array $config = [], GuzzleDescription $description)
+    public function __construct(array $config = [], Description $description)
     {
         $this->description = $description;
 
@@ -119,10 +120,34 @@ class Operation
         }
     }
 
+    public function toArray()
+    {
+        $result = [];
+        // Grab valid properties and filter out values that weren't set
+        foreach (array_keys(self::$properties) as $check) {
+            if ($value = $this->{$check}) {
+                $result[$check] = $value;
+            }
+        }
+        // Remove the name property
+        unset($result['name']);
+        // Parameters need to be converted to arrays
+        $result['parameters'] = [];
+        foreach ($this->parameters as $key => $param) {
+            $result['parameters'][$key] = $param->toArray();
+        }
+        // Additional parameters need to be cast to an array
+        if ($this->additionalParameters instanceof Parameter) {
+            $result['additionalParameters'] = $this->additionalParameters->toArray();
+        }
+
+        return $result;
+    }
+
     /**
      * Get the service description that the operation belongs to
      *
-     * @return GuzzleDescription
+     * @return Description
      */
     public function getServiceDescription()
     {

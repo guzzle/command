@@ -1,13 +1,13 @@
 <?php
 
-namespace GuzzleHttp\Command\Guzzle\Description;
+namespace GuzzleHttp\Command\Guzzle;
 
 use GuzzleHttp\Url;
 
 /**
  * Represents a Guzzle service description
  */
-class GuzzleDescription
+class Description
 {
     /** @var array Array of {@see OperationInterface} objects */
     private $operations = [];

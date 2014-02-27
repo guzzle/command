@@ -1,6 +1,6 @@
 <?php
 
-namespace GuzzleHttp\Command\Guzzle\Description;
+namespace GuzzleHttp\Command\Guzzle;
 
 /**
  * API parameter object used with service descriptions
@@ -33,7 +33,7 @@ class Parameter
     private $format;
     private $propertiesCache = null;
 
-    /** @var GuzzleDescription */
+    /** @var Description */
     private $serviceDescription;
 
     /**
@@ -137,8 +137,8 @@ class Parameter
     {
         if (isset($options['description'])) {
             $this->serviceDescription = $options['description'];
-            if (!($this->serviceDescription instanceof GuzzleDescription)) {
-                throw new \InvalidArgumentException('description must be a GuzzleDescription');
+            if (!($this->serviceDescription instanceof Description)) {
+                throw new \InvalidArgumentException('description must be a Description');
             }
             if (isset($data['$ref'])) {
                 if ($model = $this->serviceDescription->getModel($data['$ref'])) {

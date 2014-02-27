@@ -9,7 +9,6 @@ use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\Event\EventWrapper;
-use GuzzleHttp\Command\Guzzle\Description\GuzzleDescription;
 use GuzzleHttp\Command\Guzzle\Subscriber\PrepareRequest;
 use GuzzleHttp\Command\Guzzle\Subscriber\ProcessResponse;
 use GuzzleHttp\Command\Guzzle\Subscriber\ValidateInput;
@@ -24,7 +23,7 @@ class GuzzleClient implements GuzzleClientInterface
     /** @var ClientInterface HTTP client used to send requests */
     private $client;
 
-    /** @var GuzzleDescription Guzzle service description */
+    /** @var Description Guzzle service description */
     private $description;
 
     /** @var Collection Service client configuration data */
@@ -35,7 +34,7 @@ class GuzzleClient implements GuzzleClientInterface
 
     /**
      * @param ClientInterface   $client      Client used to send HTTP requests
-     * @param GuzzleDescription $description Guzzle service description
+     * @param Description $description Guzzle service description
      * @param array             $config      Configuration options
      *     - defaults: Associative array of default command parameters to add
      *       to each command created by the client.
@@ -52,7 +51,7 @@ class GuzzleClient implements GuzzleClientInterface
      */
     public function __construct(
         ClientInterface $client,
-        GuzzleDescription $description,
+        Description $description,
         array $config = []
     ) {
         $this->client = $client;
@@ -150,11 +149,11 @@ class GuzzleClient implements GuzzleClientInterface
      * Creates a callable function used to create command objects from a
      * service description.
      *
-     * @param GuzzleDescription $description Service description
+     * @param Description $description Service description
      *
      * @return callable Returns a command factory
      */
-    public static function defaultCommandFactory(GuzzleDescription $description)
+    public static function defaultCommandFactory(Description $description)
     {
         return function (
             $name,

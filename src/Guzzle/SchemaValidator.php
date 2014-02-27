@@ -1,6 +1,6 @@
 <?php
 
-namespace GuzzleHttp\Command\Guzzle\Description;
+namespace GuzzleHttp\Command\Guzzle;
 
 use GuzzleHttp\ToArrayInterface;
 

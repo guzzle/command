@@ -4,7 +4,7 @@ namespace GuzzleHttp\Command\Guzzle\Subscriber;
 
 use GuzzleHttp\Event\SubscriberInterface;
 use GuzzleHttp\Message\ResponseInterface;
-use GuzzleHttp\Command\Guzzle\Description\Parameter;
+use GuzzleHttp\Command\Guzzle\Parameter;
 use GuzzleHttp\Command\Guzzle\GuzzleCommandInterface;
 use GuzzleHttp\Command\Guzzle\ResponseLocation\JsonLocation;
 use GuzzleHttp\Command\Event\ProcessEvent;

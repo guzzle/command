@@ -3,7 +3,6 @@
 namespace GuzzleHttp\Command\Guzzle;
 
 use GuzzleHttp\Command\CommandInterface;
-use GuzzleHttp\Command\Guzzle\Description\Operation;
 
 /**
  * Represents a command that is sent using a Guzzle service description.

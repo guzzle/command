@@ -14,7 +14,7 @@ use GuzzleHttp\Command\Guzzle\RequestLocation\PostFileLocation;
 use GuzzleHttp\Command\Guzzle\RequestLocation\QueryLocation;
 use GuzzleHttp\Command\Guzzle\RequestLocation\XmlLocation;
 use GuzzleHttp\Command\Event\PrepareEvent;
-use GuzzleHttp\Command\Guzzle\Description\Parameter;
+use GuzzleHttp\Command\Guzzle\Parameter;
 use GuzzleHttp\Command\Guzzle\RequestLocation\RequestLocationInterface;
 
 /**

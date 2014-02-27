@@ -6,7 +6,6 @@ use GuzzleHttp\Command\Command as DefaultCommand;
 use GuzzleHttp\Event\EmitterInterface;
 use GuzzleHttp\HasDataTrait;
 use GuzzleHttp\Event\HasEmitterTrait;
-use GuzzleHttp\Command\Guzzle\Description\Operation;
 
 /**
  * Default Guzzle command implementation.
