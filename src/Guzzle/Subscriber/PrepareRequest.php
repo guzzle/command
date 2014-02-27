@@ -54,6 +54,11 @@ class PrepareRequest implements SubscriberInterface
 
     public function onPrepare(PrepareEvent $event)
     {
+        // Don't modify the request if one is already present
+        if ($event->getRequest()) {
+            return;
+        }
+
         /* @var GuzzleCommandInterface $command */
         $command = $event->getCommand();
         /* @var GuzzleClientInterface $client */

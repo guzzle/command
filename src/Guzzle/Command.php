@@ -2,7 +2,7 @@
 
 namespace GuzzleHttp\Command\Guzzle;
 
-use GuzzleHttp\Collection;
+use GuzzleHttp\Command\Command as DefaultCommand;
 use GuzzleHttp\Event\EmitterInterface;
 use GuzzleHttp\HasDataTrait;
 use GuzzleHttp\Event\HasEmitterTrait;
@@ -11,15 +11,10 @@ use GuzzleHttp\Command\Guzzle\Description\Operation;
 /**
  * Default Guzzle command implementation.
  */
-class Command implements GuzzleCommandInterface
+class Command extends DefaultCommand implements GuzzleCommandInterface
 {
-    use HasDataTrait, HasEmitterTrait;
-
     /** @var Operation */
     private $operation;
-
-    /** @var Collection */
-    private $config;
 
     /**
      * @param Operation        $operation Operation associated with the command
@@ -32,18 +27,7 @@ class Command implements GuzzleCommandInterface
         EmitterInterface $emitter = null
     ) {
         $this->operation = $operation;
-        $this->data = $args;
-        $this->emitter = $emitter;
-    }
-
-    /**
-     * Ensure that the emitter is cloned.
-     */
-    public function __clone()
-    {
-        if ($this->emitter) {
-            $this->emitter = clone $this->emitter;
-        }
+        parent::__construct('', $args, $emitter);
     }
 
     public function getName()
@@ -54,19 +38,5 @@ class Command implements GuzzleCommandInterface
     public function getOperation()
     {
         return $this->operation;
-    }
-
-    public function hasParam($name)
-    {
-        return array_key_exists($name, $this->data);
-    }
-
-    public function getConfig()
-    {
-        if (!$this->config) {
-            $this->config = new Collection();
-        }
-
-        return $this->config;
     }
 }

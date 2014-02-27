@@ -30,7 +30,8 @@ class ValidateInput implements SubscriberInterface
     {
         $command = $event->getCommand();
         if (!($command instanceof GuzzleCommandInterface)) {
-            throw new \RuntimeException('Invalid command sent to validator');
+            throw new \RuntimeException('The command sent to ' . __METHOD__
+                . ' is not a GuzzleHttp\\Command\\Guzzle\\GuzzleCommandInterface');
         }
 
         $errors = [];

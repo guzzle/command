@@ -140,6 +140,7 @@ class GuzzleDescription
 
         // Lazily create operations as they are retrieved
         if (!($this->operations[$name] instanceof Operation)) {
+            $this->operations[$name]['name'] = $name;
             $this->operations[$name] = new Operation($this->operations[$name], $this);
         }
 

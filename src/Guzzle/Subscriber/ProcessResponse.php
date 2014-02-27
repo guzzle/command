@@ -63,7 +63,8 @@ class ProcessResponse implements SubscriberInterface
     {
         $command = $event->getCommand();
         if (!($command instanceof GuzzleCommandInterface)) {
-            throw new \RuntimeException('Invalid command');
+            throw new \RuntimeException('The command sent to ' . __METHOD__
+                . ' is not a GuzzleHttp\\Command\\Guzzle\\GuzzleCommandInterface');
         }
 
         $operation = $command->getOperation();

@@ -76,7 +76,7 @@ class GuzzleClient implements GuzzleClientInterface
         $args += $this->config['defaults'];
 
         if (!($command = $factory($name, $args, $this))) {
-            throw new \InvalidArgumentException("Invalid operation: $name");
+            throw new \InvalidArgumentException("No operation found named $name");
         }
 
         return $command;
@@ -161,12 +161,19 @@ class GuzzleClient implements GuzzleClientInterface
             array $args = [],
             GuzzleClientInterface $client
         ) use ($description) {
-            // Try with a capital and lowercase first letter
-            if (!$description->hasOperation($name)) {
+
+            $operation = null;
+
+            if ($description->hasOperation($name)) {
+                $operation = $description->getOperation($name);
+            } else {
                 $name = ucfirst($name);
+                if ($description->hasOperation($name)) {
+                    $operation = $description->getOperation($name);
+                }
             }
 
-            if (!($operation = $description->getOperation($name))) {
+            if (!$operation) {
                 return null;
             }
 
@@ -180,8 +187,8 @@ class GuzzleClient implements GuzzleClientInterface
     protected function processConfig()
     {
         // Use the passed in command factory or a custom factory if provided
-        $this->commandFactory = isset($config['command_factory'])
-            ? $config['command_factory']
+        $this->commandFactory = isset($this->config['command_factory'])
+            ? $this->config['command_factory']
             : self::defaultCommandFactory($this->description);
 
         // Add event listeners based on the configuration option
@@ -197,7 +204,9 @@ class GuzzleClient implements GuzzleClientInterface
             $this->config['request_locations'] ?: []
         ));
 
-        if (!isset($config['process']) || $config['process'] === true) {
+        if (!isset($this->config['process']) ||
+            $this->config['process'] === true
+        ) {
             $emitter->addSubscriber(new ProcessResponse(
                 $this->config['response_locations'] ?: []
             ));
