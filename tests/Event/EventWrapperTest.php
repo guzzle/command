@@ -68,27 +68,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($called);
     }
 
-    public function testWrapsLowLevelExceptionsOnPrepareEventError()
-    {
-        $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        $command = new Command('foo', []);
-        $ex = new \Exception('foo');
-        $command->getEmitter()->on('prepare', function (PrepareEvent $e) use ($ex) {
-            throw $ex;
-        });
-        try {
-            EventWrapper::prepareCommand($command, $client);
-            $this->fail('Did not throw');
-        } catch (CommandException $e) {
-            $this->assertSame($command, $e->getCommand());
-            $this->assertSame($ex, $e->getPrevious());
-            $this->assertSame($client, $e->getClient());
-            $this->assertNull($e->getRequest());
-            $this->assertNull($e->getResponse());
-        }
-    }
-
-    public function testPassesCommandExceptionsThroughUntouchedInPrepareError()
+    public function testPassesExceptionsThroughUntouchedInPrepareError()
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
@@ -164,6 +144,40 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
         $request->getEmitter()->emit('error', $errorEvent);
         $this->assertTrue($called1);
         $this->assertTrue($called2);
+    }
+
+    public function testCanStopErrorEventWithoutResult()
+    {
+        $request = new Request('GET', '/');
+        $response = new Response(200);
+        $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
+        $command = new Command('foo', []);
+
+        $command->getEmitter()->on('prepare', function (PrepareEvent $e) use ($request) {
+            $e->setRequest($request);
+        });
+
+        $called1 = false;
+        $command->getEmitter()->on(
+            'error',
+            function (CommandErrorEvent $e) use (&$called1, $client, $command, $request, $response) {
+                $e->stopPropagation();
+                $called1 = true;
+            }
+        );
+
+        $called2 = false;
+        $command->getEmitter()->on('process', function (ProcessEvent $e) use (&$called2) {
+            $called2 = true;
+        });
+
+        $transaction = new Transaction(new Client(), $request);
+        $exc = new RequestException('foo', $request, $response);
+        $errorEvent = new ErrorEvent($transaction, $exc);
+        EventWrapper::prepareCommand($command, $client);
+        $request->getEmitter()->emit('error', $errorEvent);
+        $this->assertTrue($called1);
+        $this->assertFalse($called2);
     }
 
     public function testEmitsErrorAndThrowsGenericException()

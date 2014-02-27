@@ -27,12 +27,22 @@ class Command implements CommandInterface
      */
     public function __construct(
         $name,
-        array $args,
+        array $args = [],
         EmitterInterface $emitter = null
     ) {
         $this->name = $name;
         $this->data = $args;
         $this->emitter = $emitter;
+    }
+
+    /**
+     * Ensure that the emitter is cloned.
+     */
+    public function __clone()
+    {
+        if ($this->emitter) {
+            $this->emitter = clone $this->emitter;
+        }
     }
 
     public function getName()

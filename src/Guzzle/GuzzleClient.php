@@ -4,8 +4,9 @@ namespace GuzzleHttp\Command\Guzzle;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Collection;
+use GuzzleHttp\Command\CommandToRequestIterator;
 use GuzzleHttp\Event\HasEmitterTrait;
-use GuzzleHttp\Command\CommandException;
+use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\Event\EventWrapper;
 use GuzzleHttp\Command\Guzzle\Description\GuzzleDescription;
@@ -73,6 +74,7 @@ class GuzzleClient implements GuzzleClientInterface
         $factory = $this->commandFactory;
         // Merge in default command options
         $args += $this->config['defaults'];
+
         if (!($command = $factory($name, $args, $this))) {
             throw new \InvalidArgumentException("Invalid operation: $name");
         }
@@ -84,33 +86,42 @@ class GuzzleClient implements GuzzleClientInterface
     {
         try {
             $event = EventWrapper::prepareCommand($command, $this);
+            // Listeners can intercept the event and inject a result. If that
+            // happened, then we must not emit further events and just
+            // return the result.
             if (null !== ($result = $event->getResult())) {
                 return $result;
             }
             $request = $event->getRequest();
-            return EventWrapper::processCommand(
-                $command,
-                $this,
-                $request,
-                $this->client->send($request)
-            );
+            // Send the request and get the response that is used in the
+            // complete event.
+            $response = $this->client->send($request);
+            // Emit the process event for the command and return the result
+            return EventWrapper::processCommand($command, $this, $request, $response);
         } catch (CommandException $e) {
+            // Let command exceptions pass through untouched
             throw $e;
         } catch (\Exception $e) {
-            throw new CommandException(
-                'Error executing the command',
-                $this,
-                $command,
-                null,
-                null,
-                $e
-            );
+            // Wrap any other exception in a CommandException so that exceptions
+            // thrown from the client are consistent and predictable.
+            $msg = 'Error executing command: ' . $e->getMessage();
+            throw new CommandException($msg, $this, $command, null, null, $e);
         }
     }
 
     public function executeAll($commands, array $options = [])
     {
+        $requestOptions = [];
+        // Move all of the options over that affect the request transfer
+        if (isset($options['parallel'])) {
+            $requestOptions['parallel'] = $options['parallel'];
+        }
 
+        // Create an iterator that yields requests from commands and send all
+        $this->client->sendAll(
+            new CommandToRequestIterator($commands, $this, $options),
+            $requestOptions
+        );
     }
 
     public function getHttpClient()

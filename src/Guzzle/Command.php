@@ -36,6 +36,16 @@ class Command implements GuzzleCommandInterface
         $this->emitter = $emitter;
     }
 
+    /**
+     * Ensure that the emitter is cloned.
+     */
+    public function __clone()
+    {
+        if ($this->emitter) {
+            $this->emitter = clone $this->emitter;
+        }
+    }
+
     public function getName()
     {
         return $this->operation->getName();

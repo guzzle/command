@@ -29,4 +29,12 @@ class CommandTest extends \PHPUnit_Framework_TestCase
         $c = new Command('foo', [], $emitter);
         $this->assertSame($emitter, $c->getEmitter());
     }
+
+    public function testCloneUsesDifferentEmitter()
+    {
+        $command = new Command('foo');
+        $e1 = $command->getEmitter();
+        $command2 = clone $command;
+        $this->assertNotSame($e1, $command2->getEmitter());
+    }
 }

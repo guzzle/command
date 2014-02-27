@@ -8,7 +8,6 @@ use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Message\ResponseInterface;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\ServiceClientInterface;
-use GuzzleHttp\Command\Exception\CommandException;
 
 /**
  * Utility class used to wrap HTTP events with client events.
@@ -35,9 +34,9 @@ class EventWrapper
         CommandInterface $command,
         ServiceClientInterface $client
     ) {
-        $event = self::prepareEvent($command, $client);
+        $event = new PrepareEvent($command, $client);
+        $command->getEmitter()->emit('prepare', $event);
         $request = $event->getRequest();
-
         $stopped = $event->isPropagationStopped();
 
         if ($request) {
@@ -89,34 +88,6 @@ class EventWrapper
     }
 
     /**
-     * Prepares a command for sending and returns the prepare event.
-     *
-     * @param CommandInterface       $command Command to prepare
-     * @param ServiceClientInterface $client  Client associated with the command
-     *
-     * @return PrepareEvent
-     * @throws CommandException on error
-     */
-    private static function prepareEvent(
-        CommandInterface $command,
-        ServiceClientInterface $client
-    ) {
-        try {
-            return $command->getEmitter()->emit(
-                'prepare',
-                new PrepareEvent($command, $client)
-            );
-        } catch (CommandException $e) {
-            // Let these exception flow through, untouched.
-            throw $e;
-        } catch (\Exception $e) {
-            // Wrap lower level exceptions with a consistent CommandException
-            $msg = 'Error preparing command: ' . $e->getMessage();
-            throw new CommandException($msg, $client, $command, null, null, $e);
-        }
-    }
-
-    /**
      * Wrap HTTP level errors with command level errors.
      *
      * @param CommandInterface       $command Command to modify
@@ -128,6 +99,9 @@ class EventWrapper
         ServiceClientInterface $client,
         RequestInterface $request
     ) {
+        // Add a listener that triggers at or near the end of the request's
+        // error event chain that emits a command error event and allows the
+        // request error to be stopped.
         $request->getEmitter()->on(
             'error',
             function (ErrorEvent $e) use ($command, $client) {
@@ -135,9 +109,9 @@ class EventWrapper
                 $event = new CommandErrorEvent($command, $client, $e);
                 $command->getEmitter()->emit('error', $event);
 
-                // The event was intercepted, so cancel the request event and
-                // emit the process event for the command.
-                if ($event->isPropagationStopped()) {
+                // If the event was intercepted with a result cancel the request
+                // event and emit the process event for the command.
+                if ($event->getResult()) {
                     self::processCommand(
                         $command,
                         $client,
@@ -145,6 +119,11 @@ class EventWrapper
                         null,
                         $event->getResult()
                     );
+                    return;
+                }
+
+                // Do not throw an exception if the propagation is stopped
+                if ($event->isPropagationStopped()) {
                     return;
                 }
 
@@ -172,7 +151,8 @@ class EventWrapper
                     $e->getResponse(),
                     $e->getException()
                 );
-            }
+            },
+            -9999
         );
     }
 }
