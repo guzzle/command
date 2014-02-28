@@ -18,9 +18,9 @@ class QueryLocation extends AbstractLocation
         Parameter $param,
         array $context
     ) {
-        $request->setHeader(
-            $param->getWireName(),
-            $this->prepareValue($command[$param->getName()], $param)
+        $request->getQuery()[$param->getWireName()] = $this->prepareValue(
+            $command[$param->getName()],
+            $param
         );
     }
 
