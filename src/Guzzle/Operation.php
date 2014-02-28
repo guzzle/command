@@ -132,9 +132,11 @@ class Operation implements ToArrayInterface
         // Remove the name property
         unset($result['name']);
         // Parameters need to be converted to arrays
-        $result['parameters'] = [];
-        foreach ($this->parameters as $key => $param) {
-            $result['parameters'][$key] = $param->toArray();
+        if ($this->parameters) {
+            $result['parameters'] = [];
+            foreach ($this->parameters as $key => $param) {
+                $result['parameters'][$key] = $param->toArray();
+            }
         }
         // Additional parameters need to be cast to an array
         if ($this->additionalParameters instanceof Parameter) {

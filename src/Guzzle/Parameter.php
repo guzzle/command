@@ -138,7 +138,9 @@ class Parameter
             }
             if (isset($data['$ref'])) {
                 if ($model = $this->serviceDescription->getModel($data['$ref'])) {
+                    $name = isset($data['name']) ? $data['name'] : null;
                     $data = $model->toArray() + $data;
+                    $data['name'] = $name ?: $data['name'];
                 }
             } elseif (isset($data['extends'])) {
                 // If this parameter extends from another parameter then start

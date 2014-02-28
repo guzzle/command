@@ -147,8 +147,7 @@ class OperationTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(123, $o->getData('bar'));
         $this->assertNull($o->getData('wfefwe'));
         $this->assertEquals([
-            'parameters'    => [],
-            'data'          => ['foo' => 'baz', 'bar' => 123]
+            'data' => ['foo' => 'baz', 'bar' => 123]
         ], $o->toArray());
         $this->assertEquals(['foo' => 'baz', 'bar' => 123], $o->getData());
     }

@@ -2,12 +2,13 @@
 
 namespace GuzzleHttp\Command\Guzzle;
 
+use GuzzleHttp\ToArrayInterface;
 use GuzzleHttp\Url;
 
 /**
  * Represents a Guzzle service description
  */
-class Description
+class Description implements ToArrayInterface
 {
     /** @var array Array of {@see OperationInterface} objects */
     private $operations = [];
@@ -66,9 +67,8 @@ class Description
         // Create operations for each operation
         if (isset($config['operations'])) {
             foreach ($config['operations'] as $name => $operation) {
-                if (!($operation instanceof Operation) && !is_array($operation)) {
-                    throw new \InvalidArgumentException('Invalid operation in '
-                        . 'service description: ' . gettype($operation));
+                if (!is_array($operation)) {
+                    throw new \InvalidArgumentException('Operations must be arrays');
                 }
                 $this->operations[$name] = $operation;
             }
@@ -90,6 +90,34 @@ class Description
             }
             $this->formatter = $defaultFormatter;
         }
+    }
+
+    public function toArray()
+    {
+        $result = [
+            'name'        => $this->name,
+            'apiVersion'  => $this->apiVersion,
+            'baseUrl'     => $this->baseUrl,
+            'description' => $this->description
+        ] + $this->extraData;
+
+        $result['operations'] = [];
+        foreach ($this->getOperations() as $name => $operation) {
+            $result['operations'][$name] = $operation->toArray();
+        }
+
+        if (!empty($this->models)) {
+            $result['models'] = array_map(function (Parameter $model) {
+                return $model->toArray();
+            }, $this->getModels());
+        }
+
+        // Remove base URL if it wasn't set
+        if ((string) $result['baseUrl'] == '') {
+            unset($result['baseUrl']);
+        }
+
+        return array_filter($result);
     }
 
     /**
@@ -170,6 +198,21 @@ class Description
         }
 
         return $this->models[$id];
+    }
+
+    /**
+     * Get all models of the service description.
+     *
+     * @return array
+     */
+    public function getModels()
+    {
+        $models = [];
+        foreach ($this->models as $name => $model) {
+            $models[$name] = $this->getModel($name);
+        }
+
+        return $models;
     }
 
     /**
