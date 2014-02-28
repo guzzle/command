@@ -21,7 +21,6 @@ class Parameter
     private $maxItems;
     private $default;
     private $static;
-    private $instanceOf;
     private $filters;
     private $location;
     private $sentAs;
@@ -48,9 +47,6 @@ class Parameter
      *   validation and determining the structure of a parameter. You can use a
      *   union type by providing an array of simple types. If one of the union
      *   types matches the provided value, then the value is valid.
-     *
-     * - instanceOf: (string) When the type is an object, you can specify the
-     *   class that the object must implement.
      *
      * - required: (bool) Whether or not the parameter is required
      *
@@ -178,21 +174,12 @@ class Parameter
      */
     public function toArray()
     {
-        static $checks = ['required', 'description', 'static', 'type',
-            'format', 'instanceOf', 'location', 'sentAs', 'pattern', 'minimum',
-            'maximum', 'minItems', 'maxItems', 'minLength', 'maxLength', 'data',
-            'enum', 'filters'];
+        static $checks = ['name', 'required', 'description', 'static', 'type',
+            'format', 'location', 'sentAs', 'pattern', 'minimum', 'maximum',
+            'minItems', 'maxItems', 'minLength', 'maxLength', 'data', 'enum',
+            'filters'];
 
         $result = [];
-
-        // Anything that is in the `Items` attribute of an array *must* include
-        // it's name if available.
-        if ($this->parent instanceof self &&
-            $this->parent->getType() == 'array' &&
-            isset($this->name)
-        ) {
-            $result['name'] = $this->name;
-        }
 
         foreach ($checks as $c) {
             if ($value = $this->{$c}) {
@@ -559,16 +546,6 @@ class Parameter
         }
 
         return $this->items;
-    }
-
-    /**
-     * Get the class that the parameter must implement
-     *
-     * @return null|string
-     */
-    public function getInstanceOf()
-    {
-        return $this->instanceOf;
     }
 
     /**

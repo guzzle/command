@@ -3,7 +3,6 @@
 namespace Guzzle\Tests\Service\Description;
 
 use GuzzleHttp\Command\Guzzle\Operation;
-use GuzzleHttp\Command\Guzzle\Parameter;
 use GuzzleHttp\Command\Guzzle\Description;
 
 /**
@@ -32,12 +31,14 @@ class OperationTest extends \PHPUnit_Framework_TestCase
                 'key' => array(
                     'required'  => true,
                     'type'      => 'string',
-                    'maxLength' => 10
+                    'maxLength' => 10,
+                    'name'      => 'key'
                 ),
                 'key_2' => array(
                     'required' => true,
                     'type'     => 'integer',
-                    'default'  => 10
+                    'default'  => 10,
+                    'name'     => 'key_2'
                 )
             )
         ), $description);
@@ -59,11 +60,13 @@ class OperationTest extends \PHPUnit_Framework_TestCase
                 'required'  => true,
                 'type'      => 'string',
                 'maxLength' => 10,
+                'name'       => 'key'
             ],
             'key_2' => [
                 'required' => true,
                 'type'     => 'integer',
                 'default'  => 10,
+                'name'     => 'key_2'
             ]
         ], $params);
 
@@ -71,6 +74,7 @@ class OperationTest extends \PHPUnit_Framework_TestCase
             'required' => true,
             'type'     => 'integer',
             'default'  => 10,
+            'name'     => 'key_2'
         ], $c->getParam('key_2')->toArray());
 
         $this->assertNull($c->getParam('afefwef'));
@@ -178,7 +182,8 @@ class OperationTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('string', $o->getAdditionalParameters()->getType());
         $arr = $o->toArray();
         $this->assertEquals(array(
-            'type' => 'string'
+            'type' => 'string',
+            'name' => 'binks'
         ), $arr['additionalParameters']);
     }
 
