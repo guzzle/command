@@ -20,12 +20,14 @@ class XmlLocation extends AbstractLocation
     protected $contentType;
 
     /**
-     * @param string $contentType Set to a non-empty string to add a
+     * @param string $locationName Name of the location
+     * @param string $contentType  Set to a non-empty string to add a
      *     Content-Type header to a request if any XML content is added to the
      *     body. Pass an empty string to disable the addition of the header.
      */
-    public function __construct($contentType = 'application/xml')
+    public function __construct($locationName, $contentType = 'application/xml')
     {
+        $this->locationName = $locationName;
         $this->contentType = $contentType;
         $this->data = new \SplObjectStorage();
     }
@@ -49,9 +51,11 @@ class XmlLocation extends AbstractLocation
         if ($additional && $additional->getLocation() == $this->locationName) {
             foreach ($command->toArray() as $key => $value) {
                 if (!$operation->hasParam($key)) {
+                    $additional->setName($key);
                     $this->visitWithValue($value, $additional, $command);
                 }
             }
+            $additional->setName(null);
         }
 
         // If data was found that needs to be serialized, then do so
@@ -116,10 +120,6 @@ class XmlLocation extends AbstractLocation
      */
     protected function addXml(\XMLWriter $writer, Parameter $param, $value)
     {
-        if ($value === null) {
-            return;
-        }
-
         $value = $param->filter($value);
         $type = $param->getType();
         $name = $param->getWireName();
@@ -235,10 +235,22 @@ class XmlLocation extends AbstractLocation
      */
     protected function addXmlObject(\XMLWriter $writer, Parameter $param, &$value)
     {
+        $noAttributes = [];
+
+        // add values which have attributes
         foreach ($value as $name => $v) {
             if ($property = $param->getProperty($name)) {
-                $this->addXml($writer, $property, $v);
+                if ($property->getData('xmlAttribute')) {
+                    $this->addXml($writer, $property, $v);
+                } else {
+                    $noAttributes[] = ['value' => $v, 'property' => $property];
+                }
             }
+        }
+
+        // now add values with no attributes
+        foreach ($noAttributes as $element) {
+            $this->addXml($writer, $element['property'], $element['value']);
         }
     }
 

@@ -8,10 +8,10 @@ use GuzzleHttp\Command\Guzzle\Description;
 
 abstract class AbstractLocationTest extends \PHPUnit_Framework_TestCase
 {
-    protected function getCommand()
+    protected function getCommand(Operation $operation = null)
     {
         return new Command(
-            new Operation([], new Description([])),
+            $operation ?: new Operation([], new Description([])),
             ['foo' => 'bar']
         );
     }
