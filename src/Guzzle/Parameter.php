@@ -28,7 +28,6 @@ class Parameter
     private $properties = [];
     private $additionalProperties;
     private $items;
-    private $parent;
     private $format;
     private $propertiesCache = null;
 

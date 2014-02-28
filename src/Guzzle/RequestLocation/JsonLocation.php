@@ -20,11 +20,13 @@ class JsonLocation extends AbstractLocation
     private $jsonData;
 
     /**
-     * @param string $contentType Content-Type header to add to the request if
+     * @param string $locationName Name of the location
+     * @param string $contentType  Content-Type header to add to the request if
      *     JSON is added to the body. Pass an empty string to omit.
      */
-    public function __construct($contentType = 'application/json')
+    public function __construct($locationName, $contentType = 'application/json')
     {
+        $this->locationName = $locationName;
         $this->jsonContentType = $contentType;
     }
 

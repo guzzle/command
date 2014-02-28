@@ -2,14 +2,14 @@
 
 namespace GuzzleHttp\Command;
 
-use GuzzleHttp\GetPathTrait;
+use GuzzleHttp\PathTrait;
 
 /**
  * Default model implementation.
  */
 class Model implements ModelInterface
 {
-    use GetPathTrait;
+    use PathTrait;
 
     public function __construct(array $data)
     {
