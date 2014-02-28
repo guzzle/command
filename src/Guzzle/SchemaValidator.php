@@ -32,7 +32,7 @@ class SchemaValidator
 
     public function validate(Parameter $param, &$value)
     {
-        $this->errors = array();
+        $this->errors = [];
         $this->recursiveProcess($param, $value);
 
         if (empty($this->errors)) {
@@ -50,7 +50,7 @@ class SchemaValidator
      */
     public function getErrors()
     {
-        return $this->errors ?: array();
+        return $this->errors ?: [];
     }
 
     /**
@@ -87,16 +87,6 @@ class SchemaValidator
 
         if ($type == 'object') {
 
-            // Objects are either associative arrays, ToArrayInterface, or some
-            // other object
-            if ($param->getInstanceOf()) {
-                $instance = $param->getInstanceOf();
-                if (!($value instanceof $instance)) {
-                    $this->errors[] = "{$path} must be an instance of {$instance}";
-                    return false;
-                }
-            }
-
             // Determine whether or not this "value" has properties and should
             // be traversed
             $traverse = $temporaryValue = false;
@@ -116,7 +106,7 @@ class SchemaValidator
             } elseif ($value === null) {
                 // Attempt to let the contents be built up by default values if
                 // possible
-                $value = array();
+                $value = [];
                 $temporaryValue = $valueIsArray = $traverse = true;
             }
 
