@@ -1,6 +1,14 @@
 {
   "name": "guzzlehttp/command",
   "description": "Provides the foundation for building command based web service clients",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Michael Dowling",
+      "email": "mtdowling@gmail.com",
+      "homepage": "https://github.com/mtdowling"
+    }
+  ],
   "require": {
     "guzzle/guzzle": "dev-guzzle4"
   },
