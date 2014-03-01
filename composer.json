@@ -1,4 +1,6 @@
 {
+  "name": "guzzlehttp/command",
+  "description": "Provides the foundation for building command based web service clients",
   "require": {
     "guzzle/guzzle": "dev-guzzle4"
   },
