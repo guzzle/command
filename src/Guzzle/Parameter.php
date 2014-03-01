@@ -2,11 +2,14 @@
 
 namespace GuzzleHttp\Command\Guzzle;
 
+use GuzzleHttp\ToArrayInterface;
+
 /**
  * API parameter object used with service descriptions
  */
-class Parameter
+class Parameter implements ToArrayInterface
 {
+    private $originalData;
     private $name;
     private $description;
     private $type;
@@ -130,6 +133,8 @@ class Parameter
      */
     public function __construct(array $data = [], array $options = [])
     {
+        $this->originalData = $data;
+
         if (isset($options['description'])) {
             $this->serviceDescription = $options['description'];
             if (!($this->serviceDescription instanceof Description)) {
@@ -175,42 +180,7 @@ class Parameter
      */
     public function toArray()
     {
-        static $checks = ['name', 'required', 'description', 'static', 'type',
-            'format', 'location', 'sentAs', 'pattern', 'minimum', 'maximum',
-            'minItems', 'maxItems', 'minLength', 'maxLength', 'data', 'enum',
-            'filters'];
-
-        $result = [];
-
-        foreach ($checks as $c) {
-            if ($value = $this->{$c}) {
-                $result[$c] = $value;
-            }
-        }
-
-        if ($this->default !== null) {
-            $result['default'] = $this->default;
-        }
-
-        if ($this->items !== null) {
-            $result['items'] = $this->getItems()->toArray();
-        }
-
-        if ($this->additionalProperties !== null) {
-            $result['additionalProperties'] = $this->getAdditionalProperties();
-            if ($result['additionalProperties'] instanceof self) {
-                $result['additionalProperties'] = $result['additionalProperties']->toArray();
-            }
-        }
-
-        if ($this->type == 'object' && $this->properties) {
-            $result['properties'] = [];
-            foreach ($this->getProperties() as $name => $property) {
-                $result['properties'][$name] = $property->toArray();
-            }
-        }
-
-        return $result;
+        return $this->originalData;
     }
 
     /**

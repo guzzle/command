@@ -2,13 +2,12 @@
 
 namespace GuzzleHttp\Command\Guzzle;
 
-use GuzzleHttp\ToArrayInterface;
 use GuzzleHttp\Url;
 
 /**
  * Represents a Guzzle service description
  */
-class Description implements ToArrayInterface
+class Description
 {
     /** @var array Array of {@see OperationInterface} objects */
     private $operations = [];
@@ -92,34 +91,6 @@ class Description implements ToArrayInterface
         }
     }
 
-    public function toArray()
-    {
-        $result = [
-            'name'        => $this->name,
-            'apiVersion'  => $this->apiVersion,
-            'baseUrl'     => $this->baseUrl,
-            'description' => $this->description
-        ] + $this->extraData;
-
-        $result['operations'] = [];
-        foreach ($this->getOperations() as $name => $operation) {
-            $result['operations'][$name] = $operation->toArray();
-        }
-
-        if (!empty($this->models)) {
-            $result['models'] = array_map(function (Parameter $model) {
-                return $model->toArray();
-            }, $this->getModels());
-        }
-
-        // Remove base URL if it wasn't set
-        if ((string) $result['baseUrl'] == '') {
-            unset($result['baseUrl']);
-        }
-
-        return array_filter($result);
-    }
-
     /**
      * Get the basePath/baseUrl of the description
      *
@@ -192,7 +163,7 @@ class Description implements ToArrayInterface
         // Lazily create models as they are retrieved
         if (!($this->models[$id] instanceof Parameter)) {
             $this->models[$id] = new Parameter(
-                $this->models[$id] + array('name' => $id),
+                $this->models[$id] + ['name' => $id],
                 ['description' => $this]
             );
         }

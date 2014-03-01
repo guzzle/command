@@ -235,10 +235,8 @@ class ParameterTest extends \PHPUnit_Framework_TestCase
         ));
         $p = new Parameter(array('$ref' => 'Anakin', 'description' => 'added'), ['description' => $description]);
         $this->assertEquals(array(
-            'type' => 'array',
-            'items' => array('type' => 'string', 'default' => 'Mesa address tha senate!', 'name' => 'JarJar'),
             'description' => 'added',
-            'name' => 'Anakin'
+            '$ref' => 'Anakin'
         ), $p->toArray());
     }
 
@@ -252,15 +250,8 @@ class ParameterTest extends \PHPUnit_Framework_TestCase
         // Description attribute will be updated, and format added
         $p = new Parameter(array('extends' => 'Anakin', 'format' => 'date'), ['description' => $description]);
         $this->assertEquals(array(
-            'type'  => 'array',
             'format' => 'date',
-            'name'   => 'Anakin',
-            'items' => array(
-                'type'    => 'string',
-                'default' => 'Mesa address tha senate!',
-                'description' => 'b',
-                'name' => 'JarJar'
-            )
+            'extends' => 'Anakin'
         ), $p->toArray());
     }
 
@@ -286,8 +277,7 @@ class ParameterTest extends \PHPUnit_Framework_TestCase
             'name' => 'Abc',
             'items' => array(
                 'name' => 'Foo',
-                'type' => 'object',
-                'additionalProperties' => true
+                'type' => 'object'
             )
         ), $result);
     }
@@ -348,9 +338,6 @@ class ParameterTest extends \PHPUnit_Framework_TestCase
             $this->assertInstanceOf('GuzzleHttp\\Command\\Guzzle\\Parameter', $prop);
         }
 
-        $data['additionalProperties'] = true;
-        $data['properties']['foo']['name'] = 'foo';
-        $data['properties']['bar']['name'] = 'bar';
         $this->assertEquals($data, $p->toArray());
     }
 }

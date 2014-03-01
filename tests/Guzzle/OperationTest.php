@@ -81,29 +81,6 @@ class OperationTest extends \PHPUnit_Framework_TestCase
         $this->assertArrayNotHasKey('parent', $c->getParam('key_2')->toArray());
     }
 
-    public function testConvertsToArray()
-    {
-        $data = [
-            'name'             => 'test',
-            'summary'          => 'test',
-            'documentationUrl' => 'http://www.example.com',
-            'httpMethod'       => 'PUT',
-            'uri'              => '/',
-            'parameters'       => ['p' => ['name' => 'foo']]
-        ];
-        $c = new Operation($data, new Description([]));
-        $toArray = $c->toArray();
-        unset($data['name']);
-        $this->assertArrayHasKey('parameters', $toArray);
-        $this->assertInternalType('array', $toArray['parameters']);
-
-        // Normalize the array
-        unset($data['parameters']);
-        unset($toArray['parameters']);
-
-        $this->assertEquals($data, $toArray);
-    }
-
     public function testDeterminesIfHasParam()
     {
         $command = $this->getTestCommand();
@@ -130,8 +107,6 @@ class OperationTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getOperation();
         $this->assertEquals(1, count($command->getErrorResponses()));
-        $arr = $command->toArray();
-        $this->assertEquals(1, count($arr['errorResponses']));
     }
 
     public function testHasNotes()
@@ -146,9 +121,6 @@ class OperationTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('baz', $o->getData('foo'));
         $this->assertEquals(123, $o->getData('bar'));
         $this->assertNull($o->getData('wfefwe'));
-        $this->assertEquals([
-            'data' => ['foo' => 'baz', 'bar' => 123]
-        ], $o->toArray());
         $this->assertEquals(['foo' => 'baz', 'bar' => 123], $o->getData());
     }
 
@@ -179,11 +151,6 @@ class OperationTest extends \PHPUnit_Framework_TestCase
             )
         ), new Description([]));
         $this->assertEquals('string', $o->getAdditionalParameters()->getType());
-        $arr = $o->toArray();
-        $this->assertEquals(array(
-            'type' => 'string',
-            'name' => 'binks'
-        ), $arr['additionalParameters']);
     }
 
     /**

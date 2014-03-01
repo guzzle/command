@@ -1,12 +1,11 @@
 <?php
 
 namespace GuzzleHttp\Command\Guzzle;
-use GuzzleHttp\ToArrayInterface;
 
 /**
  * Guzzle operation
  */
-class Operation implements ToArrayInterface
+class Operation
 {
     /** @var array Hashmap of properties that can be specified */
     private static $properties = ['name' => true, 'httpMethod' => true,
@@ -118,32 +117,6 @@ class Operation implements ToArrayInterface
                 );
             }
         }
-    }
-
-    public function toArray()
-    {
-        $result = [];
-        // Grab valid properties and filter out values that weren't set
-        foreach (array_keys(self::$properties) as $check) {
-            if ($value = $this->{$check}) {
-                $result[$check] = $value;
-            }
-        }
-        // Remove the name property
-        unset($result['name']);
-        // Parameters need to be converted to arrays
-        if ($this->parameters) {
-            $result['parameters'] = [];
-            foreach ($this->parameters as $key => $param) {
-                $result['parameters'][$key] = $param->toArray();
-            }
-        }
-        // Additional parameters need to be cast to an array
-        if ($this->additionalParameters instanceof Parameter) {
-            $result['additionalParameters'] = $this->additionalParameters->toArray();
-        }
-
-        return $result;
     }
 
     /**

@@ -92,22 +92,6 @@ class DescriptionTest extends \PHPUnit_Framework_TestCase
         $this->assertNull($d->getData('missing'));
     }
 
-    public function testHasToArray()
-    {
-        $data = [
-            'operations'  => [],
-            'models'      => ['foo' => ['type' => 'string']],
-            'name'        => 'Name',
-            'description' => 'Test'
-        ];
-        $d = new Description($data);
-        $d->getModel('foo');
-        $arr = $d->toArray();
-        $this->assertEquals('Name', $arr['name']);
-        $this->assertEquals('Test', $arr['description']);
-        $this->assertEquals(['foo' => ['type' => 'string', 'name' => 'foo']], $arr['models']);
-    }
-
     /**
      * @expectedException \InvalidArgumentException
      */
@@ -160,7 +144,6 @@ class DescriptionTest extends \PHPUnit_Framework_TestCase
         $s = new Description($desc);
         $this->assertInstanceOf('GuzzleHttp\\Command\\Guzzle\\Operation', $s->getOperation('foo'));
         $this->assertSame($s->getOperation('foo'), $s->getOperation('foo'));
-        $this->assertEquals($desc, $s->toArray());
     }
 
     public function testHasFormatter()
