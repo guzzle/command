@@ -369,7 +369,23 @@ class XmlLocationTest extends AbstractLocationTest
                     )
                 ),
                 '<Request><Delete><Item><A>1</A><B>2</B></Item><Item><A>3</A><B>4</B></Item></Delete></Request>'
-            )
+            ),
+            // Test adding root node attributes after nodes
+            array(
+                array(
+                    'data' => array(
+                        'xmlRoot' => array(
+                            'name' => 'test'
+                        )
+                    ),
+                    'parameters' => array(
+                        'Foo' => array('location' => 'xml', 'type' => 'string'),
+                        'Baz' => array('location' => 'xml', 'type' => 'string', 'data' => array('xmlAttribute' => true)),
+                    )
+                ),
+                array('Foo' => 'test', 'Baz' => 'bar'),
+                '<test Baz="bar"><Foo>test</Foo></test>'
+            ),
         );
     }
 

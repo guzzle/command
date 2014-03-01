@@ -14,10 +14,13 @@ use GuzzleHttp\Stream\Stream;
 class XmlLocation extends AbstractLocation
 {
     /** @var \XMLWriter XML writer resource */
-    protected $writer;
+    private $writer;
 
     /** @var bool Content-Type header added when XML is found */
-    protected $contentType;
+    private $contentType;
+
+    /** @var Parameter[] Buffered elements to write */
+    private $buffered = [];
 
     /**
      * @param string $locationName Name of the location
@@ -38,7 +41,14 @@ class XmlLocation extends AbstractLocation
         Parameter $param,
         array $context
     ) {
-        $this->visitWithValue($command[$param->getName()], $param, $command);
+        // Buffer and order the parameters to visit based on if they are
+        // top-level attributes or child nodes.
+        // @link https://github.com/guzzle/guzzle/pull/494
+        if ($param->getData('xmlAttribute')) {
+            array_unshift($this->buffered, $param);
+        } else {
+            $this->buffered[] = $param;
+        }
     }
 
     public function after(
@@ -47,6 +57,12 @@ class XmlLocation extends AbstractLocation
         Operation $operation,
         array $context
     ) {
+        foreach ($this->buffered as $param) {
+            $this->visitWithValue($command[$param->getName()], $param, $command);
+        }
+
+        $this->buffered = [];
+
         $additional = $operation->getAdditionalParameters();
         if ($additional && $additional->getLocation() == $this->locationName) {
             foreach ($command->toArray() as $key => $value) {
@@ -88,7 +104,7 @@ class XmlLocation extends AbstractLocation
      */
     protected function createRootElement(Operation $operation)
     {
-        static $defaultRoot = array('name' => 'Request');
+        static $defaultRoot = ['name' => 'Request'];
         // If no root element was specified, then just wrap the XML in 'Request'
         $root = $operation->getData('xmlRoot') ?: $defaultRoot;
         // Allow the XML declaration to be customized with xmlEncoding
