@@ -223,7 +223,7 @@ class XmlLocation extends AbstractLocation
     {
         $this->writer = new \XMLWriter();
         $this->writer->openMemory();
-        $this->writer->startDocument('1.0', $encoding);
+        $this->writer->startDocument(1.0, $encoding);
 
         return $this->writer;
     }
