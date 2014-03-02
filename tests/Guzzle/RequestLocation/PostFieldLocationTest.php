@@ -19,7 +19,7 @@ class PostFieldLocationTest extends AbstractLocationTest
     {
         $location = new PostFieldLocation('body');
         $command = $this->getCommand();
-        $request = new Request('POST', '/', [], new PostBody());
+        $request = new Request('POST', 'http://httbin.org', [], new PostBody());
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
         $this->assertEquals('bar', $request->getBody()->getField('foo'));
@@ -32,7 +32,7 @@ class PostFieldLocationTest extends AbstractLocationTest
     {
         $location = new PostFieldLocation('postField');
         $command = $this->getCommand();
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
     }
@@ -47,7 +47,7 @@ class PostFieldLocationTest extends AbstractLocationTest
                 'location' => 'postField'
             ]
         ], new Description([]));
-        $request = new Request('POST', '/', [], new PostBody());
+        $request = new Request('POST', 'http://httbin.org', [], new PostBody());
         $location->after($command, $request, $operation, []);
         $this->assertEquals('props', $request->getBody()->getField('add'));
     }
@@ -64,7 +64,7 @@ class PostFieldLocationTest extends AbstractLocationTest
                 'location' => 'postField'
             ]
         ], new Description([]));
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $location->after($command, $request, $operation, []);
     }
 }

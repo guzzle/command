@@ -26,7 +26,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $command->getEmitter()->on('prepare', function (PrepareEvent $e) use ($request) {
             $e->setRequest($request);
         });
@@ -86,7 +86,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
 
     public function testEmitsProcessEvent()
     {
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
@@ -109,7 +109,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
 
     public function testEmitsErrorEventAndCanInterceptWithSuccessfulResult()
     {
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
@@ -148,7 +148,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
 
     public function testCanStopErrorEventWithoutResult()
     {
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
@@ -182,7 +182,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
 
     public function testEmitsErrorAndThrowsGenericException()
     {
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
@@ -210,7 +210,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
 
     public function testEmitsErrorAndThrowsClientException()
     {
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(400);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
@@ -234,7 +234,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
 
     public function testEmitsErrorAndThrowsServerException()
     {
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(500);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);

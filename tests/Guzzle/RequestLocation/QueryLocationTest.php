@@ -18,7 +18,7 @@ class QueryLocationTest extends AbstractLocationTest
     {
         $location = new QueryLocation('query');
         $command = $this->getCommand();
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
         $this->assertEquals('bar', $request->getQuery()['foo']);
@@ -34,7 +34,7 @@ class QueryLocationTest extends AbstractLocationTest
                 'location' => 'query'
             ]
         ], new Description([]));
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $location->after($command, $request, $operation, []);
         $this->assertEquals('props', $request->getQuery()['add']);
     }

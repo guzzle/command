@@ -36,7 +36,7 @@ class PrepareEventTest extends \PHPUnit_Framework_TestCase
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
         $event = new PrepareEvent($command, $client);
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $event->setRequest($request);
         $this->assertSame($request, $event->getRequest());
         $this->assertFalse($event->isPropagationStopped());

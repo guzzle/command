@@ -21,7 +21,7 @@ class ErrorEventTest extends \PHPUnit_Framework_TestCase
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
 
         $httpClient = new Client();
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $transaction = new Transaction($httpClient, $request);
         $requestException = new RequestException('foo', $request);
         $errorEvent = new ErrorEvent($transaction, $requestException, []);

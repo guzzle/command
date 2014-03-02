@@ -16,7 +16,7 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
         $result = null;
         $event = new ProcessEvent($command, $client, $request, $response);
@@ -31,7 +31,7 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
         $result = null;
         $event = new ProcessEvent($command, $client, $request, $response);
@@ -44,7 +44,7 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
         $event = new ProcessEvent($command, $client, $request, $response, 'hi');
         $this->assertSame('hi', $event->getResult());

@@ -16,7 +16,7 @@ class PostFileLocationTest extends AbstractLocationTest
     {
         $location = new PostFileLocation('postFile');
         $command = $this->getCommand();
-        $request = new Request('POST', '/', [], new PostBody());
+        $request = new Request('POST', 'http://httbin.org', [], new PostBody());
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
         $this->assertEquals(
@@ -32,7 +32,7 @@ class PostFileLocationTest extends AbstractLocationTest
     {
         $location = new PostFileLocation('postFile');
         $command = $this->getCommand();
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
     }

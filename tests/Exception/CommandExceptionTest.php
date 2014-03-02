@@ -13,7 +13,7 @@ class CommandExceptionTest extends \PHPUnit_Framework_TestCase
 {
     public function testHasData()
     {
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
         $previous = new \Exception('bar');
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');

@@ -18,7 +18,7 @@ class JsonLocationTest extends AbstractLocationTest
     {
         $location = new JsonLocation('json');
         $command = $this->getCommand();
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
         $operation = new Operation([], new Description([]));
@@ -32,7 +32,7 @@ class JsonLocationTest extends AbstractLocationTest
         $location = new JsonLocation('json', 'foo');
         $command = $this->getCommand();
         $command['baz'] = ['bam' => [1]];
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
         $operation = new Operation([
@@ -49,7 +49,7 @@ class JsonLocationTest extends AbstractLocationTest
     {
         $location = new JsonLocation('json');
         $command = $this->getCommand();
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter([
             'name' => 'foo',
             'type' => 'object',

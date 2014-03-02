@@ -15,7 +15,7 @@ class BodyLocationTest extends AbstractLocationTest
     {
         $location = new BodyLocation('body');
         $command = $this->getCommand();
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
         $this->assertEquals('bar', $request->getBody());

@@ -24,7 +24,7 @@ class XmlLocationTest extends AbstractLocationTest
         $location = new XmlLocation('xml');
         $command = $this->getCommand();
         $command['bar'] = 'test';
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
         $param = new Parameter(['name' => 'bar']);
@@ -41,7 +41,7 @@ class XmlLocationTest extends AbstractLocationTest
     {
         $location = new XmlLocation('xml');
         $command = $this->getCommand();
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $operation = new Operation([
             'data' => ['xmlAllowEmpty' => true]
         ], new Description([]));
@@ -56,7 +56,7 @@ class XmlLocationTest extends AbstractLocationTest
     {
         $location = new XmlLocation('xml', 'test');
         $command = $this->getCommand();
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $command['foo'] = 'bar';
         $location->visit($command, $request, $param, []);
@@ -80,7 +80,7 @@ class XmlLocationTest extends AbstractLocationTest
             'data' => ['xmlEncoding' => 'UTF-8']
         ], new Description([]));
         $command = $this->getCommand($operation);
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $command['foo'] = 'bar';
         $location->visit($command, $request, $param, []);

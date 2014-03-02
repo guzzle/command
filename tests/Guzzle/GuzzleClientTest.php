@@ -195,7 +195,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
         $guzzle = new GuzzleClient($client, $description);
         $command = $guzzle->getCommand('foo');
         $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
-            $event->setRequest($event->getClient()->getHttpClient()->createRequest('GET', '/'));
+            $event->setRequest($event->getClient()->getHttpClient()->createRequest('GET', 'http://httbin.org'));
         }, 1);
         $result = $guzzle->execute($command);
         $this->assertInstanceOf('GuzzleHttp\\Command\\Model', $result);
@@ -211,7 +211,7 @@ class GuzzleClientTest extends \PHPUnit_Framework_TestCase
         $description = new Description(['operations' => ['Foo' => []]]);
         $guzzle = new GuzzleClient($client, $description);
         $command = $guzzle->getCommand('foo');
-        $request = $client->createRequest('GET', '/');
+        $request = $client->createRequest('GET', 'http://httbin.org');
         $command->getEmitter()->on('prepare', function (PrepareEvent $e) use ($request) {
             $e->setRequest($request);
         }, 1);

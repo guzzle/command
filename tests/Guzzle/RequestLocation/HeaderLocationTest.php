@@ -18,7 +18,7 @@ class HeaderLocationTest extends AbstractLocationTest
     {
         $location = new HeaderLocation('header');
         $command = $this->getCommand();
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $param = new Parameter(['name' => 'foo']);
         $location->visit($command, $request, $param, []);
         $this->assertEquals('bar', $request->getHeader('foo'));
@@ -34,7 +34,7 @@ class HeaderLocationTest extends AbstractLocationTest
                 'location' => 'header'
             ]
         ], new Description([]));
-        $request = new Request('POST', '/');
+        $request = new Request('POST', 'http://httbin.org');
         $location->after($command, $request, $operation, []);
         $this->assertEquals('props', $request->getHeader('add'));
     }

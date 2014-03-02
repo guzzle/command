@@ -31,7 +31,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $cmd = new Command('foo');
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $cmd->getEmitter()->on('prepare', function (PrepareEvent $event) use ($request) {
             $event->setRequest($request);
         });
@@ -47,8 +47,8 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
     public function testCanUseAnIterator()
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request1 = new Request('GET', '/');
-        $request2 = new Request('GET', '/');
+        $request1 = new Request('GET', 'http://httbin.org');
+        $request2 = new Request('GET', 'http://httbin.org');
 
         $cmd = new Command('foo');
         $cmd->getEmitter()->on('prepare', function (PrepareEvent $event) use ($request1) {
@@ -94,7 +94,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
     public function testHooksUpEvents()
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
         $command = new Command('foo');
         $calledPrepare = $calledProcess = $calledError = false;
         $commands = [$command];
@@ -132,7 +132,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
     public function testSkipsInterceptedCommands()
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request = new Request('GET', '/');
+        $request = new Request('GET', 'http://httbin.org');
 
         $command1 = new Command('foo');
         $command1->getEmitter()->on('prepare', function (PrepareEvent $e) use ($request) {
