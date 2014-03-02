@@ -218,11 +218,18 @@ class XmlLocation extends AbstractLocation
      * @param  string $encoding document encoding
      *
      * @return \XMLWriter the writer resource
+     * @throws \RuntimeException if the document cannot be started
      */
     protected function startDocument($encoding)
     {
         $this->writer = new \XMLWriter();
-        $this->writer->openMemory();
+        if (!$this->writer->openMemory()) {
+            $lastError = error_get_last();
+            $lastXmlError = libxml_get_last_error();
+            $msg = $lastError ? ($lastError['message'] . ' ') : '';
+            $msg .= $lastXmlError ? $lastXmlError->message : '';
+            throw new \RuntimeException("Unable to start XML document: $msg");
+        }
         $this->writer->startDocument('1.0', $encoding);
 
         return $this->writer;
