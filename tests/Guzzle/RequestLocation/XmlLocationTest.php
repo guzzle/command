@@ -394,6 +394,7 @@ class XmlLocationTest extends AbstractLocationTest
      */
     public function testSerializesXml(array $operation, array $input, $xml)
     {
+        $operation['uri'] = 'http://httpbin.org';
         $client = new GuzzleClient(new Client(), new Description([
             'operations' => [
                 'foo' => $operation
