@@ -224,13 +224,11 @@ class XmlLocation extends AbstractLocation
     {
         $this->writer = new \XMLWriter();
         if (!$this->writer->openMemory()) {
-            $lastError = error_get_last();
-            $lastXmlError = libxml_get_last_error();
-            $msg = $lastError ? ($lastError['message'] . ' ') : '';
-            $msg .= $lastXmlError ? $lastXmlError->message : '';
-            throw new \RuntimeException("Unable to start XML document: $msg");
+            throw new \RuntimeException('Unable to open XML document in memory');
         }
-        $this->writer->startDocument('1.0', $encoding);
+        if (!$this->writer->startDocument('1.0', $encoding)) {
+            throw new \RuntimeException('Unable to start XML document');
+        }
 
         return $this->writer;
     }
