@@ -38,7 +38,7 @@ class JsonLocation extends AbstractLocation
         ) {
             foreach ($this->json as $prop => $val) {
                 if (!isset($result[$prop])) {
-                    $result[$prop] = $this->recursiveProcess($additional, $val);
+                    $result[$prop] = $this->recurse($additional, $val);
                 }
             }
         }
@@ -57,30 +57,17 @@ class JsonLocation extends AbstractLocation
         $key = $param->getWireName();
 
         // Check if the result should be treated as a list
-        if ($param->getType() == 'array' &&
-            ($context || !$key || $param->getSentAs() === '')
-        ) {
+        if ($param->getType() == 'array') {
             // Treat as javascript array
-            if ($context || !$name) {
-                // top-level `array` or an empty name
-                $result = array_merge(
-                    $result,
-                    $this->recursiveProcess($param, $this->json)
-                );
-            } else {
+            if ($name) {
                 // name provided, store it under a key in the array
-                $result[$name] = $this->recursiveProcess($param, $this->json);
+                $result[$name] = $this->recurse($param, $this->json);
+            } else {
+                // top-level `array` or an empty name
+                $result = array_merge($result, $this->recurse($param, $this->json));
             }
         } elseif (isset($this->json[$key])) {
-            // Treat as a javascript object
-            if (!$name) {
-                $result += $this->recursiveProcess($param, $this->json[$key]);
-            } else {
-                $result[$name] = $this->recursiveProcess(
-                    $param,
-                    $this->json[$key]
-                );
-            }
+            $result[$name] = $this->recurse($param, $this->json[$key]);
         }
     }
 
@@ -91,24 +78,19 @@ class JsonLocation extends AbstractLocation
      * @param mixed     $value Value to process.
      * @return mixed|null
      */
-    private function recursiveProcess(Parameter $param, $value)
+    private function recurse(Parameter $param, $value)
     {
-        if ($value === null) {
-            return null;
-        } elseif (!is_array($value)) {
-            // Scalar values don't need to be walked
+        if (!is_array($value)) {
             return $param->filter($value);
         }
 
         $result = [];
         $type = $param->getType();
-        if (!$type) {
-            // Just merge all properties onto the result
-            $result = $value;
-        } elseif ($type == 'array') {
+
+        if ($type == 'array') {
             $items = $param->getItems();
             foreach ($value as $val) {
-                $result[] = $this->recursiveProcess($items, $val);
+                $result[] = $this->recurse($items, $val);
             }
         } elseif ($type == 'object' && !isset($value[0])) {
             // On the above line, we ensure that the array is associative and
@@ -117,7 +99,7 @@ class JsonLocation extends AbstractLocation
                 foreach ($properties as $property) {
                     $key = $property->getWireName();
                     if (isset($value[$key])) {
-                        $result[$property->getName()] = $this->recursiveProcess(
+                        $result[$property->getName()] = $this->recurse(
                             $property,
                             $value[$key]
                         );
@@ -136,10 +118,7 @@ class JsonLocation extends AbstractLocation
                 } elseif ($additional instanceof Parameter) {
                     // Process all child elements according to the given schema
                     foreach ($value as $prop => $val) {
-                        $result[$prop] = $this->recursiveProcess(
-                            $additional,
-                            $val
-                        );
+                        $result[$prop] = $this->recurse($additional, $val);
                     }
                 }
             }

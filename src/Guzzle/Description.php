@@ -163,7 +163,7 @@ class Description
         // Lazily create models as they are retrieved
         if (!($this->models[$id] instanceof Parameter)) {
             $this->models[$id] = new Parameter(
-                $this->models[$id] + ['name' => $id],
+                $this->models[$id],
                 ['description' => $this]
             );
         }

@@ -61,8 +61,10 @@ class XmlLocation extends AbstractLocation
 
         // Process the primary property
         if (count($this->xml->children($ns, true)->{$sentAs})) {
-            $node = $this->xml->children($ns, true)->{$sentAs};
-            $value[$param->getName()] = $this->recursiveProcess($param, $node);
+            $result[$param->getName()] = $this->recursiveProcess(
+                $param,
+                $this->xml->children($ns, true)->{$sentAs}
+            );
         }
     }
 
@@ -73,7 +75,7 @@ class XmlLocation extends AbstractLocation
      * @param \SimpleXMLElement $node  Node being processed
      * @return array
      */
-    protected function recursiveProcess(
+    private function recursiveProcess(
         Parameter $param,
         \SimpleXMLElement $node
     ) {
@@ -143,7 +145,7 @@ class XmlLocation extends AbstractLocation
      * @param \SimpleXMLElement $node  Value to process
      * @return array
      */
-    protected function processObject(Parameter $param, \SimpleXMLElement $node)
+    private function processObject(Parameter $param, \SimpleXMLElement $node)
     {
         $result = $knownProps = [];
 

@@ -18,6 +18,8 @@ class ReasonPhraseLocation extends AbstractLocation
         &$result,
         array $context = []
     ) {
-        $result[$param->getName()] = $response->getReasonPhrase();
+        $result[$param->getName()] = $param->filter(
+            $response->getReasonPhrase()
+        );
     }
 }

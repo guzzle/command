@@ -132,7 +132,7 @@ class DescriptionTest extends \PHPUnit_Framework_TestCase
         ];
 
         $s = new Description($desc);
-        $this->assertEquals('date', $s->getModel('date')->getName());
+        $this->assertEquals('string', $s->getModel('date')->getType());
         $this->assertEquals('dob', $s->getModel('user')->getProperty('dob')->getName());
     }
 

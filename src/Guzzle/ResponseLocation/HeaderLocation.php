@@ -24,23 +24,4 @@ class HeaderLocation extends AbstractLocation
             $result[$name] = $param->filter($header);
         }
     }
-
-    public function after(
-        GuzzleCommandInterface $command,
-        ResponseInterface $response,
-        Parameter $model,
-        &$result,
-        array $context = []
-    ) {
-        $additional = $model->getAdditionalProperties();
-        if ($additional instanceof Parameter &&
-            $additional->getLocation() == $this->locationName
-        ) {
-            foreach ($response->getHeaders() as $key => $header) {
-                if (!isset($result[$key])) {
-                    $result[$key] = $additional->filter(implode($header, ', '));
-                }
-            }
-        }
-    }
 }
