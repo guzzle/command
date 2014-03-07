@@ -196,17 +196,17 @@ class GuzzleClient implements GuzzleClientInterface
         if (!isset($this->config['validate']) ||
             $this->config['validate'] === true
         ) {
-            $emitter->addSubscriber(new ValidateInput());
+            $emitter->attach(new ValidateInput());
         }
 
-        $emitter->addSubscriber(new PrepareRequest(
+        $emitter->attach(new PrepareRequest(
             $this->config['request_locations'] ?: []
         ));
 
         if (!isset($this->config['process']) ||
             $this->config['process'] === true
         ) {
-            $emitter->addSubscriber(new ProcessResponse(
+            $emitter->attach(new ProcessResponse(
                 $this->config['response_locations'] ?: []
             ));
         }

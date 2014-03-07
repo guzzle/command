@@ -34,11 +34,6 @@ class ProcessResponse implements SubscriberInterface
     /** @var ResponseLocationInterface[] */
     private $responseLocations;
 
-    public static function getSubscribedEvents()
-    {
-        return ['process' => ['onProcess']];
-    }
-
     /**
      * @param ResponseLocationInterface[] $responseLocations Extra response locations
      */
@@ -57,6 +52,11 @@ class ProcessResponse implements SubscriberInterface
         }
 
         $this->responseLocations = $responseLocations + $defaultResponseLocations;
+    }
+
+    public function getEvents()
+    {
+        return ['process' => ['onProcess']];
     }
 
     public function onProcess(ProcessEvent $event)

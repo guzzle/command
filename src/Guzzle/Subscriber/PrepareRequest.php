@@ -26,11 +26,6 @@ class PrepareRequest implements SubscriberInterface
     /** @var RequestLocationInterface[] */
     private $requestLocations;
 
-    public static function getSubscribedEvents()
-    {
-        return ['prepare' => ['onPrepare']];
-    }
-
     /**
      * @param RequestLocationInterface[] $requestLocations Extra request locations
      */
@@ -50,6 +45,11 @@ class PrepareRequest implements SubscriberInterface
         }
 
         $this->requestLocations = $requestLocations + $defaultRequestLocations;
+    }
+
+    public function getEvents()
+    {
+        return ['prepare' => ['onPrepare']];
     }
 
     public function onPrepare(PrepareEvent $event)

@@ -16,14 +16,14 @@ class ValidateInput implements SubscriberInterface
     /** @var SchemaValidator */
     private $validator;
 
-    public static function getSubscribedEvents()
-    {
-        return ['prepare' => ['onPrepare']];
-    }
-
     public function __construct(SchemaValidator $schemaValidator = null)
     {
         $this->validator = $schemaValidator ?: new SchemaValidator();
+    }
+
+    public function getEvents()
+    {
+        return ['prepare' => ['onPrepare']];
     }
 
     public function onPrepare(PrepareEvent $event)
