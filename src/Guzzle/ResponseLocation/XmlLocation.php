@@ -36,11 +36,7 @@ class XmlLocation extends AbstractLocation
         if ($additional instanceof Parameter &&
             $additional->getLocation() == $this->locationName
         ) {
-            if ($additional->getType()) {
-                $this->recursiveProcess($additional, $this->xml);
-            } else {
-                $result += self::xmlToArray($this->xml);
-            }
+            $result += self::xmlToArray($this->xml);
         }
 
         $this->xml = null;
@@ -85,7 +81,7 @@ class XmlLocation extends AbstractLocation
         if ($type == 'object') {
             $result = $this->processObject($param, $node);
         } elseif ($type == 'array') {
-            $this->processArray($param, $node);
+            $result = $this->processArray($param, $node);
         } else {
             // We are probably handling a flat data node (i.e. string or
             // integer), so let's check if it's childless, which indicates a
@@ -104,15 +100,12 @@ class XmlLocation extends AbstractLocation
         return $result;
     }
 
-    /**
-     * @param Parameter         $param
-     * @param \SimpleXMLElement $node
-     */
     private function processArray(Parameter $param, \SimpleXMLElement $node)
     {
         // Cast to an array if the value was a string, but should be an array
         $items = $param->getItems();
         $sentAs = $items->getWireName();
+        $result = [];
         $ns = null;
 
         if (strstr($sentAs, ':')) {
@@ -136,6 +129,8 @@ class XmlLocation extends AbstractLocation
                 $result[] = $this->recursiveProcess($items, $child);
             }
         }
+
+        return $result;
     }
 
     /**
