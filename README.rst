@@ -15,6 +15,20 @@ Models
     Models are key value pair objects representing the result of an API
     operation.
 
+Installing
+==========
+
+This project can be installed using Composer. Add the following to your
+composer.json:
+
+.. code-block:: javascript
+
+    {
+        "require": {
+            "guzzlehttp/command": "0.1.0"
+        }
+    }
+
 Service Clients
 ===============
 
