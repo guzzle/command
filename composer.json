@@ -19,5 +19,6 @@
     "psr-4": {
       "GuzzleHttp\\Command\\": "src/"
     }
-  }
+  },
+  "minimum-stability": "dev"
 }
