@@ -4,9 +4,7 @@ namespace GuzzleHttp\Tests\Command\Guzzle;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
-use GuzzleHttp\Command\Event\EventWrapper;
 use GuzzleHttp\Command\Event\ProcessEvent;
-use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Exception\CommandException;
