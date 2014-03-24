@@ -53,6 +53,26 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('foo', $mock->foo([]));
     }
 
+    public function testMagicMethodExecutesCommandsWithNoArguments()
+    {
+        $client = new Client();
+        $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$client, []])
+            ->setMethods(['getCommand', 'execute'])
+            ->getMock();
+
+        $mock->expects($this->once())
+            ->method('getCommand')
+            ->with('foo')
+            ->will($this->returnValue(new Command('foo')));
+
+        $mock->expects($this->once())
+            ->method('execute')
+            ->will($this->returnValue('foo'));
+
+        $this->assertEquals('foo', $mock->foo());
+    }
+
     /**
      * @expectedException \GuzzleHttp\Command\Exception\CommandException
      */

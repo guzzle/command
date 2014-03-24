@@ -51,7 +51,9 @@ abstract class AbstractClient implements ServiceClientInterface
 
     public function __call($name, array $arguments)
     {
-        return $this->execute($this->getCommand($name, $arguments[0]));
+        return $this->execute(
+            $this->getCommand($name, isset($arguments[0]) ? $arguments[0] : [])
+        );
     }
 
     public function execute(CommandInterface $command)
