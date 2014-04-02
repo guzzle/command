@@ -5,6 +5,8 @@ namespace GuzzleHttp\Command\Event;
 use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\ServiceClientInterface;
+use GuzzleHttp\HasDataTrait;
+use GuzzleHttp\ToArrayInterface;
 
 /**
  * Event emitted when an error occurs while transferring a request for a
@@ -13,8 +15,14 @@ use GuzzleHttp\Command\ServiceClientInterface;
  * Event listeners can inject a result onto the event to intercept the
  * exception with a successful result.
  */
-class CommandErrorEvent extends AbstractCommandEvent
+class CommandErrorEvent extends AbstractCommandEvent implements
+    ToArrayInterface,
+    \Countable,
+    \ArrayAccess,
+    \IteratorAggregate
 {
+    use HasDataTrait;
+
     /** @var ErrorEvent */
     private $errorEvent;
 

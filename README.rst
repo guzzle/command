@@ -101,6 +101,19 @@ prepare
     trigger the "process" event so that subsequent listeners can modify the
     result of a command as needed.
 
+    .. code-block:: php
+
+        use GuzzleHttp\Command\Event\PrepareEvent;
+
+        $command->getEmitter()->on('prepare', ProcessEvent $event) {
+            // Set a request on the command
+            $request = $event->getClient()->createRequest(
+                'GET',
+                'http://httpbin.org/get'
+            );
+            $event->setRequest($request);
+        });
+
 process
     Emitted after a HTTP response has been received for the command
     OR when a result is injected into an emitted "prepare" or "error" event.
@@ -110,6 +123,20 @@ process
     PrepareEvent and CommandErrorEvent, there may not be a request or response
     available to the event.
 
+    .. code-block:: php
+
+        use GuzzleHttp\Command\Event\ProcessEvent;
+        use GuzzleHttp\Command\Model;
+
+        $command->getEmitter()->on('process', ProcessEvent $event) {
+            // Parse the response into something (e.g., a Model object).
+            $model = new Model([
+                'code' => $event->getResponse()->getStatusCode()
+            ]);
+            // Set the custom result on the event
+            $event->setResult($model);
+        });
+
 error
     Emitted when an error occurs after receiving an HTTP response. You
     MAY inject a result onto the ``GuzzleHttp\Command\Event\CommandErrorEvent``,
@@ -117,6 +144,22 @@ error
     the "process" event is triggered. When the CommandErrorEvent is not
     intercepted with a result, then a
     ``GuzzleHttp\Command\Exception\CommandException`` is thrown.
+
+    Event listeners can add custom metadata to the CommandErrorEvent by
+    treating the event like an associative array. In addition to being able to
+    store custom key/value pairs, you can iterate over the custom keys of the
+    event using ``foreach()``.
+
+    .. code-block:: php
+
+        $command->getEmitter()->on('error', CommandErrorEvent $e) {
+            $e['custom'] = 'data';
+            echo $e['custom']; // outputs "data"
+            // You can iterate over the event like an array
+            foreach ($event as $key => $value) {
+                echo $key . ' = ' . $value . "\n";
+            }
+        });
 
 Implementations are encouraged to use the
 ``GuzzleHttp\Command\Event\EventWrapper`` class to help with implementing the
