@@ -36,5 +36,9 @@ class ErrorEventTest extends \PHPUnit_Framework_TestCase
         $event->setResult('foo');
         $this->assertSame('foo', $event->getResult());
         $this->assertTrue($event->isPropagationStopped());
+
+        $this->assertNull($event['abc']);
+        $event['abc'] = 'foo';
+        $this->assertEquals('foo', $event['abc']);
     }
 }
