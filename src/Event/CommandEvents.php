@@ -78,7 +78,7 @@ class CommandEvents
     ) {
         // Handle when an error event is intercepted before sending a request.
         if ($response instanceof CanceledResponse) {
-            return self::getCanceledResult($request);
+            return self::getCanceledResult($command);
         }
 
         $e = new ProcessEvent($command, $client, $request, $response, $result);
@@ -86,7 +86,7 @@ class CommandEvents
 
         // Track the result of a command using the request if needed.
         if (!$response && $request) {
-            $request->getConfig()['command_result'] = $e->getResult();
+            $command->getConfig()['__result'] = $e->getResult();
         }
 
         return $e->getResult();
@@ -158,11 +158,11 @@ class CommandEvents
         }
     }
 
-    private static function getCanceledResult(RequestInterface $request)
+    private static function getCanceledResult(CommandInterface $command)
     {
-        $config = $request->getConfig();
-        $result = $config['command_result'];
-        unset($config['command_result']);
+        $config = $command->getConfig();
+        $result = $config['__result'];
+        unset($config['__result']);
 
         return $result;
     }
