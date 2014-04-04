@@ -109,7 +109,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
             },
             'error' => function (CommandErrorEvent $event) use (&$calledError) {
                 $calledError = true;
-                $event->stopPropagation();
+                $event->setResult(null);
             }
         ]);
 
@@ -124,7 +124,10 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($calledProcess);
         $this->assertFalse($calledError);
 
-        $mockError = new ErrorEvent($transaction, new RequestException('foo', $request));
+        $mockError = new ErrorEvent(
+            $transaction,
+            new RequestException('foo', $request)
+        );
         $request->getEmitter()->emit('error', $mockError);
         $this->assertTrue($calledError);
     }

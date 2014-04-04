@@ -2,6 +2,8 @@
 
 namespace GuzzleHttp\Command\Event;
 
+use GuzzleHttp\Command\CanceledResponse;
+use GuzzleHttp\Event\CompleteEvent;
 use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Message\RequestInterface;
@@ -81,10 +83,29 @@ class EventWrapper
         ResponseInterface $response = null,
         $result = null
     ) {
-        return $command->getEmitter()->emit(
+        // Handle the edge case where a result is set and the process event
+        // wrapper method is called twice (once to intercept and once in the
+        // AbstractClient).
+        if ($response instanceof CanceledResponse) {
+            $config = $request->getConfig();
+            $result = $config['command_result'];
+            unset($config['command_result']);
+            return $result;
+        }
+
+        $result = $command->getEmitter()->emit(
             'process',
             new ProcessEvent($command, $client, $request, $response, $result)
         )->getResult();
+
+        // If there's no response, then the request errored out before it
+        // was actually sent and a result was injected. Add the result to the
+        // request's config so that the client can return it as the result.
+        if (!$response && $request) {
+            $request->getConfig()['command_result'] = $result;
+        }
+
+        return $result;
     }
 
     /**
@@ -111,7 +132,8 @@ class EventWrapper
 
                 // If the event was intercepted with a result cancel the request
                 // event and emit the process event for the command.
-                if ($event->getResult()) {
+                if ($event->isPropagationStopped()) {
+                    self::addCanceledResponse($event);
                     self::processCommand(
                         $command,
                         $client,
@@ -119,11 +141,6 @@ class EventWrapper
                         null,
                         $event->getResult()
                     );
-                    return;
-                }
-
-                // Do not throw an exception if the propagation is stopped
-                if ($event->isPropagationStopped()) {
                     return;
                 }
 
@@ -154,5 +171,32 @@ class EventWrapper
             },
             -9999
         );
+    }
+
+    /**
+     * If a command error event was intercepted, then the request event
+     * lifecycle needs to be intercepted as well with a CanceledResponse
+     * object. In addition to intercepting the request, the complete event of
+     * the request must be intercepted as well by stopping the event
+     * propagation as early as possible.
+     *
+     * This is necessary, for example, when mocking requests with exceptions
+     * and interecepting the corresponding error event of a command.
+     */
+    private static function addCanceledResponse(CommandErrorEvent $event)
+    {
+        // If the error response had no response, then set a cancelled response
+        // to prevent adapters from sending the request.
+        if (!$event->getRequestErrorEvent()->getResponse()) {
+            // Stop events from firing for the request's complete event
+            $event->getRequest()->getEmitter()->once(
+                'complete',
+                function (CompleteEvent $event) {
+                    $event->stopPropagation();
+                },
+                'first'
+            );
+            $event->getRequestErrorEvent()->intercept(new CanceledResponse());
+        }
     }
 }
