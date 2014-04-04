@@ -24,12 +24,14 @@ class CommandExceptionTest extends \PHPUnit_Framework_TestCase
             $command,
             $request,
             $response,
-            $previous
+            $previous,
+            ['test' => '123']
         );
         $this->assertSame($client, $e->getClient());
         $this->assertSame($command, $e->getCommand());
         $this->assertSame($previous, $e->getPrevious());
         $this->assertSame($request, $e->getRequest());
         $this->assertSame($response, $e->getResponse());
+        $this->assertEquals('123', $e->getContext()['test']);
     }
 }

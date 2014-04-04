@@ -23,8 +23,8 @@ class CommandEvents
      * event system up to the request's event system, and returning the
      * prepared request.
      *
-     * @param CommandInterface       $cmd    Command to prepare
-     * @param ServiceClientInterface $client Client that executes the command
+     * @param CommandInterface       $command Command to prepare
+     * @param ServiceClientInterface $client  Client that executes the command
      *
      * @return PrepareEvent returns the PrepareEvent. You can use this to see
      *     if the event was intercepted with a result, or to grab the request
@@ -33,11 +33,11 @@ class CommandEvents
      * @throws \RuntimeException
      */
     public static function prepare(
-        CommandInterface $cmd,
+        CommandInterface $command,
         ServiceClientInterface $client
     ) {
-        $ev = new PrepareEvent($cmd, $client);
-        $cmd->getEmitter()->emit('prepare', $ev);
+        $ev = new PrepareEvent($command, $client);
+        $command->getEmitter()->emit('prepare', $ev);
         $req = $ev->getRequest();
         $stopped = $ev->isPropagationStopped();
 
@@ -49,9 +49,9 @@ class CommandEvents
 
         if ($stopped) {
             // Event was intercepted with a result, so emit the process event.
-            self::process($cmd, $client, $req, null, $ev->getResult());
+            self::process($command, $client, $req, null, $ev->getResult());
         } elseif ($req) {
-            self::injectErrorHandler($cmd, $client, $req);
+            self::injectErrorHandler($command, $client, $req);
         }
 
         return $ev;
@@ -93,23 +93,23 @@ class CommandEvents
     /**
      * Wrap HTTP level errors with command level errors.
      *
-     * @param CommandInterface       $cmd     Command to modify
+     * @param CommandInterface       $command Command to modify
      * @param ServiceClientInterface $client  Client associated with the command
      * @param RequestInterface       $request Prepared request for the command
      */
     private static function injectErrorHandler(
-        CommandInterface $cmd,
+        CommandInterface $command,
         ServiceClientInterface $client,
         RequestInterface $request
     ) {
         $request->getEmitter()->on(
             'error',
-            function (ErrorEvent $re) use ($cmd, $client) {
+            function (ErrorEvent $re) use ($command, $client) {
                 $re->stopPropagation();
-                $ce = new CommandErrorEvent($cmd, $client, $re);
-                $cmd->getEmitter()->emit('error', $ce);
+                $ce = new CommandErrorEvent($command, $client, $re);
+                $command->getEmitter()->emit('error', $ce);
                 if (!$ce->isPropagationStopped()) {
-                    self::throwErrorException($cmd, $client, $re);
+                    self::throwErrorException($command, $client, $ce, $re);
                 } else {
                     self::interceptRequestError($ce, $re->getRequest());
                 }
@@ -119,15 +119,16 @@ class CommandEvents
     }
 
     private static function throwErrorException(
-        CommandInterface $cmd,
+        CommandInterface $command,
         ServiceClientInterface $client,
-        ErrorEvent $e
+        CommandErrorEvent $ce,
+        ErrorEvent $re
     ) {
         $className = 'GuzzleHttp\\Command\\Exception\\CommandException';
 
         // If a response was received, then throw a specific exception.
-        if ($res = $e->getResponse()) {
-            $statusCode = (string) $res->getStatusCode();
+        if ($response = $re->getResponse()) {
+            $statusCode = (string) $response->getStatusCode();
             if ($statusCode[0] == '4') {
                 $className = 'GuzzleHttp\\Command\\Exception\\CommandClientException';
             } elseif ($statusCode[0] == '5') {
@@ -135,10 +136,16 @@ class CommandEvents
             }
         }
 
-        $ex = $e->getException();
-        $m = "Error executing command: " . $ex->getMessage();
-
-        throw new $className($m, $client, $cmd, $e->getRequest(), $res, $ex);
+        $previous = $re->getException();
+        throw new $className(
+            "Error executing command: " . $previous->getMessage(),
+            $client,
+            $command,
+            $re->getRequest(),
+            $response,
+            $previous,
+            $ce->toArray()
+        );
     }
 
     private static function interceptRequestError(
