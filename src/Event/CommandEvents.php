@@ -78,16 +78,14 @@ class CommandEvents
     ) {
         // Handle when an error event is intercepted before sending a request.
         if ($response instanceof CanceledResponse) {
-            return self::getCanceledResult($command);
+            $config = $command->getConfig();
+            $result = $config['__result'];
+            unset($config['__result']);
+            return $result;
         }
 
         $e = new ProcessEvent($command, $client, $request, $response, $result);
         $command->getEmitter()->emit('process', $e);
-
-        // Track the result of a command using the request if needed.
-        if (!$response && $request) {
-            $command->getConfig()['__result'] = $e->getResult();
-        }
 
         return $e->getResult();
     }
@@ -104,21 +102,20 @@ class CommandEvents
         ServiceClientInterface $client,
         RequestInterface $request
     ) {
-        $listener = function (ErrorEvent $re) use ($cmd, $client) {
-            $re->stopPropagation();
-            $ce = new CommandErrorEvent($cmd, $client, $re);
-            $cmd->getEmitter()->emit('error', $ce);
-
-            if (!$ce->isPropagationStopped()) {
-                self::throwErrorException($cmd, $client, $re);
-            }
-
-            // Process the command if the error event was intercepted.
-            self::addCanceledResponse($ce);
-            self::process($cmd, $client, $re->getRequest(), null, $ce->getResult());
-        };
-
-        $request->getEmitter()->on('error', $listener, RequestEvents::LATE);
+        $request->getEmitter()->on(
+            'error',
+            function (ErrorEvent $re) use ($cmd, $client) {
+                $re->stopPropagation();
+                $ce = new CommandErrorEvent($cmd, $client, $re);
+                $cmd->getEmitter()->emit('error', $ce);
+                if (!$ce->isPropagationStopped()) {
+                    self::throwErrorException($cmd, $client, $re);
+                } else {
+                    self::interceptRequestError($ce, $re->getRequest());
+                }
+            },
+            RequestEvents::LATE
+        );
     }
 
     private static function throwErrorException(
@@ -144,26 +141,18 @@ class CommandEvents
         throw new $className($m, $client, $cmd, $e->getRequest(), $res, $ex);
     }
 
-    /**
-     * If a command error event was intercepted, then the request event
-     * lifecycle needs to be intercepted as well with a CanceledResponse
-     * object and the request complete event must be suppressed.
-     */
-    private static function addCanceledResponse(CommandErrorEvent $event)
-    {
-        if (!$event->getRequestErrorEvent()->getResponse()) {
-            $fn = function ($e) { $e->stopPropagation(); };
-            $event->getRequest()->getEmitter()->once('complete', $fn, 'first');
-            $event->getRequestErrorEvent()->intercept(new CanceledResponse());
+    private static function interceptRequestError(
+        CommandErrorEvent $e,
+        RequestInterface $request = null
+    ) {
+        // Add a canceled response to prevent an adapter from sending a request.
+        if (!$e->getRequestErrorEvent()->getResponse()) {
+            $e->getCommand()->getConfig()->set('__result', $e->getResult());
+            $fn = function ($ev) { $ev->stopPropagation(); };
+            $e->getRequest()->getEmitter()->once('complete', $fn, 'first');
+            $e->getRequestErrorEvent()->intercept(new CanceledResponse());
         }
-    }
 
-    private static function getCanceledResult(CommandInterface $command)
-    {
-        $config = $command->getConfig();
-        $result = $config['__result'];
-        unset($config['__result']);
-
-        return $result;
+        self::process($e->getCommand(), $e->getClient(), $request, null, $e->getResult());
     }
 }
