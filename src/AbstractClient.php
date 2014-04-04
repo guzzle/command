@@ -6,7 +6,7 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Collection;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Command\Exception\CommandException;
-use GuzzleHttp\Command\Event\EventWrapper;
+use GuzzleHttp\Command\Event\CommandEvents;
 
 /**
  * Abstract client implementation that provides a basic implementation of
@@ -59,7 +59,7 @@ abstract class AbstractClient implements ServiceClientInterface
     public function execute(CommandInterface $command)
     {
         try {
-            $event = EventWrapper::prepareCommand($command, $this);
+            $event = CommandEvents::prepare($command, $this);
             // Listeners can intercept the event and inject a result. If that
             // happened, then we must not emit further events and just
             // return the result.
@@ -71,7 +71,7 @@ abstract class AbstractClient implements ServiceClientInterface
             // complete event.
             $response = $this->client->send($request);
             // Emit the process event for the command and return the result
-            return EventWrapper::processCommand($command, $this, $request, $response);
+            return CommandEvents::process($command, $this, $request, $response);
         } catch (CommandException $e) {
             // Let command exceptions pass through untouched
             throw $e;

@@ -161,6 +161,5 @@ error
             }
         });
 
-Implementations are encouraged to use the
-``GuzzleHttp\Command\Event\EventWrapper`` class to help with implementing the
-event system correctly as described above.
+Implementations SHOULD use ``GuzzleHttp\Command\Event\CommandEvents`` to
+implement the event system correctly.

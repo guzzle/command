@@ -5,7 +5,7 @@ namespace GuzzleHttp\Tests\Command\Event;
 use GuzzleHttp\Adapter\Transaction;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
-use GuzzleHttp\Command\Event\EventWrapper;
+use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
@@ -20,9 +20,9 @@ use GuzzleHttp\Message\Response;
 use GuzzleHttp\Subscriber\Mock;
 
 /**
- * @covers \GuzzleHttp\Command\Event\EventWrapper
+ * @covers \GuzzleHttp\Command\Event\CommandEvents
  */
-class EventWrapperTest extends \PHPUnit_Framework_TestCase
+class CommandEventsTest extends \PHPUnit_Framework_TestCase
 {
     public function testEmitsPrepareEvent()
     {
@@ -32,7 +32,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
         $command->getEmitter()->on('prepare', function (PrepareEvent $e) use ($request) {
             $e->setRequest($request);
         });
-        $event = EventWrapper::prepareCommand($command, $client);
+        $event = CommandEvents::prepare($command, $client);
         $this->assertSame($request, $event->getRequest());
         $this->assertFalse($event->isPropagationStopped());
         $this->assertNull($event->getResult());
@@ -46,7 +46,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
     {
         $command = new Command('foo', []);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        EventWrapper::prepareCommand($command, $client);
+        CommandEvents::prepare($command, $client);
     }
 
     public function testPrepareEventCanInterceptWithResultBeforeSending()
@@ -63,7 +63,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
             $called = true;
             $this->assertEquals('123', $e->getResult());
         });
-        $event = EventWrapper::prepareCommand($command, $client);
+        $event = CommandEvents::prepare($command, $client);
         $this->assertNull($event->getRequest());
         $this->assertTrue($event->isPropagationStopped());
         $this->assertEquals('123', $event->getResult());
@@ -79,7 +79,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
             throw $ex;
         });
         try {
-            EventWrapper::prepareCommand($command, $client);
+            CommandEvents::prepare($command, $client);
             $this->fail('Did not throw');
         } catch (CommandException $e) {
             $this->assertSame($ex, $e);
@@ -104,7 +104,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
                 $called = true;
             }
         );
-        $result = EventWrapper::processCommand($command, $client, $request, $response);
+        $result = CommandEvents::process($command, $client, $request, $response);
         $this->assertEquals('foo', $result);
         $this->assertTrue($called);
     }
@@ -142,7 +142,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
         $transaction = new Transaction(new Client(), $request);
         $exc = new RequestException('foo', $request, $response);
         $errorEvent = new ErrorEvent($transaction, $exc);
-        EventWrapper::prepareCommand($command, $client);
+        CommandEvents::prepare($command, $client);
         $request->getEmitter()->emit('error', $errorEvent);
         $this->assertTrue($called1);
         $this->assertTrue($called2);
@@ -207,7 +207,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
         $transaction = new Transaction(new Client(), $request);
         $exc = new RequestException('foo', $request, $response);
         $errorEvent = new ErrorEvent($transaction, $exc);
-        EventWrapper::prepareCommand($command, $client);
+        CommandEvents::prepare($command, $client);
 
         try {
             $request->getEmitter()->emit('error', $errorEvent);
@@ -230,7 +230,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
         $command->getEmitter()->on('prepare', function (PrepareEvent $e) use ($request) {
             $e->setRequest($request);
         });
-        EventWrapper::prepareCommand($command, $client);
+        CommandEvents::prepare($command, $client);
 
         try {
             $request->getEmitter()->emit(
@@ -254,7 +254,7 @@ class EventWrapperTest extends \PHPUnit_Framework_TestCase
         $command->getEmitter()->on('prepare', function (PrepareEvent $e) use ($request) {
             $e->setRequest($request);
         });
-        EventWrapper::prepareCommand($command, $client);
+        CommandEvents::prepare($command, $client);
 
         try {
             $request->getEmitter()->emit(

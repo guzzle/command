@@ -4,7 +4,7 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Message\RequestInterface;
-use GuzzleHttp\Command\Event\EventWrapper;
+use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Event\CompleteEvent;
 
 /**
@@ -95,7 +95,7 @@ class CommandToRequestIterator implements \Iterator
                 . ' Encountered a ' . gettype($command) . ' value.');
         }
 
-        $event = $this->prepareCommand($command);
+        $event = $this->prepare($command);
 
         // Handle the command being intercepted with a result by going to the
         // next command and returning it's validity
@@ -125,7 +125,7 @@ class CommandToRequestIterator implements \Iterator
      *
      * @return PrepareEvent
      */
-    private function prepareCommand(CommandInterface $command)
+    private function prepare(CommandInterface $command)
     {
         if (isset($this->options['prepare'])) {
             $command->getEmitter()->on('prepare', $this->options['prepare'], -9999);
@@ -139,7 +139,7 @@ class CommandToRequestIterator implements \Iterator
             $command->getEmitter()->on('error', $this->options['error'], -9999);
         }
 
-        return EventWrapper::prepareCommand($command, $this->client);
+        return CommandEvents::prepare($command, $this->client);
     }
 
     /**
@@ -157,7 +157,7 @@ class CommandToRequestIterator implements \Iterator
         $this->currentRequest->getEmitter()->on(
             'complete',
             function (CompleteEvent $event) use ($command) {
-                EventWrapper::processCommand(
+                CommandEvents::process(
                     $command,
                     $this->client,
                     $event->getRequest(),
