@@ -1,5 +1,4 @@
 <?php
-
 namespace GuzzleHttp\Tests\Command\CommandException;
 
 use GuzzleHttp\Command\Exception\CommandException;

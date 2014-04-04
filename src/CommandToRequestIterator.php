@@ -1,5 +1,4 @@
 <?php
-
 namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Command\Event\PrepareEvent;

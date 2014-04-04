@@ -1,5 +1,4 @@
 <?php
-
 namespace GuzzleHttp\Tests\Command\Event;
 
 use GuzzleHttp\Adapter\Transaction;

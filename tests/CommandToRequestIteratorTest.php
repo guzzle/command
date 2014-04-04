@@ -1,5 +1,4 @@
 <?php
-
 namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Adapter\Transaction;
@@ -32,9 +31,12 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $cmd = new Command('foo');
         $request = new Request('GET', 'http://httbin.org');
-        $cmd->getEmitter()->on('prepare', function (PrepareEvent $event) use ($request) {
-            $event->setRequest($request);
-        });
+        $cmd->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $event) use ($request) {
+                $event->setRequest($request);
+            }
+        );
         $commands = [$cmd];
         $i = new CommandToRequestIterator($commands, $client, []);
         $this->assertTrue($i->valid());
@@ -51,13 +53,19 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
         $request2 = new Request('GET', 'http://httbin.org');
 
         $cmd = new Command('foo');
-        $cmd->getEmitter()->on('prepare', function (PrepareEvent $event) use ($request1) {
-            $event->setRequest($request1);
-        });
+        $cmd->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $event) use ($request1) {
+                $event->setRequest($request1);
+            }
+        );
         $cmd2 = new Command('foo');
-        $cmd2->getEmitter()->on('prepare', function (PrepareEvent $event) use ($request2) {
-            $event->setRequest($request2);
-        });
+        $cmd2->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $event) use ($request2) {
+                $event->setRequest($request2);
+            }
+        );
         $commands = new \ArrayIterator([$cmd, $cmd2]);
         $i = new CommandToRequestIterator($commands, $client, []);
 
@@ -138,13 +146,19 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
         $request = new Request('GET', 'http://httbin.org');
 
         $command1 = new Command('foo');
-        $command1->getEmitter()->on('prepare', function (PrepareEvent $e) use ($request) {
-            $e->setRequest($request);
-        });
+        $command1->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $e) use ($request) {
+                $e->setRequest($request);
+            }
+        );
         $command2 = new Command('bar');
-        $command2->getEmitter()->on('prepare', function (PrepareEvent $e) {
-            $e->setResult('baz');
-        });
+        $command2->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $e) {
+                $e->setResult('baz');
+            }
+        );
 
         $commands = [$command1, $command2];
         $i = new CommandToRequestIterator($commands, $client);

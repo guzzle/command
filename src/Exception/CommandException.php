@@ -1,5 +1,4 @@
 <?php
-
 namespace GuzzleHttp\Command\Exception;
 
 use GuzzleHttp\Command\ServiceClientInterface;

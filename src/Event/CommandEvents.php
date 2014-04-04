@@ -1,5 +1,4 @@
 <?php
-
 namespace GuzzleHttp\Command\Event;
 
 use GuzzleHttp\Command\CanceledResponse;

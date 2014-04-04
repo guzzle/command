@@ -1,5 +1,4 @@
 <?php
-
 namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Command\CanceledResponse;

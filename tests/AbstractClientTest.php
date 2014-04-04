@@ -1,5 +1,4 @@
 <?php
-
 namespace GuzzleHttp\Tests\Command\Guzzle;
 
 use GuzzleHttp\Client;
@@ -156,17 +155,22 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
             ->getMockForAbstractClass();
         $command = new Command('foo');
         $request = $client->createRequest('GET', 'http://httbin.org');
-        $command->getEmitter()->on('prepare', function (PrepareEvent $e) use ($request) {
-            $e->setRequest($request);
-        });
+        $command->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $e) use ($request) {
+                $e->setRequest($request);
+            }
+        );
 
         $client->expects($this->once())
             ->method('sendAll')
-            ->will($this->returnCallback(function ($requests, $options) use ($request) {
-                $this->assertEquals(10, $options['parallel']);
-                $this->assertTrue($requests->valid());
-                $this->assertSame($request, $requests->current());
-            }));
+            ->will($this->returnCallback(
+                function ($requests, $options) use ($request) {
+                    $this->assertEquals(10, $options['parallel']);
+                    $this->assertTrue($requests->valid());
+                    $this->assertSame($request, $requests->current());
+                }
+            ));
 
         $mock->executeAll([$command], ['parallel' => 10]);
     }
