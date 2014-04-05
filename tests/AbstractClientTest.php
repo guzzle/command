@@ -31,6 +31,12 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals([], $sc->getConfig('defaults'));
         $sc->setConfig('abc/123', 'listen');
         $this->assertEquals('listen', $sc->getConfig('abc/123'));
+        $this->assertEquals([
+            'foo'      => 'bar',
+            'baz'      => ['bam' => 'boo'],
+            'defaults' => [],
+            'abc'      => ['123' => 'listen']
+        ], $sc->getConfig());
     }
 
     public function testMagicMethodExecutesCommands()
@@ -95,7 +101,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $mock->execute($command);
     }
 
-    public function testWrapsExceptionsInCommandExceptions()
+    public function testDoesNotWrapExceptionsMoreThanOnce()
     {
         $client = new Client();
         $client->getEmitter()->attach(new Mock([new Response(404)]));
@@ -126,12 +132,27 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
             $this->assertTrue($ce, 'The error event was not called');
             // Ensure that there isn't a bunch of competing exception stacking
             // where the command exception wraps the requests exception > once.
-            $c = 0;
-            while ($e) {
-                $e = $e->getPrevious();
-                $c++;
-            }
-            $this->assertEquals(2, $c);
+            $this->assertEquals(2, $this->getWrapCount($e));
+        }
+    }
+
+    public function testWrapsNonCommandExceptions()
+    {
+        $client = new Client();
+        $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$client, []])
+            ->getMockForAbstractClass();
+        $command = new Command('foo');
+        $emitter = $command->getEmitter();
+        $e1 = new \Exception('foo');
+        $emitter->on('prepare', function() use ($e1) { throw $e1; });
+
+        try {
+            $mock->execute($command);
+            $this->fail('Did not throw');
+        } catch (CommandException $e) {
+            $this->assertSame($e->getPrevious(), $e1);
+            $this->assertEquals(2, $this->getWrapCount($e));
         }
     }
 
@@ -197,5 +218,16 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
             ));
 
         $mock->executeAll([$command], ['parallel' => 10]);
+    }
+
+    private function getWrapCount(\Exception $e)
+    {
+        $c = 0;
+        while ($e) {
+            $e = $e->getPrevious();
+            $c++;
+        }
+
+        return $c;
     }
 }
