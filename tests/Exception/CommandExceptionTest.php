@@ -31,6 +31,8 @@ class CommandExceptionTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($previous, $e->getPrevious());
         $this->assertSame($request, $e->getRequest());
         $this->assertSame($response, $e->getResponse());
-        $this->assertEquals('123', $e->getContext()['test']);
+        $this->assertEquals(['test' => '123'], $e->getContext());
+        $this->assertEquals('123', $e->getContext('test'));
+        $this->assertNull($e->getContext('test/missing'));
     }
 }

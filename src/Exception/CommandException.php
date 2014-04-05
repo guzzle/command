@@ -94,10 +94,15 @@ class CommandException extends \RuntimeException
      * during the command's event lifecycle such as parsed error data from a
      * web service response.
      *
-     * @return array
+     * @param string $keyOrPath Specify a path expression to retrieve nested
+     *                          data, or leave null to retrieve all data.
+     *
+     * @return mixed|array
      */
-    public function getContext()
+    public function getContext($keyOrPath = null)
     {
-        return $this->context;
+        return $keyOrPath
+            ? \GuzzleHttp\get_path($this->context, $keyOrPath)
+            : $this->context;
     }
 }
