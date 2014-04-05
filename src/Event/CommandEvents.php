@@ -11,7 +11,10 @@ use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\ServiceClientInterface;
 
 /**
- * Utility class used to wrap HTTP events with client events.
+ * Wraps HTTP lifecycle events with command lifecycle events.
+ *
+ * This class uses __request and __exception command config options to manage
+ * the state of a command.
  */
 class CommandEvents
 {
@@ -57,8 +60,7 @@ class CommandEvents
     }
 
     /**
-     * Handles the processing workflow of a command after it has been sent and
-     * a response has been received.
+     * Handles the processing workflow of a command after it has been sent.
      *
      * @param CommandInterface       $command  Command that was executed
      * @param ServiceClientInterface $client   Client that sent the command
@@ -67,6 +69,7 @@ class CommandEvents
      * @param mixed                  $result   Specify the result if available
      *
      * @return mixed|null Returns the result of the command
+     * @throws \GuzzleHttp\Command\Exception\CommandException
      */
     public static function process(
         CommandInterface $command,
@@ -75,12 +78,17 @@ class CommandEvents
         ResponseInterface $response = null,
         $result = null
     ) {
+        $config = $command->getConfig();
+
         // Handle when an error event is intercepted before sending a request.
-        if ($response instanceof CanceledResponse) {
-            $config = $command->getConfig();
+        if (isset($config['__result'])) {
             $result = $config['__result'];
             unset($config['__result']);
-            return $result;
+        } elseif (isset($config['__exception'])) {
+            // Throw if an exception occurred while transferring the command.
+            $e = $config['__exception'];
+            unset($config['__exception']);
+            throw $e;
         }
 
         $e = new ProcessEvent($command, $client, $request, $response, $result);
@@ -91,10 +99,6 @@ class CommandEvents
 
     /**
      * Wrap HTTP level errors with command level errors.
-     *
-     * @param CommandInterface       $command Command to modify
-     * @param ServiceClientInterface $client  Client associated with the command
-     * @param RequestInterface       $request Prepared request for the command
      */
     private static function injectErrorHandler(
         CommandInterface $command,
@@ -108,16 +112,24 @@ class CommandEvents
                 $ce = new CommandErrorEvent($command, $client, $re);
                 $command->getEmitter()->emit('error', $ce);
                 if (!$ce->isPropagationStopped()) {
-                    self::throwErrorException($command, $client, $ce, $re);
+                    self::addCommandException($command, $client, $ce, $re);
                 } else {
-                    self::interceptRequestError($ce, $re->getRequest());
+                    $command->getConfig()['__result'] = $ce->getResult();
+                    // Add a canceled response to prevent an adapter from
+                    // sending a request if no response was received.
+                    if (!$re->getResponse()) {
+                        self::stopRequestError($re);
+                    }
                 }
             },
             RequestEvents::LATE
         );
     }
 
-    private static function throwErrorException(
+    /**
+     * Associate an exception with a command so that it can be thrown later.
+     */
+    private static function addCommandException(
         CommandInterface $command,
         ServiceClientInterface $client,
         CommandErrorEvent $ce,
@@ -125,8 +137,11 @@ class CommandEvents
     ) {
         $className = 'GuzzleHttp\\Command\\Exception\\CommandException';
 
-        // If a response was received, then throw a specific exception.
-        if ($response = $re->getResponse()) {
+        // Throw a specific exception for client and server errors.
+        $response = $re->getResponse();
+        if (!$response) {
+            self::stopRequestError($re);
+        } else {
             $statusCode = (string) $response->getStatusCode();
             if ($statusCode[0] == '4') {
                 $className = 'GuzzleHttp\\Command\\Exception\\CommandClientException';
@@ -135,8 +150,10 @@ class CommandEvents
             }
         }
 
+        // Add the exception to the command and allow the request lifecycle to
+        // complete successfully.
         $previous = $re->getException();
-        throw new $className(
+        $command->getConfig()['__exception'] = new $className(
             "Error executing command: " . $previous->getMessage(),
             $client,
             $command,
@@ -147,18 +164,14 @@ class CommandEvents
         );
     }
 
-    private static function interceptRequestError(
-        CommandErrorEvent $e,
-        RequestInterface $request = null
-    ) {
-        // Add a canceled response to prevent an adapter from sending a request.
-        if (!$e->getRequestErrorEvent()->getResponse()) {
-            $e->getCommand()->getConfig()->set('__result', $e->getResult());
-            $fn = function ($ev) { $ev->stopPropagation(); };
-            $e->getRequest()->getEmitter()->once('complete', $fn, 'first');
-            $e->getRequestErrorEvent()->intercept(new CanceledResponse());
-        }
-
-        self::process($e->getCommand(), $e->getClient(), $request, null, $e->getResult());
+    /**
+     * Prevent a request from sending an intercept it's complete event. This
+     * method is required when a request fails before sending.
+     */
+    private static function stopRequestError(ErrorEvent $e)
+    {
+        $fn = function ($ev) { $ev->stopPropagation(); };
+        $e->getRequest()->getEmitter()->once('complete', $fn, 'first');
+        $e->intercept(new CanceledResponse());
     }
 }

@@ -8,6 +8,7 @@ use GuzzleHttp\Message\Response;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Event\BeforeEvent;
+use GuzzleHttp\Subscriber\Mock;
 
 /**
  * @covers \GuzzleHttp\Command\AbstractClient
@@ -94,21 +95,44 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $mock->execute($command);
     }
 
-    /**
-     * @expectedException \GuzzleHttp\Command\Exception\CommandException
-     * @expectedExceptionMessage Error executing command: msg
-     */
     public function testWrapsExceptionsInCommandExceptions()
     {
         $client = new Client();
+        $client->getEmitter()->attach(new Mock([new Response(404)]));
+
         $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$client, []])
             ->getMockForAbstractClass();
+
         $command = new Command('foo');
-        $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
-            throw new \Exception('msg');
+        $emitter = $command->getEmitter();
+
+        $emitter->on('prepare', function(PrepareEvent $event) {
+            $event->setRequest($event->getClient()
+                ->getHttpClient()
+                ->createRequest('PUT', 'http://httpbin.org/get'));
         });
-        $mock->execute($command);
+
+        $cp = $ce = false;
+        $emitter->on('process', function() use (&$cp) { $cp = true; });
+        $emitter->on('error', function() use (&$ce) { $ce = true; });
+
+        try {
+            $mock->execute($command);
+            $this->fail('Did not throw');
+        } catch (CommandException $e) {
+            $this->assertContains('Error executing command:', (string) $e);
+            $this->assertFalse($cp, 'The process event was called');
+            $this->assertTrue($ce, 'The error event was not called');
+            // Ensure that there isn't a bunch of competing exception stacking
+            // where the command exception wraps the requests exception > once.
+            $c = 0;
+            while ($e) {
+                $e = $e->getPrevious();
+                $c++;
+            }
+            $this->assertEquals(2, $c);
+        }
     }
 
     public function testReturnsInterceptedResult()
