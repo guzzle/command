@@ -45,6 +45,9 @@ abstract class AbstractClient implements ServiceClientInterface
         if (!isset($config['defaults'])) {
             $config['defaults'] = [];
         }
+        if (isset($config['emitter'])) {
+            $this->emitter = $config['emitter'];
+        }
         $this->config = new Collection($config);
     }
 
