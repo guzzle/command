@@ -220,6 +220,23 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $mock->executeAll([$command], ['parallel' => 10]);
     }
 
+    public function testCanInjectEmitter()
+    {
+        $guzzleClient = $this->getMock('GuzzleHttp\\ClientInterface');
+        $emitter = $this->getMockBuilder('GuzzleHttp\Event\EmitterInterface')
+            ->setMethods(['listeners'])
+            ->getMockForAbstractClass();
+        $serviceClient = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$guzzleClient, ['emitter' => $emitter]])
+            ->getMockForAbstractClass();
+
+        $emitter->expects($this->once())
+            ->method('listeners')
+            ->will($this->returnValue('foo'));
+
+        $this->assertEquals('foo', $serviceClient->getEmitter()->listeners());
+    }
+
     private function getWrapCount(\Exception $e)
     {
         $c = 0;
