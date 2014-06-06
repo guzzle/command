@@ -128,7 +128,7 @@ process
         use GuzzleHttp\Command\Event\ProcessEvent;
         use GuzzleHttp\Command\Model;
 
-        $command->getEmitter()->on('process', ProcessEvent $event) {
+        $command->getEmitter()->on('process', function(ProcessEvent $event) {
             // Parse the response into something (e.g., a Model object).
             $model = new Model([
                 'code' => $event->getResponse()->getStatusCode()
@@ -152,7 +152,7 @@ error
 
     .. code-block:: php
 
-        $command->getEmitter()->on('error', CommandErrorEvent $e) {
+        $command->getEmitter()->on('error', function(CommandErrorEvent $e) {
             $e['custom'] = 'data';
             echo $e['custom']; // outputs "data"
             // You can iterate over the event like an array
