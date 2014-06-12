@@ -63,6 +63,25 @@ interface ServiceClientInterface extends HasEmitterInterface
     public function executeAll($commands, array $options = []);
 
     /**
+     * Sends multiple commands in parallel and returns a hash map of commands
+     * mapped to their corresponding result or exception.
+     *
+     * Note: This method keeps every command and command response in memory,
+     * and as such is NOT recommended when sending a large number or an
+     * indeterminable number of commands in parallel.
+     *
+     * @param array|\Iterator $commands Commands to send in parallel
+     * @param array           $options  Passes through the options available
+     *                                  in {@see ClientInterface::executeAll()}
+     *
+     * @return \SplObjectStorage Commands are the key and each value is the
+     *     result of the command or a {@see GuzzleHttp\Command\CommandException}
+     *     if a command failed.
+     * @throws \InvalidArgumentException if the event format is incorrect.
+     */
+    public function batch($commands, array $options = []);
+
+    /**
      * Get the HTTP client used to send requests for the web service client
      *
      * @return ClientInterface

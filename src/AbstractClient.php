@@ -4,8 +4,11 @@ namespace GuzzleHttp\Command;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Collection;
 use GuzzleHttp\Event\HasEmitterTrait;
+use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Event\CommandEvents;
+use GuzzleHttp\Command\Event\CommandErrorEvent;
+use GuzzleHttp\Command\Event\ProcessEvent;
 
 /**
  * Abstract client implementation that provides a basic implementation of
@@ -98,6 +101,40 @@ abstract class AbstractClient implements ServiceClientInterface
             new CommandToRequestIterator($commands, $this, $options),
             $requestOptions
         );
+    }
+
+    public function batch($commands, array $options = [])
+    {
+        $hash = new \SplObjectStorage();
+        foreach ($commands as $command) {
+            $hash->attach($command);
+        }
+
+        $options = RequestEvents::convertEventArray(
+            $options,
+            ['process', 'error'],
+            [
+                'priority' => RequestEvents::EARLY,
+                'once' => true,
+                'fn' => function ($e) use ($hash) { $hash[$e->getCommand()] = $e; }
+            ]
+        );
+
+        // Send the requests in parallel and aggregate the results.
+        $this->executeAll($commands, $options);
+
+        // Update the received value for any of the intercepted commands.
+        foreach ($hash as $request) {
+            if ($hash[$request] instanceof ProcessEvent) {
+                $hash[$request] = $hash[$request]->getResult();
+            } elseif ($hash[$request] instanceof CommandErrorEvent) {
+                $hash[$request] = $hash[$request]
+                    ->getRequestErrorEvent()
+                    ->getException();
+            }
+        }
+
+        return $hash;
     }
 
     public function getHttpClient()
