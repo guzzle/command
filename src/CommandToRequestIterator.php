@@ -5,6 +5,7 @@ use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Event\CompleteEvent;
+use GuzzleHttp\Event\ListenerAttacherTrait;
 
 /**
  * Iterator used for easily creating request objects from an iterator or array
@@ -15,6 +16,8 @@ use GuzzleHttp\Event\CompleteEvent;
  */
 class CommandToRequestIterator implements \Iterator
 {
+    use ListenerAttacherTrait;
+
     /** @var \Iterator */
     private $commands;
 
@@ -26,6 +29,9 @@ class CommandToRequestIterator implements \Iterator
 
     /** @var RequestInterface|null Current request */
     private $currentRequest;
+
+    /** @var array Listeners to attach to each command */
+    private $eventListeners = [];
 
     /**
      * @param array|\Iterator        $commands Collection of command objects
@@ -51,6 +57,12 @@ class CommandToRequestIterator implements \Iterator
     ) {
         $this->client = $client;
         $this->options = $options;
+
+        $this->eventListeners = $this->prepareListeners(
+            $options,
+            ['prepare', 'process', 'error']
+        );
+
         if ($commands instanceof \Iterator) {
             $this->commands = $commands;
         } elseif (is_array($commands)) {
@@ -126,17 +138,7 @@ class CommandToRequestIterator implements \Iterator
      */
     private function prepare(CommandInterface $command)
     {
-        if (isset($this->options['prepare'])) {
-            $command->getEmitter()->on('prepare', $this->options['prepare'], -9999);
-        }
-
-        if (isset($this->options['process'])) {
-            $command->getEmitter()->on('process', $this->options['process'], -9999);
-        }
-
-        if (isset($this->options['error'])) {
-            $command->getEmitter()->on('error', $this->options['error'], -9999);
-        }
+        $this->attachListeners($command, $this->eventListeners);
 
         return CommandEvents::prepare($command, $this->client);
     }
