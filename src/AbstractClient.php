@@ -110,18 +110,20 @@ abstract class AbstractClient implements ServiceClientInterface
             $hash->attach($command);
         }
 
-        $options = RequestEvents::convertEventArray(
-            $options,
-            ['process', 'error'],
-            [
-                'priority' => RequestEvents::EARLY,
-                'once' => true,
-                'fn' => function ($e) use ($hash) { $hash[$e->getCommand()] = $e; }
-            ]
+        $this->executeAll(
+            $commands,
+            RequestEvents::convertEventArray(
+                $options,
+                ['process', 'error'],
+                [
+                    'priority' => RequestEvents::EARLY,
+                    'once'     => true,
+                    'fn'       => function ($e) use ($hash) {
+                        $hash[$e->getCommand()] = $e;
+                    }
+                ]
+            )
         );
-
-        // Send the requests in parallel and aggregate the results.
-        $this->executeAll($commands, $options);
 
         // Update the received value for any of the intercepted commands.
         foreach ($hash as $request) {

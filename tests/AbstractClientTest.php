@@ -220,6 +220,36 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $mock->executeAll([$command], ['parallel' => 10]);
     }
 
+    public function testExecutesCommandsInBatch()
+    {
+        $client = new Client();
+        $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$client, []])
+            ->getMockForAbstractClass();
+        $request = $client->createRequest('GET', 'http://httbin.org');
+
+        $command1 = new Command('foo');
+        $command1->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $e) use ($request) {
+                $e->setResult('foo');
+            }
+        );
+
+        $command2 = new Command('foo');
+        $command2->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $e) use ($request) {
+                $e->setResult('bar');
+            }
+        );
+
+        $hash = $mock->batch([$command1, $command2]);
+        $this->assertCount(2, $hash);
+        $this->assertEquals('foo', $hash[$command1]);
+        $this->assertEquals('bar', $hash[$command2]);
+    }
+
     public function testCanInjectEmitter()
     {
         $guzzleClient = $this->getMock('GuzzleHttp\\ClientInterface');

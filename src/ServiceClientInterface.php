@@ -66,9 +66,10 @@ interface ServiceClientInterface extends HasEmitterInterface
      * Sends multiple commands in parallel and returns a hash map of commands
      * mapped to their corresponding result or exception.
      *
-     * Note: This method keeps every command and command response in memory,
+     * Note: This method keeps every command and command and result in memory,
      * and as such is NOT recommended when sending a large number or an
-     * indeterminable number of commands in parallel.
+     * indeterminable number of commands in parallel. Instead, you should use
+     * executeAll() and utilize the event system to work with results.
      *
      * @param array|\Iterator $commands Commands to send in parallel
      * @param array           $options  Passes through the options available
