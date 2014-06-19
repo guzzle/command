@@ -36,13 +36,16 @@ class CommandTransaction
     /**
      * @param ServiceClientInterface $client  Client that executes commands
      * @param CommandInterface       $command Command being executed
+     * @param array                  $context Command context array of data
      */
     public function __construct(
         ServiceClientInterface $client,
-        CommandInterface $command
+        CommandInterface $command,
+        array $context = []
     ) {
         $this->client = $client;
         $this->command = $command;
+        $this->context = new Collection($context);
     }
 
     /**
@@ -153,10 +156,6 @@ class CommandTransaction
      */
     public function getContext()
     {
-        if (!$this->context) {
-            $this->context = new Collection();
-        }
-
         return $this->context;
     }
 }
