@@ -2,8 +2,7 @@
 namespace GuzzleHttp\Command\Event;
 
 use GuzzleHttp\Message\RequestInterface;
-use GuzzleHttp\Command\CommandInterface;
-use GuzzleHttp\Command\ServiceClientInterface;
+use GuzzleHttp\Command\CommandTransaction;
 
 /**
  * Event emitted when a command is being prepared.
@@ -14,15 +13,11 @@ use GuzzleHttp\Command\ServiceClientInterface;
 class PrepareEvent extends AbstractCommandEvent
 {
     /**
-     * @param CommandInterface       $command Command to prepare
-     * @param ServiceClientInterface $client  Client used to send the command
+     * @param CommandTransaction $trans Contextual transfer information
      */
-    public function __construct(
-        CommandInterface $command,
-        ServiceClientInterface $client
-    ) {
-        $this->command = $command;
-        $this->client = $client;
+    public function __construct(CommandTransaction $trans)
+    {
+        $this->trans = $trans;
     }
 
     /**
@@ -32,7 +27,7 @@ class PrepareEvent extends AbstractCommandEvent
      */
     public function setRequest(RequestInterface $request)
     {
-        $this->request = $request;
+        $this->trans->setRequest($request);
     }
 
     /**
@@ -42,7 +37,7 @@ class PrepareEvent extends AbstractCommandEvent
      */
     public function setResult($result)
     {
-        $this->result = $result;
+        $this->trans->setResult($result);
         $this->stopPropagation();
     }
 }

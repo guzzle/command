@@ -1,10 +1,8 @@
 <?php
 namespace GuzzleHttp\Command\Event;
 
-use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Message\ResponseInterface;
-use GuzzleHttp\Command\CommandInterface;
-use GuzzleHttp\Command\ServiceClientInterface;
+use GuzzleHttp\Command\CommandTransaction;
 
 /**
  * Event emitted when the HTTP response of a command is being processed.
@@ -18,28 +16,12 @@ use GuzzleHttp\Command\ServiceClientInterface;
  */
 class ProcessEvent extends AbstractCommandEvent
 {
-    /** @var ResponseInterface */
-    private $response;
-
     /**
-     * @param CommandInterface       $command  Command
-     * @param ServiceClientInterface $client   Client used to send the command
-     * @param RequestInterface       $request  Request that was sent
-     * @param ResponseInterface      $response Response that was received
-     * @param mixed                  $result   Can specify the result up-front
+     * @param CommandTransaction $trans Contextual transfer information
      */
-    public function __construct(
-        CommandInterface $command,
-        ServiceClientInterface $client,
-        RequestInterface $request = null,
-        ResponseInterface $response = null,
-        $result = null
-    ) {
-        $this->command = $command;
-        $this->client = $client;
-        $this->request = $request;
-        $this->response = $response;
-        $this->result = $result;
+    public function __construct(CommandTransaction $trans)
+    {
+        $this->trans = $trans;
     }
 
     /**
@@ -49,7 +31,7 @@ class ProcessEvent extends AbstractCommandEvent
      */
     public function getResponse()
     {
-        return $this->response;
+        return $this->trans->getResponse();
     }
 
     /**
@@ -59,6 +41,6 @@ class ProcessEvent extends AbstractCommandEvent
      */
     public function setResult($result)
     {
-        $this->result = $result;
+        $this->trans->setResult($result);
     }
 }
