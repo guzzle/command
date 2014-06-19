@@ -99,6 +99,16 @@ class CommandException extends \RuntimeException
     }
 
     /**
+     * Gets the transaction associated with the exception
+     *
+     * @return CommandTransaction
+     */
+    public function getCommandTransaction()
+    {
+        return $this->trans;
+    }
+
+    /**
      * Check or set if the exception was emitted in an error event.
      *
      * This value is used in the CommandEvents::prepare() method to check

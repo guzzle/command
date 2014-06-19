@@ -142,6 +142,7 @@ class CommandEvents
         if (!$response) {
             self::stopRequestError($re);
         } else {
+            $trans->setResponse($response);
             $statusCode = (string) $response->getStatusCode();
             if ($statusCode[0] == '4') {
                 $className = 'GuzzleHttp\\Command\\Exception\\CommandClientException';
