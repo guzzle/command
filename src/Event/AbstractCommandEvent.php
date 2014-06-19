@@ -66,4 +66,14 @@ class AbstractCommandEvent extends AbstractEvent
     {
         return $this->trans->getContext();
     }
+
+    /**
+     * Gets the transaction associated with the event
+     *
+     * @return CommandTransaction
+     */
+    public function getCommandTransaction()
+    {
+        return $this->trans;
+    }
 }
