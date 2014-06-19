@@ -3,6 +3,7 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Collection;
+use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Command\Exception\CommandException;
@@ -63,20 +64,19 @@ abstract class AbstractClient implements ServiceClientInterface
 
     public function execute(CommandInterface $command)
     {
+        $t = new CommandTransaction($this, $command);
+
         try {
-            $event = CommandEvents::prepare($command, $this);
+            CommandEvents::prepare($t);
             // Listeners can intercept the event and inject a result. If that
             // happened, then we must not emit further events and just
             // return the result.
-            if (null !== ($result = $event->getResult())) {
+            if (null !== ($result = $t->getResult())) {
                 return $result;
             }
-            $request = $event->getRequest();
-            // Send the request and get the response that is used in the
-            // complete event.
-            $response = $this->client->send($request);
-            // Emit the process event for the command and return the result
-            return CommandEvents::process($command, $this, $request, $response);
+            $t->setResponse($this->client->send($t->getRequest()));
+            CommandEvents::process($t);
+            return $t->getResult();
         } catch (CommandException $e) {
             // Let command exceptions pass through untouched
             throw $e;
@@ -84,7 +84,7 @@ abstract class AbstractClient implements ServiceClientInterface
             // Wrap any other exception in a CommandException so that exceptions
             // thrown from the client are consistent and predictable.
             $msg = 'Error executing command: ' . $e->getMessage();
-            throw new CommandException($msg, $this, $command, null, null, $e);
+            throw new CommandException($msg, $t, $e);
         }
     }
 
@@ -99,7 +99,7 @@ abstract class AbstractClient implements ServiceClientInterface
         // Create an iterator that yields requests from commands and send all
         $this->client->sendAll(
             new CommandToRequestIterator($commands, $this, $options),
-            $requestOptions
+            $this->preventCommandExceptions($requestOptions)
         );
     }
 
@@ -110,20 +110,19 @@ abstract class AbstractClient implements ServiceClientInterface
             $hash->attach($command);
         }
 
-        $this->executeAll(
-            $commands,
-            RequestEvents::convertEventArray(
-                $options,
-                ['process', 'error'],
-                [
-                    'priority' => RequestEvents::EARLY,
-                    'once'     => true,
-                    'fn'       => function ($e) use ($hash) {
+        $options = RequestEvents::convertEventArray(
+            $options,
+            ['process', 'error'],
+            [
+                'priority' => RequestEvents::EARLY,
+                'once'     => true,
+                'fn'       => function ($e) use ($hash) {
                         $hash[$e->getCommand()] = $e;
                     }
-                ]
-            )
+            ]
         );
+
+        $this->executeAll($commands, $options);
 
         // Update the received value for any of the intercepted commands.
         foreach ($hash as $request) {
@@ -160,5 +159,20 @@ abstract class AbstractClient implements ServiceClientInterface
     public function setConfig($keyOrPath, $value)
     {
         $this->config->setPath($keyOrPath, $value);
+    }
+
+    private function preventCommandExceptions(array $options)
+    {
+        // Prevent CommandExceptions from being thrown
+        return RequestEvents::convertEventArray(
+            $options,
+            ['error'],
+            [
+                'priority' => RequestEvents::LATE,
+                'fn'       => function (ErrorEvent $e) {
+                        $e->stopPropagation();
+                    }
+            ]
+        );
     }
 }

@@ -1,48 +1,35 @@
 <?php
 namespace GuzzleHttp\Command\Exception;
 
+use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Command\ServiceClientInterface;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Message\ResponseInterface;
+use GuzzleHttp\Collection;
 
 /**
  * Exception encountered while transferring a command.
  */
 class CommandException extends \RuntimeException
 {
-    /** @var ServiceClientInterface */
-    private $client;
+    /** @var CommandTransaction */
+    private $trans;
 
-    /** @var CommandInterface */
-    private $command;
-
-    /** @var array */
-    private $context;
+    /** @var bool */
+    private $emittedErrorEvent = false;
 
     /**
-     * @param string                 $message  Exception message
-     * @param ServiceClientInterface $client   Client that sent the command
-     * @param CommandInterface       $command  Command that failed
-     * @param RequestInterface       $request  Request that was sent
-     * @param ResponseInterface      $response Response that was received
-     * @param array                  $context  Contextual exception data
-     * @param \Exception             $previous Previous exception (if any)
+     * @param string             $message  Exception message
+     * @param CommandTransaction $trans    Contextual transfer information
+     * @param \Exception         $previous Previous exception (if any)
      */
     public function __construct(
         $message,
-        ServiceClientInterface $client,
-        CommandInterface $command,
-        RequestInterface $request = null,
-        ResponseInterface $response = null,
-        \Exception $previous = null,
-        array $context = []
+        CommandTransaction $trans,
+        \Exception $previous = null
     ) {
-        $this->client = $client;
-        $this->command = $command;
-        $this->request = $request;
-        $this->response = $response;
-        $this->context = $context;
+        $this->trans = $trans;
         parent::__construct($message, 0, $previous);
     }
 
@@ -53,7 +40,7 @@ class CommandException extends \RuntimeException
      */
     public function getClient()
     {
-        return $this->client;
+        return $this->trans->getClient();
     }
 
     /**
@@ -63,7 +50,7 @@ class CommandException extends \RuntimeException
      */
     public function getCommand()
     {
-        return $this->command;
+        return $this->trans->getCommand();
     }
 
     /**
@@ -73,7 +60,7 @@ class CommandException extends \RuntimeException
      */
     public function getRequest()
     {
-        return $this->request;
+        return $this->trans->getRequest();
     }
 
     /**
@@ -84,25 +71,54 @@ class CommandException extends \RuntimeException
      */
     public function getResponse()
     {
-        return $this->response;
+        return $this->trans->getResponse();
     }
 
     /**
-     * Get contextual error information about the exception.
+     * Get the result of the command if one was populated.
+     *
+     * @return mixed|null Returns the result or null if no result was populated
+     */
+    public function getResult()
+    {
+        return $this->trans->getResult();
+    }
+
+    /**
+     * Get contextual error information about the transaction.
      *
      * This contextual data may contain important data that was populated
      * during the command's event lifecycle such as parsed error data from a
      * web service response.
      *
-     * @param string $keyOrPath Specify a path expression to retrieve nested
-     *                          data, or leave null to retrieve all data.
-     *
-     * @return mixed|array
+     * @return Collection
      */
-    public function getContext($keyOrPath = null)
+    public function getContext()
     {
-        return $keyOrPath
-            ? \GuzzleHttp\get_path($this->context, $keyOrPath)
-            : $this->context;
+        return $this->trans->getContext();
+    }
+
+    /**
+     * Check or set if the exception was emitted in an error event.
+     *
+     * This value is used in the CommandEvents::prepare() method to check
+     * to see if an exception has already been emitted in an error event.
+     *
+     * @param bool|null Set to true to set the exception as having emitted an
+     *     error. Leave null to retrieve the current setting.
+     *
+     * @return null|bool
+     * @throws \InvalidArgumentException if you attempt to set the value to false
+     */
+    public function emittedError($value = null)
+    {
+        if ($value === null) {
+            return $this->emittedErrorEvent;
+        } elseif ($value === true) {
+            return $this->emittedErrorEvent = true;
+        } else {
+            throw new \InvalidArgumentException('You cannot set the emitted '
+                . 'error value to false.');
+        }
     }
 }
