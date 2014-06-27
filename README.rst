@@ -105,7 +105,7 @@ prepare
 
         use GuzzleHttp\Command\Event\PrepareEvent;
 
-        $command->getEmitter()->on('prepare', function(ProcessEvent $event) {
+        $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
             // Set a request on the command
             $request = $event->getClient()->createRequest(
                 'GET',
