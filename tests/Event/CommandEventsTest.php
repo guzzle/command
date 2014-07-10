@@ -222,8 +222,6 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             $this->assertSame($request, $e->getRequest());
             $this->assertSame($response, $e->getResponse());
             $this->assertSame($exc, $e->getPrevious());
-            $this->assertNull($command->getConfig()->get('__exception'));
-            $this->assertNull($command->getConfig()->get('__result'));
         }
     }
 
@@ -261,8 +259,6 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             $this->fail('Did not throw');
         } catch (CommandException $e) {
             $this->assertInstanceOf($type, $e);
-            $this->assertNull($command->getConfig()->get('__exception'));
-            $this->assertNull($command->getConfig()->get('__result'));
         }
     }
 
@@ -288,9 +284,6 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
         try {
             $mock->execute($command);
             $this->fail('Did not throw');
-        } catch (CommandException $e) {
-            $this->assertNull($command->getConfig()->get('__exception'));
-            $this->assertNull($command->getConfig()->get('__result'));
-        }
+        } catch (CommandException $e) {}
     }
 }
