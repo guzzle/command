@@ -2,7 +2,7 @@
 namespace GuzzleHttp\Command\Event;
 
 use GuzzleHttp\Command\CommandTransaction;
-use GuzzleHttp\Command\Exception\CommandException;
+use GuzzleHttp\Command\Exception\CommandExceptionInterface;
 use GuzzleHttp\HasDataTrait;
 use GuzzleHttp\Message\ResponseInterface;
 
@@ -15,27 +15,22 @@ use GuzzleHttp\Message\ResponseInterface;
  */
 class CommandErrorEvent extends AbstractCommandEvent
 {
-    /** @var CommandException */
-    private $commandException;
-
     /**
      * @param CommandTransaction $trans Command transfer context
-     * @param CommandException   $e     Command exception encountered
      */
-    public function __construct(CommandTransaction $trans, CommandException $e)
+    public function __construct(CommandTransaction $trans)
     {
         $this->trans = $trans;
-        $this->commandException = $e;
     }
 
     /**
      * Returns the exception that was encountered.
      *
-     * @return CommandException
+     * @return CommandExceptionInterface
      */
     public function getCommandException()
     {
-        return $this->commandException;
+        return $this->trans->getException();
     }
 
     /**

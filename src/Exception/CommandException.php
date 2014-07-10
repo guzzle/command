@@ -11,7 +11,9 @@ use GuzzleHttp\Collection;
 /**
  * Exception encountered while transferring a command.
  */
-class CommandException extends \RuntimeException
+class CommandException
+    extends \RuntimeException
+    implements CommandExceptionInterface
 {
     /** @var CommandTransaction */
     private $trans;

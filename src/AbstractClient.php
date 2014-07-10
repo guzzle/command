@@ -7,9 +7,11 @@ use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Command\Exception\CommandException;
+use GuzzleHttp\Command\Exception\CommandExceptionInterface;
 use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * Abstract client implementation that provides a basic implementation of
@@ -49,9 +51,11 @@ abstract class AbstractClient implements ServiceClientInterface
         if (!isset($config['defaults'])) {
             $config['defaults'] = [];
         }
+
         if (isset($config['emitter'])) {
             $this->emitter = $config['emitter'];
         }
+
         $this->config = new Collection($config);
     }
 
@@ -77,7 +81,7 @@ abstract class AbstractClient implements ServiceClientInterface
             $t->setResponse($this->client->send($t->getRequest()));
             CommandEvents::process($t);
             return $t->getResult();
-        } catch (CommandException $e) {
+        } catch (CommandExceptionInterface $e) {
             // Let command exceptions pass through untouched
             throw $e;
         } catch (\Exception $e) {
@@ -159,6 +163,28 @@ abstract class AbstractClient implements ServiceClientInterface
     public function setConfig($keyOrPath, $value)
     {
         $this->config->setPath($keyOrPath, $value);
+    }
+
+    public function createCommandException(
+        CommandTransaction $transaction,
+        RequestException $previous
+    ) {
+        $cn = 'GuzzleHttp\\Command\\Exception\\CommandException';
+
+        if ($response = $transaction->getResponse()) {
+            $statusCode = (string) $response->getStatusCode();
+            if ($statusCode[0] == '4') {
+                $cn = 'GuzzleHttp\\Command\\Exception\\CommandClientException';
+            } elseif ($statusCode[0] == '5') {
+                $cn = 'GuzzleHttp\\Command\\Exception\\CommandServerException';
+            }
+        }
+
+        return new $cn(
+            "Error executing command: " . $previous->getMessage(),
+            $transaction,
+            $previous
+        );
     }
 
     private function preventCommandExceptions(array $options)

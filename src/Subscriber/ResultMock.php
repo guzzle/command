@@ -1,8 +1,8 @@
 <?php
-
 namespace GuzzleHttp\Command\Subscriber;
 
 use GuzzleHttp\Command\Event\PrepareEvent;
+use GuzzleHttp\Command\Exception\CommandExceptionInterface;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Event\SubscriberInterface;
 
@@ -30,21 +30,21 @@ class ResultMock implements SubscriberInterface, \Countable
     }
 
     /**
-     * @throws CommandException if one has been queued.
+     * @throws CommandExceptionInterface if one has been queued.
      * @throws \OutOfBoundsException if the queue is empty.
      */
     public function onPrepare(PrepareEvent $event)
     {
         if (!$result = array_shift($this->queue)) {
             throw new \OutOfBoundsException('Result mock queue is empty');
-        } elseif ($result instanceof CommandException) {
+        } elseif ($result instanceof CommandExceptionInterface) {
             throw $result;
         } elseif ($result instanceof \Exception) {
             // Use the message and event data to create a CommandException
             throw new CommandException(
                 $result->getMessage(),
-                $event->getClient(),
-                $event->getCommand()
+                $event->getCommandTransaction(),
+                $result
             );
         } else {
             $event->setResult($result);
@@ -73,11 +73,11 @@ class ResultMock implements SubscriberInterface, \Countable
     /**
      * Add an exception to the end of the queue.
      *
-     * @param CommandException $exception Thrown when the command is executed.
+     * @param CommandExceptionInterface $exception Thrown when executing.
      *
      * @return self
      */
-    public function addException(CommandException $exception)
+    public function addException(CommandExceptionInterface $exception)
     {
         $this->queue[] = $exception;
 

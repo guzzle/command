@@ -3,7 +3,7 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Message\ResponseInterface;
-use GuzzleHttp\Command\Exception\CommandException;
+use GuzzleHttp\Command\Exception\CommandExceptionInterface;
 use GuzzleHttp\Collection;
 
 /**
@@ -27,7 +27,7 @@ class CommandTransaction
     /** @var CommandInterface */
     private $command;
 
-    /** @var CommandException */
+    /** @var CommandExceptionInterface */
     private $commandException;
 
     /** @var Collection */
@@ -131,7 +131,7 @@ class CommandTransaction
     }
 
     /**
-     * @return CommandException|null
+     * @return CommandExceptionInterface|null
      */
     public function getException()
     {
@@ -141,10 +141,11 @@ class CommandTransaction
     /**
      * Associate an exception with the transaction.
      *
-     * @param CommandException $e Exception to associate or pass null to remove
-     *                            any previously assigned exception.
+     * @param CommandExceptionInterface $e Exception to associate or pass null
+     *                                     to remove any previously assigned
+     *                                     exception.
      */
-    public function setException(CommandException $e = null)
+    public function setException(CommandExceptionInterface $e = null)
     {
         $this->commandException = $e;
     }

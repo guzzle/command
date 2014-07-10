@@ -3,7 +3,7 @@ namespace GuzzleHttp\Command\Event;
 
 use GuzzleHttp\Command\CanceledResponse;
 use GuzzleHttp\Command\CommandTransaction;
-use GuzzleHttp\Command\Exception\CommandException;
+use GuzzleHttp\Command\Exception\CommandExceptionInterface;
 use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Event\RequestEvents;
@@ -28,7 +28,7 @@ class CommandEvents
         try {
             $ev = new PrepareEvent($trans);
             $trans->getCommand()->getEmitter()->emit('prepare', $ev);
-        } catch (CommandException $e) {
+        } catch (CommandExceptionInterface $e) {
             self::emitError($trans, $e);
             return;
         }
@@ -55,7 +55,7 @@ class CommandEvents
      * Handles the processing workflow of a command after it has been sent.
      *
      * @param CommandTransaction $trans Command execution context
-     * @throws \GuzzleHttp\Command\Exception\CommandException
+     * @throws \GuzzleHttp\Command\Exception\CommandExceptionInterface
      */
     public static function process(CommandTransaction $trans)
     {
@@ -70,7 +70,7 @@ class CommandEvents
                 'process',
                 new ProcessEvent($trans)
             );
-        } catch (CommandException $e) {
+        } catch (CommandExceptionInterface $e) {
             self::emitError($trans, $e);
         }
     }
@@ -78,21 +78,23 @@ class CommandEvents
     /**
      * Emits an error event for the command.
      *
-     * @param CommandTransaction $trans Command execution context
-     * @param CommandException   $e     Exception encountered
-     * @throws CommandException
+     * @param CommandTransaction        $trans Command execution context
+     * @param CommandExceptionInterface $e     Exception encountered
+     * @throws CommandExceptionInterface
      */
     public static function emitError(
         CommandTransaction $trans,
-        CommandException $e
+        CommandExceptionInterface $e
     ) {
+        $trans->setException($e);
+
         // If this exception has already emitted, then throw it now.
-        if ($e->emittedError()) {
+        if (isset($e->emittedCommandError)) {
             throw $e;
         }
 
-        $e->emittedError(true);
-        $event = new CommandErrorEvent($trans, $e);
+        $e->emittedCommandError = true;
+        $event = new CommandErrorEvent($trans);
         $trans->getCommand()->getEmitter()->emit('error', $event);
 
         if (!$event->isPropagationStopped()) {
@@ -110,12 +112,11 @@ class CommandEvents
             function (ErrorEvent $re) use ($trans) {
                 $re->stopPropagation();
                 $cex = self::exceptionFromError($trans, $re);
+                $trans->setException($cex);
                 $cev = new CommandErrorEvent($trans, $cex);
                 $trans->getCommand()->getEmitter()->emit('error', $cev);
 
                 if (!$cev->isPropagationStopped()) {
-                    $trans->setException($cex);
-                } else {
                     // Add a canceled response to prevent an adapter from
                     // sending a request if no response was received.
                     $trans->setException(null);
@@ -130,35 +131,23 @@ class CommandEvents
 
     /**
      * Create a CommandException from a request error event.
+     * @param CommandTransaction $trans
+     * @param ErrorEvent         $re
+     * @return CommandExceptionInterface
      */
     private static function exceptionFromError(
         CommandTransaction $trans,
         ErrorEvent $re
     ) {
-        $className = 'GuzzleHttp\\Command\\Exception\\CommandException';
-        // Throw a specific exception for client and server errors.
-        $response = $re->getResponse();
-
-        if (!$response) {
-            self::stopRequestError($re);
-        } else {
+        if ($response = $re->getResponse()) {
             $trans->setResponse($response);
-            $statusCode = (string) $response->getStatusCode();
-            if ($statusCode[0] == '4') {
-                $className = 'GuzzleHttp\\Command\\Exception\\CommandClientException';
-            } elseif ($statusCode[0] == '5') {
-                $className = 'GuzzleHttp\\Command\\Exception\\CommandServerException';
-            }
+        } else {
+            self::stopRequestError($re);
         }
 
-        // Add the exception to the command and allow the request lifecycle to
-        // complete successfully.
-        $previous = $re->getException();
-
-        return new $className(
-            "Error executing command: " . $previous->getMessage(),
+        return $trans->getClient()->createCommandException(
             $trans,
-            $previous
+            $re->getException()
         );
     }
 
