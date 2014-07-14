@@ -2,8 +2,6 @@
 namespace GuzzleHttp\Command\Subscriber;
 
 use GuzzleHttp\Command\Event\PrepareEvent;
-use GuzzleHttp\Command\Exception\CommandExceptionInterface;
-use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Event\SubscriberInterface;
 
 /**
@@ -30,22 +28,15 @@ class ResultMock implements SubscriberInterface, \Countable
     }
 
     /**
-     * @throws CommandExceptionInterface if one has been queued.
+     * @throws \Exception if one has been queued.
      * @throws \OutOfBoundsException if the queue is empty.
      */
     public function onPrepare(PrepareEvent $event)
     {
         if (!$result = array_shift($this->queue)) {
             throw new \OutOfBoundsException('Result mock queue is empty');
-        } elseif ($result instanceof CommandExceptionInterface) {
-            throw $result;
         } elseif ($result instanceof \Exception) {
-            // Use the message and event data to create a CommandException
-            throw new CommandException(
-                $result->getMessage(),
-                $event->getCommandTransaction(),
-                $result
-            );
+            throw $result;
         } else {
             $event->setResult($result);
         }
@@ -73,36 +64,13 @@ class ResultMock implements SubscriberInterface, \Countable
     /**
      * Add an exception to the end of the queue.
      *
-     * @param CommandExceptionInterface $exception Thrown when executing.
+     * @param \Exception $exception Thrown when executing.
      *
      * @return self
      */
-    public function addException(CommandExceptionInterface $exception)
+    public function addException(\Exception $exception)
     {
         $this->queue[] = $exception;
-
-        return $this;
-    }
-
-    /**
-     * Add an exception to the end of the queue, by specifying the message only.
-     *
-     * @param string $message Message used in the exception thrown when the command is executed.
-     *
-     * @throws \InvalidArgumentException if something other than a string is provided.
-     * @return self
-     */
-    public function addExceptionMessage($message)
-    {
-        if (!is_string($message)) {
-            throw new \InvalidArgumentException('You must provide a string.');
-        }
-
-        // A vanilla exception is used to transport the message, so that when it
-        // is taken off the queue, we will know that it was not meant to be a
-        // result, since results can be anything. The value will be used to
-        // create a CommandException, which is what will actually be thrown.
-        $this->queue[] = new \Exception($message);
 
         return $this;
     }

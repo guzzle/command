@@ -3,9 +3,7 @@ namespace GuzzleHttp\Command\Event;
 
 use GuzzleHttp\Command\CanceledResponse;
 use GuzzleHttp\Command\CommandTransaction;
-use GuzzleHttp\Command\Exception\CommandExceptionInterface;
 use GuzzleHttp\Event\ErrorEvent;
-use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Event\RequestEvents;
 
 /**
@@ -28,7 +26,7 @@ class CommandEvents
         try {
             $ev = new PrepareEvent($trans);
             $trans->getCommand()->getEmitter()->emit('prepare', $ev);
-        } catch (CommandExceptionInterface $e) {
+        } catch (\Exception $e) {
             self::emitError($trans, $e);
             return;
         }
@@ -55,7 +53,7 @@ class CommandEvents
      * Handles the processing workflow of a command after it has been sent.
      *
      * @param CommandTransaction $trans Command execution context
-     * @throws \GuzzleHttp\Command\Exception\CommandExceptionInterface
+     * @throws \Exception
      */
     public static function process(CommandTransaction $trans)
     {
@@ -70,7 +68,7 @@ class CommandEvents
                 'process',
                 new ProcessEvent($trans)
             );
-        } catch (CommandExceptionInterface $e) {
+        } catch (\Exception $e) {
             self::emitError($trans, $e);
         }
     }
@@ -78,22 +76,22 @@ class CommandEvents
     /**
      * Emits an error event for the command.
      *
-     * @param CommandTransaction        $trans Command execution context
-     * @param CommandExceptionInterface $e     Exception encountered
-     * @throws CommandExceptionInterface
+     * @param CommandTransaction $trans Command execution context
+     * @param \Exception         $e     Exception encountered
+     * @throws \Exception
      */
     public static function emitError(
         CommandTransaction $trans,
-        CommandExceptionInterface $e
+        \Exception $e
     ) {
         $trans->setException($e);
 
         // If this exception has already emitted, then throw it now.
-        if (isset($e->emittedCommandError)) {
+        if (isset($e->_emittedError)) {
             throw $e;
         }
 
-        $e->emittedCommandError = true;
+        $e->_emittedError = true;
         $event = new CommandErrorEvent($trans);
         $trans->getCommand()->getEmitter()->emit('error', $event);
 
@@ -133,7 +131,7 @@ class CommandEvents
      * Create a CommandException from a request error event.
      * @param CommandTransaction $trans
      * @param ErrorEvent         $re
-     * @return CommandExceptionInterface
+     * @return \Exception
      */
     private static function exceptionFromError(
         CommandTransaction $trans,

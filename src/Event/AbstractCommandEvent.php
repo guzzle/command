@@ -72,7 +72,7 @@ class AbstractCommandEvent extends AbstractEvent
      *
      * @return CommandTransaction
      */
-    public function getCommandTransaction()
+    public function getTransaction()
     {
         return $this->trans;
     }
