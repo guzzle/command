@@ -1,6 +1,7 @@
 <?php
 namespace GuzzleHttp\Tests\Command\Event;
 
+use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Message\Request;
 
@@ -14,7 +15,9 @@ class PrepareEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
-        $event = new PrepareEvent($command, $client);
+        $trans = new CommandTransaction($client, $command);
+        $event = new PrepareEvent($trans);
+        $this->assertSame($trans, $event->getTransaction());
         $this->assertSame($command, $event->getCommand());
         $this->assertSame($client, $event->getClient());
         $this->assertNull($event->getResult());
@@ -24,7 +27,8 @@ class PrepareEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
-        $event = new PrepareEvent($command, $client);
+        $trans = new CommandTransaction($client, $command);
+        $event = new PrepareEvent($trans);
         $event->setResult('foo');
         $this->assertEquals('foo', $event->getResult());
         $this->assertTrue($event->isPropagationStopped());
@@ -34,7 +38,8 @@ class PrepareEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
-        $event = new PrepareEvent($command, $client);
+        $trans = new CommandTransaction($client, $command);
+        $event = new PrepareEvent($trans);
         $request = new Request('GET', 'http://httbin.org');
         $event->setRequest($request);
         $this->assertSame($request, $event->getRequest());

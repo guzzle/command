@@ -1,15 +1,14 @@
 <?php
 namespace GuzzleHttp\Tests\Command\Event;
 
-use GuzzleHttp\Adapter\Transaction;
 use GuzzleHttp\Client;
+use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Exception\CommandException;
-use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Message\Request;
@@ -25,6 +24,7 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
+        $trans = new CommandTransaction($client, $command);
         $request = new Request('GET', 'http://httbin.org');
         $command->getEmitter()->on(
             'prepare',
@@ -32,10 +32,9 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
                 $e->setRequest($request);
             }
         );
-        $event = CommandEvents::prepare($command, $client);
-        $this->assertSame($request, $event->getRequest());
-        $this->assertFalse($event->isPropagationStopped());
-        $this->assertNull($event->getResult());
+        CommandEvents::prepare($trans);
+        $this->assertSame($request, $trans->getRequest());
+        $this->assertNull($trans->getResult());
     }
 
     /**
@@ -46,13 +45,15 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
     {
         $command = new Command('foo', []);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        CommandEvents::prepare($command, $client);
+        $trans = new CommandTransaction($client, $command);
+        CommandEvents::prepare($trans);
     }
 
     public function testPrepareEventCanInterceptWithResultBeforeSending()
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
+        $trans = new CommandTransaction($client, $command);
         // inject a result into the prepare event to skip sending over the wire
         $command->getEmitter()->on('prepare', function (PrepareEvent $e) {
             $e->setResult('123');
@@ -66,10 +67,9 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
                 $this->assertEquals('123', $e->getResult());
             }
         );
-        $event = CommandEvents::prepare($command, $client);
-        $this->assertNull($event->getRequest());
-        $this->assertTrue($event->isPropagationStopped());
-        $this->assertEquals('123', $event->getResult());
+        CommandEvents::prepare($trans);
+        $this->assertNull($trans->getRequest());
+        $this->assertEquals('123', $trans->getResult());
         $this->assertTrue($called);
     }
 
@@ -77,18 +77,21 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
-        $ex = new CommandException('foo', $client, $command);
+        $trans = new CommandTransaction($client, $command);
+        $ex = new CommandException('foo', $trans);
         $command->getEmitter()->on(
             'prepare',
             function (PrepareEvent $e) use ($ex) {
                 throw $ex;
             }
         );
+
         try {
-            CommandEvents::prepare($command, $client);
+            CommandEvents::prepare($trans);
             $this->fail('Did not throw');
         } catch (CommandException $e) {
             $this->assertSame($ex, $e);
+            $this->assertSame($ex, $trans->getException());
         }
     }
 
@@ -98,6 +101,9 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
         $res = new Response(200);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $cmd = new Command('foo', []);
+        $trans = new CommandTransaction($client, $cmd);
+        $trans->setRequest($req);
+        $trans->setResponse($res);
         $c = false;
         $cmd->getEmitter()->on(
             'process',
@@ -110,8 +116,8 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
                 $c = true;
             }
         );
-        $result = CommandEvents::process($cmd, $client, $req, $res);
-        $this->assertEquals('foo', $result);
+        CommandEvents::process($trans);
+        $this->assertEquals('foo', $trans->getResult());
         $this->assertTrue($c);
     }
 
@@ -121,10 +127,13 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
         $res = new Response(200);
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $cmd = new Command('foo', []);
+        $trans = new CommandTransaction($client, $cmd);
         $em = $cmd->getEmitter();
+        $exc = new RequestException('foo', $req, $res);
 
-        $em->on('prepare', function (PrepareEvent $e) use ($req) {
+        $em->on('prepare', function (PrepareEvent $e) use ($req, $exc) {
             $e->setRequest($req);
+            throw $exc;
         });
 
         $c1 = $c2 = false;
@@ -137,7 +146,7 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
                 $this->assertSame($req, $e->getRequest());
                 $this->assertSame(
                     $res,
-                    $e->getRequestErrorEvent()->getResponse()
+                    $e->getException()->getResponse()
                 );
                 $c1 = true;
             }
@@ -145,12 +154,7 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
 
         $c2 = false;
         $em->on('process', function () use (&$c2) { $c2 = true;});
-
-        $transaction = new Transaction(new Client(), $req);
-        $exc = new RequestException('foo', $req, $res);
-        $errorEvent = new ErrorEvent($transaction, $exc);
-        CommandEvents::prepare($cmd, $client);
-        $req->getEmitter()->emit('error', $errorEvent);
+        CommandEvents::prepare($trans);
         $this->assertTrue($c1);
         $this->assertFalse($c2);
     }
@@ -161,7 +165,8 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
         $request = $client->createRequest('GET', 'http://www.foo.com');
         $mock = new Mock();
         $request->getEmitter()->attach($mock);
-        $mock->addException(new RequestException('foo', $request));
+        $reqex = new RequestException('foo', $request);
+        $mock->addException($reqex);
 
         $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
             ->setConstructorArgs([$client])
@@ -173,7 +178,12 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             $e->setRequest($request);
         });
 
-        $em->on('error', function (CommandErrorEvent $e) {
+        $em->on('error', function (CommandErrorEvent $e) use ($reqex) {
+            $this->assertInstanceOf(
+                'GuzzleHttp\Command\Exception\CommandException',
+                $e->getException()
+            );
+            $this->assertSame($reqex, $e->getException()->getPrevious());
             $e->setResult('foo');
         }, RequestEvents::EARLY);
 
@@ -192,39 +202,6 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, $called);
     }
 
-    public function testEmitsErrorAndThrowsGenericException()
-    {
-        $request = new Request('GET', 'http://httbin.org');
-        $response = new Response(200);
-        $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        $command = new Command('foo', []);
-
-        $command->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $e) use ($request) {
-                $e->setRequest($request);
-            }
-        );
-
-        $transaction = new Transaction(new Client(), $request);
-        $exc = new RequestException('foo', $request, $response);
-        $errorEvent = new ErrorEvent($transaction, $exc);
-        CommandEvents::prepare($command, $client);
-        $request->getEmitter()->emit('error', $errorEvent);
-        $this->assertTrue($command->getConfig()->hasKey('__exception'));
-
-        try {
-            CommandEvents::process($command, $client, $request, $response);
-            $this->fail('Did not throw');
-        } catch (CommandException $e) {
-            $this->assertSame($command, $e->getCommand());
-            $this->assertSame($client, $e->getClient());
-            $this->assertSame($request, $e->getRequest());
-            $this->assertSame($response, $e->getResponse());
-            $this->assertSame($exc, $e->getPrevious());
-        }
-    }
-
     public function specificExceptionProvider()
     {
         return [
@@ -240,15 +217,12 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
     {
         $client = new Client();
         $client->getEmitter()->attach(new Mock([new Response($code)]));
-
         $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$client, []])
             ->getMockForAbstractClass();
 
         $command = new Command('foo');
-        $emitter = $command->getEmitter();
-
-        $emitter->on('prepare', function(PrepareEvent $event) {
+        $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
             $event->setRequest($event->getClient()
                 ->getHttpClient()
                 ->createRequest('PUT', 'http://httpbin.org/get'));

@@ -1,12 +1,8 @@
 <?php
 namespace GuzzleHttp\Tests\Command\Event;
 
-use GuzzleHttp\Adapter\Transaction;
-use GuzzleHttp\Client;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
-use GuzzleHttp\Event\ErrorEvent;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Message\Request;
+use GuzzleHttp\Command\CommandTransaction;
 
 /**
  * @covers \GuzzleHttp\Command\Event\CommandErrorEvent
@@ -18,26 +14,22 @@ class ErrorEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
+        $ctrans = new CommandTransaction($client, $command);
+        $ex = new \Exception('foo');
+        $ctrans->setException($ex);
 
-        $httpClient = new Client();
-        $request = new Request('GET', 'http://httbin.org');
-        $transaction = new Transaction($httpClient, $request);
-        $requestException = new RequestException('foo', $request);
-        $errorEvent = new ErrorEvent($transaction, $requestException, []);
-
-        $event = new CommandErrorEvent($command, $client, $errorEvent);
+        $event = new CommandErrorEvent($ctrans);
+        $this->assertSame($ctrans, $event->getTransaction());
         $this->assertSame($command, $event->getCommand());
         $this->assertSame($client, $event->getClient());
-        $this->assertSame($request, $event->getRequest());
-        $this->assertSame($errorEvent, $event->getRequestErrorEvent());
+        $this->assertSame($ex, $event->getException());
         $this->assertNull($event->getResult());
 
         $event->setResult('foo');
         $this->assertSame('foo', $event->getResult());
         $this->assertTrue($event->isPropagationStopped());
 
-        $this->assertNull($event['abc']);
-        $event['abc'] = 'foo';
-        $this->assertEquals('foo', $event['abc']);
+        $event->getContext()->set('abc', '123');
+        $this->assertEquals('123', $ctrans->getContext()->get('abc'));
     }
 }

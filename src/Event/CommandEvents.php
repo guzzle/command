@@ -31,21 +31,16 @@ class CommandEvents
             return;
         }
 
-        $req = $trans->getRequest();
-        $stopped = $ev->isPropagationStopped();
-
-        if (!$req && !$stopped) {
+        if ($ev->isPropagationStopped()) {
+            // Event was intercepted with a result, so emit process
+            self::process($trans);
+        } elseif ($trans->getRequest()) {
+            self::injectErrorHandler($trans);
+        } else {
             throw new \RuntimeException('No request was prepared for the'
                 . ' command and no result was added to intercept the event.'
                 . ' One of the listeners must set a request in the prepare'
                 . ' event.');
-        }
-
-        if ($stopped) {
-            // Event was intercepted with a result, so emit process
-            self::process($trans);
-        } elseif ($req) {
-            self::injectErrorHandler($trans);
         }
     }
 
@@ -114,13 +109,8 @@ class CommandEvents
                 $cev = new CommandErrorEvent($trans, $cex);
                 $trans->getCommand()->getEmitter()->emit('error', $cev);
 
-                if (!$cev->isPropagationStopped()) {
-                    // Add a canceled response to prevent an adapter from
-                    // sending a request if no response was received.
+                if ($cev->isPropagationStopped()) {
                     $trans->setException(null);
-                    if (!$re->getResponse()) {
-                        self::stopRequestError($re);
-                    }
                 }
             },
             RequestEvents::LATE
