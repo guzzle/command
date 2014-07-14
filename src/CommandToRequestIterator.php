@@ -107,9 +107,10 @@ class CommandToRequestIterator implements \Iterator
         $trans = new CommandTransaction($this->client, $command);
         $this->prepare($trans);
 
-        // Handle the command being intercepted with a result by going to the
-        // next command and returning it's validity
-        if ($trans->getResult() !== null) {
+        // Handle the command being intercepted with a result or failing by
+        // not generating a request by going to the next command and returning
+        // it's validity
+        if ($trans->getResult() !== null || !$trans->getRequest()) {
             $this->commands->next();
             return $this->valid();
         }
@@ -145,12 +146,14 @@ class CommandToRequestIterator implements \Iterator
     {
         $this->currentRequest = $trans->getRequest();
 
-        // Emit the command's process event when the request completes
-        $this->currentRequest->getEmitter()->on(
-            'complete',
-            function () use ($trans) {
-                CommandEvents::process($trans);
-            }
-        );
+        if ($this->currentRequest) {
+            // Emit the command's process event when the request completes
+            $this->currentRequest->getEmitter()->on(
+                'complete',
+                function () use ($trans) {
+                    CommandEvents::process($trans);
+                }
+            );
+        }
     }
 }

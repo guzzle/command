@@ -15,9 +15,6 @@ use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 use GuzzleHttp\Subscriber\Mock;
 
-/**
- * @covers \GuzzleHttp\Command\Event\CommandEvents
- */
 class CommandEventsTest extends \PHPUnit_Framework_TestCase
 {
     public function testEmitsPrepareEvent()

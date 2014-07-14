@@ -222,10 +222,16 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
             }
         );
 
-        $hash = $mock->batch([$command1, $command2]);
-        $this->assertCount(2, $hash);
+        $command3 = new Command('foo');
+        $command3->getEmitter()->on('prepare', function () {
+            throw new \Exception('foo');
+        });
+
+        $hash = $mock->batch([$command1, $command2, $command3]);
+        $this->assertCount(3, $hash);
         $this->assertEquals('foo', $hash[$command1]);
         $this->assertEquals('bar', $hash[$command2]);
+        $this->assertEquals('foo', $hash[$command3]->getPrevious()->getMessage());
     }
 
     public function testCanInjectEmitter()

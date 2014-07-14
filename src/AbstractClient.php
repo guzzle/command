@@ -84,6 +84,7 @@ abstract class AbstractClient implements ServiceClientInterface
     public function executeAll($commands, array $options = [])
     {
         $requestOptions = [];
+
         // Move all of the options over that affect the request transfer
         if (isset($options['parallel'])) {
             $requestOptions['parallel'] = $options['parallel'];
@@ -91,8 +92,12 @@ abstract class AbstractClient implements ServiceClientInterface
 
         // Create an iterator that yields requests from commands and send all
         $this->client->sendAll(
-            new CommandToRequestIterator($commands, $this, $options),
-            $this->preventCommandExceptions($requestOptions)
+            new CommandToRequestIterator(
+                $commands,
+                $this,
+                $this->preventCommandExceptions($options)
+            ),
+            $requestOptions
         );
     }
 
@@ -182,15 +187,11 @@ abstract class AbstractClient implements ServiceClientInterface
     private function preventCommandExceptions(array $options)
     {
         // Prevent CommandExceptions from being thrown
-        return RequestEvents::convertEventArray(
-            $options,
-            ['error'],
-            [
-                'priority' => RequestEvents::LATE,
-                'fn'       => function (ErrorEvent $e) {
-                        $e->stopPropagation();
-                    }
-            ]
-        );
+        return RequestEvents::convertEventArray($options, ['error'], [
+            'priority' => RequestEvents::LATE,
+            'fn' => function (CommandErrorEvent $e) {
+                $e->stopPropagation();
+            }
+        ]);
     }
 }
