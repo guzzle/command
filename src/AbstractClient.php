@@ -3,12 +3,14 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Collection;
+use GuzzleHttp\Command\Exception\CommandException;
+use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Event\RequestEvents;
-use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * Abstract client implementation that provides a basic implementation of
@@ -48,9 +50,11 @@ abstract class AbstractClient implements ServiceClientInterface
         if (!isset($config['defaults'])) {
             $config['defaults'] = [];
         }
+
         if (isset($config['emitter'])) {
             $this->emitter = $config['emitter'];
         }
+
         $this->config = new Collection($config);
     }
 
@@ -63,34 +67,24 @@ abstract class AbstractClient implements ServiceClientInterface
 
     public function execute(CommandInterface $command)
     {
-        try {
-            $event = CommandEvents::prepare($command, $this);
-            // Listeners can intercept the event and inject a result. If that
-            // happened, then we must not emit further events and just
-            // return the result.
-            if (null !== ($result = $event->getResult())) {
-                return $result;
-            }
-            $request = $event->getRequest();
-            // Send the request and get the response that is used in the
-            // complete event.
-            $response = $this->client->send($request);
-            // Emit the process event for the command and return the result
-            return CommandEvents::process($command, $this, $request, $response);
-        } catch (CommandException $e) {
-            // Let command exceptions pass through untouched
-            throw $e;
-        } catch (\Exception $e) {
-            // Wrap any other exception in a CommandException so that exceptions
-            // thrown from the client are consistent and predictable.
-            $msg = 'Error executing command: ' . $e->getMessage();
-            throw new CommandException($msg, $this, $command, null, null, $e);
+        $t = new CommandTransaction($this, $command);
+        CommandEvents::prepare($t);
+        // Listeners can intercept the event and inject a result. If that
+        // happened, then we must not emit further events and just
+        // return the result.
+        if (null !== ($result = $t->getResult())) {
+            return $result;
         }
+        $t->setResponse($this->client->send($t->getRequest()));
+        CommandEvents::process($t);
+
+        return $t->getResult();
     }
 
     public function executeAll($commands, array $options = [])
     {
         $requestOptions = [];
+
         // Move all of the options over that affect the request transfer
         if (isset($options['parallel'])) {
             $requestOptions['parallel'] = $options['parallel'];
@@ -98,7 +92,11 @@ abstract class AbstractClient implements ServiceClientInterface
 
         // Create an iterator that yields requests from commands and send all
         $this->client->sendAll(
-            new CommandToRequestIterator($commands, $this, $options),
+            new CommandToRequestIterator(
+                $commands,
+                $this,
+                $this->preventCommandExceptions($options)
+            ),
             $requestOptions
         );
     }
@@ -110,29 +108,31 @@ abstract class AbstractClient implements ServiceClientInterface
             $hash->attach($command);
         }
 
-        $this->executeAll(
-            $commands,
-            RequestEvents::convertEventArray(
-                $options,
-                ['process', 'error'],
-                [
-                    'priority' => RequestEvents::EARLY,
-                    'once'     => true,
-                    'fn'       => function ($e) use ($hash) {
-                        $hash[$e->getCommand()] = $e;
-                    }
-                ]
-            )
+        $options = RequestEvents::convertEventArray(
+            $options,
+            ['process', 'error'],
+            [
+                'priority' => RequestEvents::EARLY,
+                'once'     => true,
+                'fn'       => function ($e) use ($hash) {
+                    $hash[$e->getCommand()] = $e;
+                }
+            ]
         );
+
+        $this->executeAll($commands, $options);
 
         // Update the received value for any of the intercepted commands.
         foreach ($hash as $request) {
             if ($hash[$request] instanceof ProcessEvent) {
                 $hash[$request] = $hash[$request]->getResult();
             } elseif ($hash[$request] instanceof CommandErrorEvent) {
-                $hash[$request] = $hash[$request]
-                    ->getRequestErrorEvent()
-                    ->getException();
+                $trans = $hash[$request]->getTransaction();
+                $hash[$request] = new CommandException(
+                    'Error executing command',
+                    $trans,
+                    $trans->getException()
+                );
             }
         }
 
@@ -160,5 +160,38 @@ abstract class AbstractClient implements ServiceClientInterface
     public function setConfig($keyOrPath, $value)
     {
         $this->config->setPath($keyOrPath, $value);
+    }
+
+    public function createCommandException(
+        CommandTransaction $transaction,
+        RequestException $previous
+    ) {
+        $cn = 'GuzzleHttp\\Command\\Exception\\CommandException';
+
+        if ($response = $transaction->getResponse()) {
+            $statusCode = (string) $response->getStatusCode();
+            if ($statusCode[0] == '4') {
+                $cn = 'GuzzleHttp\\Command\\Exception\\CommandClientException';
+            } elseif ($statusCode[0] == '5') {
+                $cn = 'GuzzleHttp\\Command\\Exception\\CommandServerException';
+            }
+        }
+
+        return new $cn(
+            "Error executing command: " . $previous->getMessage(),
+            $transaction,
+            $previous
+        );
+    }
+
+    private function preventCommandExceptions(array $options)
+    {
+        // Prevent CommandExceptions from being thrown
+        return RequestEvents::convertEventArray($options, ['error'], [
+            'priority' => RequestEvents::LATE,
+            'fn' => function (CommandErrorEvent $e) {
+                $e->stopPropagation();
+            }
+        ]);
     }
 }

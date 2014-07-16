@@ -2,19 +2,12 @@
 namespace GuzzleHttp\Command\Event;
 
 use GuzzleHttp\Command\CanceledResponse;
+use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Event\ErrorEvent;
-use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Event\RequestEvents;
-use GuzzleHttp\Message\RequestInterface;
-use GuzzleHttp\Message\ResponseInterface;
-use GuzzleHttp\Command\CommandInterface;
-use GuzzleHttp\Command\ServiceClientInterface;
 
 /**
  * Wraps HTTP lifecycle events with command lifecycle events.
- *
- * This class uses __request and __exception command config options to manage
- * the state of a command.
  */
 class CommandEvents
 {
@@ -25,101 +18,99 @@ class CommandEvents
      * event system up to the request's event system, and returning the
      * prepared request.
      *
-     * @param CommandInterface       $command Command to prepare
-     * @param ServiceClientInterface $client  Client that executes the command
-     *
-     * @return PrepareEvent returns the PrepareEvent. You can use this to see
-     *     if the event was intercepted with a result, or to grab the request
-     *     that was prepared for the event.
-     *
+     * @param CommandTransaction $trans Command execution context
      * @throws \RuntimeException
      */
-    public static function prepare(
-        CommandInterface $command,
-        ServiceClientInterface $client
-    ) {
-        $ev = new PrepareEvent($command, $client);
-        $command->getEmitter()->emit('prepare', $ev);
-        $req = $ev->getRequest();
-        $stopped = $ev->isPropagationStopped();
+    public static function prepare(CommandTransaction $trans)
+    {
+        try {
+            $ev = new PrepareEvent($trans);
+            $trans->getCommand()->getEmitter()->emit('prepare', $ev);
+        } catch (\Exception $e) {
+            self::emitError($trans, $e);
+            return;
+        }
 
-        if (!$req && !$stopped) {
+        if ($ev->isPropagationStopped()) {
+            // Event was intercepted with a result, so emit process
+            self::process($trans);
+        } elseif ($trans->getRequest()) {
+            self::injectErrorHandler($trans);
+        } else {
             throw new \RuntimeException('No request was prepared for the'
-                . ' command and no result was added to intercept the event. One'
-                . ' of the listeners must set a request in the prepare event.');
+                . ' command and no result was added to intercept the event.'
+                . ' One of the listeners must set a request in the prepare'
+                . ' event.');
         }
-
-        if ($stopped) {
-            // Event was intercepted with a result, so emit the process event.
-            self::process($command, $client, $req, null, $ev->getResult());
-        } elseif ($req) {
-            self::injectErrorHandler($command, $client, $req);
-        }
-
-        return $ev;
     }
 
     /**
      * Handles the processing workflow of a command after it has been sent.
      *
-     * @param CommandInterface       $command  Command that was executed
-     * @param ServiceClientInterface $client   Client that sent the command
-     * @param RequestInterface       $request  Request that was sent
-     * @param ResponseInterface      $response Response that was received
-     * @param mixed                  $result   Specify the result if available
-     *
-     * @return mixed|null Returns the result of the command
-     * @throws \GuzzleHttp\Command\Exception\CommandException
+     * @param CommandTransaction $trans Command execution context
+     * @throws \Exception
      */
-    public static function process(
-        CommandInterface $command,
-        ServiceClientInterface $client,
-        RequestInterface $request = null,
-        ResponseInterface $response = null,
-        $result = null
-    ) {
-        $config = $command->getConfig();
-
-        // Handle when an error event is intercepted before sending a request.
-        if (isset($config['__result'])) {
-            $result = $config['__result'];
-            unset($config['__result']);
-        } elseif (isset($config['__exception'])) {
-            // Throw if an exception occurred while transferring the command.
-            $e = $config['__exception'];
-            unset($config['__exception']);
+    public static function process(CommandTransaction $trans)
+    {
+        // Throw if an exception occurred while sending the request
+        if ($e = $trans->getException()) {
+            $trans->setException(null);
             throw $e;
         }
 
-        $e = new ProcessEvent($command, $client, $request, $response, $result);
-        $command->getEmitter()->emit('process', $e);
+        try {
+            $trans->getCommand()->getEmitter()->emit(
+                'process',
+                new ProcessEvent($trans)
+            );
+        } catch (\Exception $e) {
+            self::emitError($trans, $e);
+        }
+    }
 
-        return $e->getResult();
+    /**
+     * Emits an error event for the command.
+     *
+     * @param CommandTransaction $trans Command execution context
+     * @param \Exception         $e     Exception encountered
+     * @throws \Exception
+     */
+    public static function emitError(
+        CommandTransaction $trans,
+        \Exception $e
+    ) {
+        $trans->setException($e);
+
+        // If this exception has already emitted, then throw it now.
+        if (isset($e->_emittedError)) {
+            throw $e;
+        }
+
+        $e->_emittedError = true;
+        $event = new CommandErrorEvent($trans);
+        $trans->getCommand()->getEmitter()->emit('error', $event);
+
+        if (!$event->isPropagationStopped()) {
+            throw $e;
+        }
     }
 
     /**
      * Wrap HTTP level errors with command level errors.
      */
-    private static function injectErrorHandler(
-        CommandInterface $command,
-        ServiceClientInterface $client,
-        RequestInterface $request
-    ) {
-        $request->getEmitter()->on(
+    private static function injectErrorHandler(CommandTransaction $trans)
+    {
+        $trans->getRequest()->getEmitter()->on(
             'error',
-            function (ErrorEvent $re) use ($command, $client) {
+            function (ErrorEvent $re) use ($trans) {
                 $re->stopPropagation();
-                $ce = new CommandErrorEvent($command, $client, $re);
-                $command->getEmitter()->emit('error', $ce);
-                if (!$ce->isPropagationStopped()) {
-                    self::addCommandException($command, $client, $ce, $re);
-                } else {
-                    $command->getConfig()['__result'] = $ce->getResult();
-                    // Add a canceled response to prevent an adapter from
-                    // sending a request if no response was received.
-                    if (!$re->getResponse()) {
-                        self::stopRequestError($re);
-                    }
+                $cex = self::exceptionFromError($trans, $re);
+                $trans->setException($cex);
+                $cev = new CommandErrorEvent($trans, $cex);
+                $trans->getCommand()->getEmitter()->emit('error', $cev);
+
+                if ($cev->isPropagationStopped()) {
+                    $trans->setException(null);
                 }
             },
             RequestEvents::LATE
@@ -127,46 +118,32 @@ class CommandEvents
     }
 
     /**
-     * Associate an exception with a command so that it can be thrown later.
+     * Create a CommandException from a request error event.
+     * @param CommandTransaction $trans
+     * @param ErrorEvent         $re
+     * @return \Exception
      */
-    private static function addCommandException(
-        CommandInterface $command,
-        ServiceClientInterface $client,
-        CommandErrorEvent $ce,
+    private static function exceptionFromError(
+        CommandTransaction $trans,
         ErrorEvent $re
     ) {
-        $className = 'GuzzleHttp\\Command\\Exception\\CommandException';
-
-        // Throw a specific exception for client and server errors.
-        $response = $re->getResponse();
-        if (!$response) {
-            self::stopRequestError($re);
+        if ($response = $re->getResponse()) {
+            $trans->setResponse($response);
         } else {
-            $statusCode = (string) $response->getStatusCode();
-            if ($statusCode[0] == '4') {
-                $className = 'GuzzleHttp\\Command\\Exception\\CommandClientException';
-            } elseif ($statusCode[0] == '5') {
-                $className = 'GuzzleHttp\\Command\\Exception\\CommandServerException';
-            }
+            self::stopRequestError($re);
         }
 
-        // Add the exception to the command and allow the request lifecycle to
-        // complete successfully.
-        $previous = $re->getException();
-        $command->getConfig()['__exception'] = new $className(
-            "Error executing command: " . $previous->getMessage(),
-            $client,
-            $command,
-            $re->getRequest(),
-            $response,
-            $previous,
-            $ce->toArray()
+        return $trans->getClient()->createCommandException(
+            $trans,
+            $re->getException()
         );
     }
 
     /**
-     * Prevent a request from sending an intercept it's complete event. This
-     * method is required when a request fails before sending.
+     * Prevent a request from sending and intercept it's complete event.
+     *
+     * This method is required when a request fails before sending to prevent
+     * adapters from still transferring the request over the wire.
      */
     private static function stopRequestError(ErrorEvent $e)
     {

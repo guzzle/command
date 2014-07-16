@@ -3,7 +3,7 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Event\HasEmitterInterface;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Command\Exception\CommandException;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * Web service client interface.
@@ -21,7 +21,7 @@ interface ServiceClientInterface extends HasEmitterInterface
      *
      * @param string $name      Name of the command
      * @param array  $arguments Arguments to pass to the command.
-     * @throws CommandException
+     * @throws \Exception
      */
     public function __call($name, array $arguments);
 
@@ -42,7 +42,7 @@ interface ServiceClientInterface extends HasEmitterInterface
      * @param CommandInterface $command Command to execute
      *
      * @return mixed Returns the result of the executed command
-     * @throws CommandException
+     * @throws \Exception
      */
     public function execute(CommandInterface $command);
 
@@ -76,8 +76,9 @@ interface ServiceClientInterface extends HasEmitterInterface
      *                                  in {@see ClientInterface::executeAll()}
      *
      * @return \SplObjectStorage Commands are the key and each value is the
-     *     result of the command or a {@see GuzzleHttp\Command\CommandException}
-     *     if a command failed.
+     *     result of the command on success or an instance of
+     *     {@see GuzzleHttp\Command\Exception\CommandException} if a failure
+     *     occurs while executing the command.
      * @throws \InvalidArgumentException if the event format is incorrect.
      */
     public function batch($commands, array $options = []);
@@ -110,4 +111,21 @@ interface ServiceClientInterface extends HasEmitterInterface
      * @param mixed $value Value to set
      */
     public function setConfig($keyOrPath, $value);
+
+    /**
+     * Create an exception for a command based on a request exception.
+     *
+     * This method is invoked when an exception occurs while transferring an
+     * HTTP request for a specific command. This method MUST return an instance
+     * of \Exception that will be thrown for the given command.
+     *
+     * @param CommandTransaction $transaction Command transaction context
+     * @param RequestException   $previous    Request exception encountered
+     *
+     * @return \Exception
+     */
+    public function createCommandException(
+        CommandTransaction $transaction,
+        RequestException $previous
+    );
 }

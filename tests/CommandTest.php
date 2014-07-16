@@ -19,10 +19,6 @@ class CommandTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($c->hasParam('baz'));
         $this->assertFalse($c->hasParam('boo'));
         $this->assertEquals('foo', $c->getName());
-        $config = $c->getConfig();
-        $this->assertInstanceOf('GuzzleHttp\\Collection', $config);
-        $this->assertSame($config, $c->getConfig());
-        $this->assertEquals(['baz' => 'bar'], $c->toArray());
     }
 
     public function testCanUseCustomEmitter()

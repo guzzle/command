@@ -29,13 +29,6 @@ interface CommandInterface extends
     public function getName();
 
     /**
-     * Get transport and plugin specific configuration settings of the command.
-     *
-     * @returns \GuzzleHttp\Collection
-     */
-    public function getConfig();
-
-    /**
      * Check if the command has a parameter by name.
      *
      * @param string $name Name of the parameter to check

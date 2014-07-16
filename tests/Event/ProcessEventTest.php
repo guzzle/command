@@ -2,6 +2,7 @@
 namespace GuzzleHttp\Tests\Command\Event;
 
 use GuzzleHttp\Command\Event\ProcessEvent;
+use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 
@@ -15,14 +16,17 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
+        $trans = new CommandTransaction($client, $command);
         $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
-        $result = null;
-        $event = new ProcessEvent($command, $client, $request, $response);
+        $trans->setRequest($request);
+        $trans->setResponse($response);
+        $event = new ProcessEvent($trans);
         $this->assertSame($command, $event->getCommand());
         $this->assertSame($client, $event->getClient());
         $this->assertSame($request, $event->getRequest());
         $this->assertSame($response, $event->getResponse());
+        $this->assertSame($trans, $event->getTransaction());
         $this->assertNull($event->getResult());
     }
 
@@ -30,12 +34,12 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request = new Request('GET', 'http://httbin.org');
-        $response = new Response(200);
+        $trans = new CommandTransaction($client, $command);
         $result = null;
-        $event = new ProcessEvent($command, $client, $request, $response);
+        $event = new ProcessEvent($trans);
         $event->setResult('foo');
         $this->assertSame('foo', $event->getResult());
+        $this->assertSame('foo', $trans->getResult());
         $this->assertFalse($event->isPropagationStopped());
     }
 
@@ -43,9 +47,9 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request = new Request('GET', 'http://httbin.org');
-        $response = new Response(200);
-        $event = new ProcessEvent($command, $client, $request, $response, 'hi');
-        $this->assertSame('hi', $event->getResult());
+        $trans = new CommandTransaction($client, $command);
+        $trans->setResult('foo');
+        $event = new ProcessEvent($trans);
+        $this->assertSame('foo', $event->getResult());
     }
 }

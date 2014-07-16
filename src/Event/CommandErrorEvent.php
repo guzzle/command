@@ -1,11 +1,8 @@
 <?php
 namespace GuzzleHttp\Command\Event;
 
-use GuzzleHttp\Event\ErrorEvent;
-use GuzzleHttp\Command\CommandInterface;
-use GuzzleHttp\Command\ServiceClientInterface;
-use GuzzleHttp\HasDataTrait;
-use GuzzleHttp\ToArrayInterface;
+use GuzzleHttp\Command\CommandTransaction;
+use GuzzleHttp\Message\ResponseInterface;
 
 /**
  * Event emitted when an error occurs while transferring a request for a
@@ -14,41 +11,35 @@ use GuzzleHttp\ToArrayInterface;
  * Event listeners can inject a result onto the event to intercept the
  * exception with a successful result.
  */
-class CommandErrorEvent extends AbstractCommandEvent implements
-    ToArrayInterface,
-    \Countable,
-    \ArrayAccess,
-    \IteratorAggregate
+class CommandErrorEvent extends AbstractCommandEvent
 {
-    use HasDataTrait;
-
-    /** @var ErrorEvent */
-    private $errorEvent;
-
     /**
-     * @param CommandInterface       $command Command of the event
-     * @param ServiceClientInterface $client  Client that sent the command
-     * @param ErrorEvent             $e       Error event that was encountered
+     * @param CommandTransaction $trans Command transfer context
      */
-    public function __construct(
-        CommandInterface $command,
-        ServiceClientInterface $client,
-        ErrorEvent $e
-    ) {
-        $this->command = $command;
-        $this->client = $client;
-        $this->errorEvent = $e;
-        $this->request = $e->getRequest();
+    public function __construct(CommandTransaction $trans)
+    {
+        $this->trans = $trans;
     }
 
     /**
-     * Get the request error event that occurred
+     * Returns the exception that was encountered.
      *
-     * @return ErrorEvent
+     * @return \Exception
      */
-    public function getRequestErrorEvent()
+    public function getException()
     {
-        return $this->errorEvent;
+        return $this->trans->getException();
+    }
+
+    /**
+     * Retrieves the HTTP response that was received for the command
+     * (if available).
+     *
+     * @return ResponseInterface|null
+     */
+    public function getResponse()
+    {
+        return $this->trans->getResponse();
     }
 
     /**
@@ -58,7 +49,7 @@ class CommandErrorEvent extends AbstractCommandEvent implements
      */
     public function setResult($result)
     {
-        $this->result = $result;
+        $this->trans->setResult($result);
         $this->stopPropagation();
     }
 }

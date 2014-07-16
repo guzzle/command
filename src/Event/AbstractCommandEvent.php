@@ -5,20 +5,13 @@ use GuzzleHttp\Event\AbstractEvent;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\ServiceClientInterface;
+use GuzzleHttp\Command\CommandTransaction;
+use GuzzleHttp\Collection;
 
 class AbstractCommandEvent extends AbstractEvent
 {
-    /** @var CommandInterface */
-    protected $command;
-
-    /** @var RequestInterface */
-    protected $request;
-
-    /** @var mixed|null */
-    protected $result;
-
-    /** @var ServiceClientInterface */
-    protected $client;
+    /** @var CommandTransaction */
+    protected $trans;
 
     /**
      * Get the command associated with the event
@@ -27,7 +20,7 @@ class AbstractCommandEvent extends AbstractEvent
      */
     public function getCommand()
     {
-        return $this->command;
+        return $this->trans->getCommand();
     }
 
     /**
@@ -37,7 +30,7 @@ class AbstractCommandEvent extends AbstractEvent
      */
     public function getRequest()
     {
-        return $this->request;
+        return $this->trans->getRequest();
     }
 
     /**
@@ -47,7 +40,7 @@ class AbstractCommandEvent extends AbstractEvent
      */
     public function getResult()
     {
-        return $this->result;
+        return $this->trans->getResult();
     }
 
     /**
@@ -57,6 +50,30 @@ class AbstractCommandEvent extends AbstractEvent
      */
     public function getClient()
     {
-        return $this->client;
+        return $this->trans->getClient();
+    }
+
+    /**
+     * Get context associated with the command transfer.
+     *
+     * The return value is a Guzzle collection object which can be accessed and
+     * mutated like a PHP associative array. You can add arbitrary data to the
+     * context for application specific purposes.
+     *
+     * @return Collection
+     */
+    public function getContext()
+    {
+        return $this->trans->getContext();
+    }
+
+    /**
+     * Gets the transaction associated with the event
+     *
+     * @return CommandTransaction
+     */
+    public function getTransaction()
+    {
+        return $this->trans;
     }
 }

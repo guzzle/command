@@ -79,28 +79,6 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('foo', $mock->foo());
     }
 
-    /**
-     * @expectedException \GuzzleHttp\Command\Exception\CommandException
-     */
-    public function testPassesCommandExceptionsThrough()
-    {
-        $client = new Client();
-        $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
-            ->setConstructorArgs([$client, []])
-            ->setMethods(['getCommand'])
-            ->getMock();
-        $command = new Command('foo');
-        $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
-            throw new CommandException(
-                'foo',
-                $event->getClient(),
-                $event->getCommand(),
-                $event->getRequest()
-            );
-        }, 1);
-        $mock->execute($command);
-    }
-
     public function testDoesNotWrapExceptionsMoreThanOnce()
     {
         $client = new Client();
@@ -136,7 +114,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         }
     }
 
-    public function testWrapsNonCommandExceptions()
+    public function testDoesNotWrapNonCommandExceptions()
     {
         $client = new Client();
         $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
@@ -150,9 +128,9 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         try {
             $mock->execute($command);
             $this->fail('Did not throw');
-        } catch (CommandException $e) {
-            $this->assertSame($e->getPrevious(), $e1);
-            $this->assertEquals(2, $this->getWrapCount($e));
+        } catch (\Exception $e) {
+            $this->assertSame($e, $e1);
+            $this->assertEquals(1, $this->getWrapCount($e));
         }
     }
 
@@ -244,10 +222,16 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
             }
         );
 
-        $hash = $mock->batch([$command1, $command2]);
-        $this->assertCount(2, $hash);
+        $command3 = new Command('foo');
+        $command3->getEmitter()->on('prepare', function () {
+            throw new \Exception('foo');
+        });
+
+        $hash = $mock->batch([$command1, $command2, $command3]);
+        $this->assertCount(3, $hash);
         $this->assertEquals('foo', $hash[$command1]);
         $this->assertEquals('bar', $hash[$command2]);
+        $this->assertEquals('foo', $hash[$command3]->getPrevious()->getMessage());
     }
 
     public function testCanInjectEmitter()

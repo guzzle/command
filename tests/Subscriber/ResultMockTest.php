@@ -1,11 +1,10 @@
 <?php
-
 namespace GuzzleHttp\Tests\Subscriber;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
+use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Command\Event\PrepareEvent;
-use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Model;
 use GuzzleHttp\Command\Subscriber\ResultMock;
 
@@ -22,10 +21,9 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
 
     public function testIsCountable()
     {
-        $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
         $plugin = (new ResultMock)->addMultiple([
             new Model([]),
-            new CommandException('foo', $client, new Command('foo')),
+            new \Exception('foo'),
         ]);
         $this->assertEquals(2, count($plugin));
     }
@@ -38,42 +36,38 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, count($plugin));
     }
 
-    /**
-     * @expectedException \InvalidArgumentException
-     */
-    public function testThrowsExceptionWhenInvalidExceptionMessage()
-    {
-        (new ResultMock())->addExceptionMessage(5);
-    }
-
     public function testCanMockCommandResults()
     {
         $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([new Client])
             ->getMockForAbstractClass();
 
+        $trans = new CommandTransaction($client, new Command('foo'));
+        $e1 = new \Exception('Foo');
+        $e2 = new \Exception('Bar');
+
         $plugin = (new ResultMock)
             ->addResult(new Model(['foo' => 'bar']))
-            ->addException(new CommandException('A', $client, new Command('foo')))
-            ->addExceptionMessage('B');
+            ->addException($e1)
+            ->addException($e2);
 
         // 1. The Model object
-        $event = new PrepareEvent(new Command('foo'), $client);
+        $event = new PrepareEvent($trans);
         $plugin->onPrepare($event);
         $this->assertInstanceOf('GuzzleHttp\Command\Model', $event->getResult());
 
-        // 2. The Exception with "A"
+        // 2. The Exception with "Foo"
         try {
-            $plugin->onPrepare(new PrepareEvent(new Command('foo'), $client));
-        } catch (CommandException $e) {
-            $this->assertEquals('A', $e->getMessage());
+            $plugin->onPrepare(new PrepareEvent($trans));
+        } catch (\Exception $e) {
+            $this->assertEquals('Foo', $e->getMessage());
         }
 
-        // 2. The Exception with "B"
+        // 2. The Exception with "Bar"
         try {
-            $plugin->onPrepare(new PrepareEvent(new Command('foo'), $client));
-        } catch (CommandException $e) {
-            $this->assertEquals('B', $e->getMessage());
+            $plugin->onPrepare(new PrepareEvent($trans));
+        } catch (\Exception $e) {
+            $this->assertEquals('Bar', $e->getMessage());
         }
     }
 
@@ -85,7 +79,9 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
         $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([new Client])
             ->getMockForAbstractClass();
-        $event = new PrepareEvent(new Command('foo'), $client);
+        $event = new PrepareEvent(
+            new CommandTransaction($client, new Command('foo'))
+        );
         (new ResultMock)->onPrepare($event);
     }
 }

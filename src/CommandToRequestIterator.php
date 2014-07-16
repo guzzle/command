@@ -1,10 +1,8 @@
 <?php
 namespace GuzzleHttp\Command;
 
-use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Command\Event\CommandEvents;
-use GuzzleHttp\Event\CompleteEvent;
 use GuzzleHttp\Event\ListenerAttacherTrait;
 
 /**
@@ -106,16 +104,18 @@ class CommandToRequestIterator implements \Iterator
                 . ' Encountered a ' . gettype($command) . ' value.');
         }
 
-        $event = $this->prepare($command);
+        $trans = new CommandTransaction($this->client, $command);
+        $this->prepare($trans);
 
-        // Handle the command being intercepted with a result by going to the
-        // next command and returning it's validity
-        if ($event->getResult() !== null) {
+        // Handle the command being intercepted with a result or failing by
+        // not generating a request by going to the next command and returning
+        // it's validity
+        if ($trans->getResult() !== null || !$trans->getRequest()) {
             $this->commands->next();
             return $this->valid();
         }
 
-        $this->processCurrentRequest($event);
+        $this->processCurrentRequest($trans);
 
         return true;
     }
@@ -131,40 +131,29 @@ class CommandToRequestIterator implements \Iterator
 
     /**
      * Prepare a command using the provided options.
-     *
-     * @param CommandInterface $command Command to prepare
-     *
-     * @return PrepareEvent
      */
-    private function prepare(CommandInterface $command)
+    private function prepare(CommandTransaction $trans)
     {
-        $this->attachListeners($command, $this->eventListeners);
-
-        return CommandEvents::prepare($command, $this->client);
+        $this->attachListeners($trans->getCommand(), $this->eventListeners);
+        CommandEvents::prepare($trans);
     }
 
     /**
      * Set the current request of the iterator and hook the request's event
      * system up to the command's event system.
-     *
-     * @param PrepareEvent $event Event invoked that prepared a request
      */
-    private function processCurrentRequest(PrepareEvent $event)
+    private function processCurrentRequest(CommandTransaction $trans)
     {
-        $command = $event->getCommand();
-        $this->currentRequest = $event->getRequest();
+        $this->currentRequest = $trans->getRequest();
 
-        // Emit the command's process event when the request completes
-        $this->currentRequest->getEmitter()->on(
-            'complete',
-            function (CompleteEvent $event) use ($command) {
-                CommandEvents::process(
-                    $command,
-                    $this->client,
-                    $event->getRequest(),
-                    $event->getResponse()
-                );
-            }
-        );
+        if ($this->currentRequest) {
+            // Emit the command's process event when the request completes
+            $this->currentRequest->getEmitter()->on(
+                'complete',
+                function () use ($trans) {
+                    CommandEvents::process($trans);
+                }
+            );
+        }
     }
 }
