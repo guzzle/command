@@ -7,10 +7,12 @@ use GuzzleHttp\Command\CommandToRequestIterator;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\Event\PrepareEvent;
+use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Event\CompleteEvent;
 use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Message\Request;
+use GuzzleHttp\Message\Response;
 
 /**
  * @covers \GuzzleHttp\Command\CommandToRequestIterator
@@ -104,7 +106,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $request = new Request('GET', 'http://httbin.org');
         $command = new Command('foo');
-        $calledPrepare = $calledProcess = $calledError = false;
+        $calledPrepare = $calledProcess = $calledError = $responseSet = false;
         $commands = [$command];
 
         $i = new CommandToRequestIterator($commands, $client, [
@@ -112,8 +114,9 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
                 $calledPrepare = true;
                 $event->setRequest($request);
             },
-            'process' => function () use (&$calledProcess) {
+            'process' => function (ProcessEvent $event) use (&$calledProcess, &$responseSet) {
                 $calledProcess = true;
+                $responseSet = $event->getResponse() instanceof Response;
             },
             'error' => function (CommandErrorEvent $event) use (&$calledError) {
                 $calledError = true;
@@ -125,8 +128,10 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($calledPrepare);
         $this->assertFalse($calledProcess);
         $this->assertFalse($calledError);
+        $this->assertFalse($responseSet);
 
         $transaction = new Transaction(new Client(), $request);
+        $transaction->setResponse(new Response(200));
         $mockComplete = new CompleteEvent($transaction);
         $request->getEmitter()->emit('complete', $mockComplete);
         $this->assertTrue($calledProcess);
