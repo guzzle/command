@@ -1,6 +1,7 @@
 <?php
 namespace GuzzleHttp\Command;
 
+use GuzzleHttp\Event\CompleteEvent;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Event\ListenerAttacherTrait;
@@ -150,7 +151,8 @@ class CommandToRequestIterator implements \Iterator
             // Emit the command's process event when the request completes
             $this->currentRequest->getEmitter()->on(
                 'complete',
-                function () use ($trans) {
+                function (CompleteEvent $event) use ($trans) {
+                    $trans->setResponse($event->getResponse());
                     CommandEvents::process($trans);
                 }
             );
