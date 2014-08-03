@@ -104,9 +104,8 @@ class CommandEvents
             'error',
             function (ErrorEvent $re) use ($trans) {
                 $re->stopPropagation();
-                $cex = self::exceptionFromError($trans, $re);
-                $trans->setException($cex);
-                $cev = new CommandErrorEvent($trans, $cex);
+                $trans->setException(self::exceptionFromError($trans, $re));
+                $cev = new CommandErrorEvent($trans);
                 $trans->getCommand()->getEmitter()->emit('error', $cev);
 
                 if ($cev->isPropagationStopped()) {
