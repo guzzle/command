@@ -7,6 +7,7 @@ use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Subscriber\Debug;
 use GuzzleHttp\Message\Response;
+use GuzzleHttp\Stream\Stream;
 use GuzzleHttp\Subscriber\Mock;
 
 /**
@@ -26,7 +27,10 @@ class DebugTest extends \PHPUnit_Framework_TestCase
         $http->getEmitter()->attach(new Mock([
             new Response(200, ['foo' => 'bar'])
         ]));
-        $command = new Command('CmdName', ['arg' => 'value']);
+        $command = new Command('CmdName', [
+            'arg' => 'value',
+            'foo' => Stream::factory('foo')
+        ]);
         $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$http])
             ->getMockForAbstractClass();
@@ -51,18 +55,17 @@ class DebugTest extends \PHPUnit_Framework_TestCase
         $client->execute($command);
         rewind($res);
         $out = stream_get_contents($res);
+
         $checks = [
-            'Starting command >',
-            'Starting the command:before event: ',
-            'Done with the command:before event (took ',
-            'Starting the request:before event: ',
-            'Done with the request:before event',
-            'Starting the request:complete event:',
-            'Done with the request:complete event',
-            'Starting the command:process event',
-            'Done with the command:process event',
-            'Sending the following command took',
-            'End command      <'
+            'Starting the command:prepare event for ',
+            'Done with the command:prepare event for ',
+            '(took ',
+            'Starting the request:before event for ',
+            'Done with the request:before event for ',
+            'Starting the request:complete event for ',
+            'Done with the request:complete event for ',
+            'Starting the command:process event for ',
+            'Done with the command:process event for ',
         ];
 
         foreach ($checks as $check) {
