@@ -3,12 +3,9 @@ namespace GuzzleHttp\Tests\Subscriber;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
-use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
-use GuzzleHttp\Command\Model;
 use GuzzleHttp\Command\Subscriber\Debug;
-use GuzzleHttp\Command\Subscriber\ResultMock;
 use GuzzleHttp\Message\Response;
 use GuzzleHttp\Subscriber\Mock;
 
