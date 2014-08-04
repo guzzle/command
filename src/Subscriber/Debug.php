@@ -313,7 +313,7 @@ class Debug implements SubscriberInterface
     {
         return !$msg ? null : [
             'start-line' => AbstractMessage::getStartLine($msg),
-            'headers'    => $msg->getHeaders(),
+            'headers'    => AbstractMessage::getHeadersAsString($msg),
             'body'       => $this->streamState($msg->getBody())
         ];
     }
