@@ -195,19 +195,21 @@ class Debug implements SubscriberInterface
     public function proxyEvent($name, EventInterface $e)
     {
         $meth = substr(debug_backtrace()[1]['function'], 0, 6) == 'before'
-            ? 'startEvent' : 'endEvent';
+            ? 'startEvent'
+            : 'endEvent';
 
-        $args = [
-            $name,
-            $this->hashCommand($e->getClient(), $e->getCommand(), $e),
-            $e->getCommand(),
-            $e->getRequest()
-        ];
-
-        $args[] = method_exists($e, 'getResponse') ? $e->getResponse() : null;
-        $args[] = method_exists($e, 'getResult') ? $e->getResult() : null;
-        $args[] = method_exists($e, 'getException') ? $e->getException() : null;
-        call_user_func_array([$this, $meth], $args);
+        call_user_func_array(
+            [$this, $meth],
+            [
+                $name,
+                $this->hashCommand($e->getClient(), $e->getCommand(), $e),
+                $e->getCommand(),
+                $e->getRequest(),
+                method_exists($e, 'getResponse') ? $e->getResponse() : null,
+                method_exists($e, 'getResult') ? $e->getResult() : null,
+                method_exists($e, 'getException') ? $e->getException() : null
+            ]
+        );
     }
 
     /**
@@ -309,12 +311,11 @@ class Debug implements SubscriberInterface
      */
     private function messageState(MessageInterface $msg = null)
     {
-        return $msg
-            ? [
-                'start-line' => AbstractMessage::getStartLine($msg),
-                'headers'    => $msg->getHeaders(),
-                'body'       => $this->streamState($msg->getBody())
-            ] : null;
+        return !$msg ? null : [
+            'start-line' => AbstractMessage::getStartLine($msg),
+            'headers'    => $msg->getHeaders(),
+            'body'       => $this->streamState($msg->getBody())
+        ];
     }
 
     /**
@@ -376,13 +377,13 @@ class Debug implements SubscriberInterface
      */
     private function errorState(\Exception $e = null)
     {
-        return $e ? [
+        return !$e ? null : [
             'class'   => get_class($e),
             'message' => $e->getMessage(),
             'line'    => $e->getLine(),
             'file'    => $e->getFile(),
             'code'    => $e->getCode()
-        ] : null;
+        ];
     }
 
     /**
