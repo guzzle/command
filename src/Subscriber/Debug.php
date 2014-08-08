@@ -11,6 +11,7 @@ use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Event\SubscriberInterface;
 use GuzzleHttp\Message\AbstractMessage;
 use GuzzleHttp\Message\MessageInterface;
+use GuzzleHttp\Stream\Stream;
 use GuzzleHttp\Stream\StreamInterface;
 use GuzzleHttp\ToArrayInterface;
 
@@ -22,6 +23,8 @@ use GuzzleHttp\ToArrayInterface;
  */
 class Debug implements SubscriberInterface
 {
+    /** @var \GuzzleHttp\Stream\StreamInterface */
+    private $output;
     private $http;
     private $maxStreamSize;
     private $states;
@@ -30,10 +33,10 @@ class Debug implements SubscriberInterface
     /**
      * The constructor accepts a hash of debug options.
      *
-     * - output: Where debug data is written
+     * - output: Where debug data is written (fopen or StreamInterface)
      * - http: Set to false to not display debug HTTP event data
      * - max_stream_size: Set to an integer to override the default maximum
-     *   stream size of 102400 bytes (or 100 KB). This value determines whether
+     *   stream size of 10240 bytes (or 10 KB). This value determines whether
      *   or not stream data is written to the output stream based on the size
      *   of the stream.
      * - adapter_debug: Set to false to disable turning on the debug adapter
@@ -47,13 +50,14 @@ class Debug implements SubscriberInterface
         $this->output = isset($options['output'])
             ? $options['output']
             : fopen('php://output', 'w');
+        $this->output = Stream::factory($this->output);
         $this->http = isset($options['http']) ? $options['http'] : true;
         $this->adapterDebug = isset($options['adapter_debug'])
             ? $options['adapter_debug']
             : true;
         $this->maxStreamSize = isset($options['max_stream_size'])
             ? $options['max_stream_size']
-            : 102400;
+            : 10240;
     }
 
     public function getEvents()
@@ -76,7 +80,7 @@ class Debug implements SubscriberInterface
 
     private function write($text)
     {
-        fwrite($this->output, date('c') . ': ' . $text . PHP_EOL);
+        $this->output->write(date('c') . ': ' . $text . PHP_EOL);
     }
 
     private function hashCommand(

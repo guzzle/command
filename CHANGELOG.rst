@@ -2,6 +2,12 @@
 Changelog
 =========
 
+0.6.0 (2014-08-08)
+------------------
+
+* Added a Debug subscriber that can be used to trace through the lifecycle of
+  a command and how it is modified in each event.
+
 0.5.0 (2014-08-01)
 ------------------
 
