@@ -14,12 +14,9 @@ use GuzzleHttp\Exception\RequestException;
 interface ServiceClientInterface extends HasEmitterInterface
 {
     /**
-     * Invokes a command by name.
+     * Creates and executes a command for an operation by name.
      *
-     * Implementations may choose to implement other missing method calls as
-     * well as executing commands by name.
-     *
-     * @param string $name      Name of the command
+     * @param string $name      Name of the command to execute.
      * @param array  $arguments Arguments to pass to the command.
      * @throws \Exception
      */
