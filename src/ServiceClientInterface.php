@@ -17,7 +17,7 @@ interface ServiceClientInterface extends HasEmitterInterface
      * Creates and executes a command for an operation by name.
      *
      * @param string $name      Name of the command to execute.
-     * @param array  $arguments Arguments to pass to the command.
+     * @param array  $arguments Arguments to pass to the getCommand method.
      * @throws \Exception
      */
     public function __call($name, array $arguments);
@@ -25,13 +25,15 @@ interface ServiceClientInterface extends HasEmitterInterface
     /**
      * Create a command for an operation name.
      *
-     * @param string $name Name of the operation to use in the command
-     * @param array  $args Arguments to pass to the command
+     * @param string $name   Name of the operation to use in the command
+     * @param array  $args   Arguments to pass to the command
+     * @param bool   $future Set to true to create a non-blocking future result
+     *                       if the underlying HTTP adapter supports it.
      *
      * @return CommandInterface
      * @throws \InvalidArgumentException if no command can be found by name
      */
-    public function getCommand($name, array $args = []);
+    public function getCommand($name, array $args = [], $future = false);
 
     /**
      * Execute a single command.

@@ -9,10 +9,14 @@ use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Exception\CommandException;
+use GuzzleHttp\Command\FutureModel;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Message\FutureResponse;
 use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
+use GuzzleHttp\Ring\Client\MockAdapter;
+use GuzzleHttp\Ring\Future;
 use GuzzleHttp\Subscriber\Mock;
 
 class CommandEventsTest extends \PHPUnit_Framework_TestCase
@@ -192,7 +196,9 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
 
         $g->expects($this->once())
             ->method('getCommand')
-            ->will($this->returnValue(new Command('fooCommand', [], $em)));
+            ->will($this->returnValue(
+                new Command('fooCommand', [], ['emitter' => $em]))
+            );
 
         $command = $g->getCommand('foo');
         $this->assertEquals('foo', $g->execute($command));
@@ -256,5 +262,50 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             $mock->execute($command);
             $this->fail('Did not throw');
         } catch (CommandException $e) {}
+    }
+
+    public function testSendsFutureCommandAsynchronously()
+    {
+        $mockAdapter = new MockAdapter(new Future(function () {
+            return ['status' => 200, 'headers' => [], 'body' => 'foo'];
+        }));
+        $client = new Client(['adapter' => $mockAdapter]);
+        $request = $client->createRequest('GET', 'http://www.foo.com');
+        $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
+            ->setConstructorArgs([$client])
+            ->setMethods(['getCommand'])
+            ->getMockForAbstractClass();
+
+        $em = $g->getEmitter();
+        $em->on('prepare', function (PrepareEvent $e) use ($request) {
+            $e->setRequest($request);
+        });
+
+        $called = 0;
+        $em->on('process', function (ProcessEvent $e) use (&$called) {
+            $called++;
+            $this->assertTrue($e->getResponse() instanceof FutureResponse);
+            $e->setResult(new FutureModel(function () use (&$called) {
+                $called++;
+                return ['foo' => 'bar'];
+            }));
+        }, RequestEvents::EARLY);
+
+        $g->expects($this->once())
+            ->method('getCommand')
+            ->will($this->returnValue(
+                new Command(
+                    'fooCommand',
+                    [],
+                    ['emitter' => $em, 'future' => true]
+                ))
+            );
+
+        $command = $g->getCommand('foo');
+        $result = $g->execute($command);
+        $this->assertEquals(1, $called);
+        $this->assertInstanceOf('GuzzleHttp\Command\FutureModel', $result);
+        $this->assertEquals(['foo' => 'bar'], $result->toArray());
+        $this->assertEquals(2, $called);
     }
 }

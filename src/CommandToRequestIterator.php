@@ -105,6 +105,7 @@ class CommandToRequestIterator implements \Iterator
                 . ' Encountered a ' . gettype($command) . ' value.');
         }
 
+        $command->setFuture(true);
         $trans = new CommandTransaction($this->client, $command);
         $this->prepare($trans);
 

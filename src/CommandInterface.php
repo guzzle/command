@@ -36,4 +36,19 @@ interface CommandInterface extends
      * @return bool
      */
     public function hasParam($name);
+
+    /**
+     * Specify whether or not the command will return a future result if the
+     * underlying adapter supports it.
+     *
+     * @param bool $useFuture Set to true or false.
+     */
+    public function setFuture($useFuture);
+
+    /**
+     * Checks if the command is meant to return a future result.
+     *
+     * @return bool
+     */
+    public function isFuture();
 }

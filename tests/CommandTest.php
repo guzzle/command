@@ -24,7 +24,7 @@ class CommandTest extends \PHPUnit_Framework_TestCase
     public function testCanUseCustomEmitter()
     {
         $emitter = new Emitter();
-        $c = new Command('foo', [], $emitter);
+        $c = new Command('foo', [], ['emitter' => $emitter]);
         $this->assertSame($emitter, $c->getEmitter());
     }
 
