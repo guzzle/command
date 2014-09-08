@@ -1,7 +1,7 @@
 <?php
 namespace GuzzleHttp\Tests\Command;
 
-use GuzzleHttp\Adapter\Transaction;
+use GuzzleHttp\Transaction;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\CommandToRequestIterator;
 use GuzzleHttp\Command\Command;
@@ -131,7 +131,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($responseSet);
 
         $transaction = new Transaction(new Client(), $request);
-        $transaction->setResponse(new Response(200));
+        $transaction->response = new Response(200);
         $mockComplete = new CompleteEvent($transaction);
         $request->getEmitter()->emit('complete', $mockComplete);
         $this->assertTrue($calledProcess);

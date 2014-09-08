@@ -2,7 +2,7 @@
 namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Command\CanceledResponse;
-use GuzzleHttp\Stream;
+use GuzzleHttp\Stream\Stream;
 
 /**
  * @covers \GuzzleHttp\Command\CanceledResponse
@@ -26,14 +26,14 @@ class CanceledResponseTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(null, $c->getBody());
         $this->assertSame([], $c->getHeaders());
         $this->assertSame('', $c->getHeader('foo'));
-        $this->assertSame([], $c->getHeader('foo', true));
+        $this->assertSame([], $c->getHeaderLines('foo'));
         $this->assertSame(false, $c->hasHeader('foo'));
     }
 
     public function immutableProvider()
     {
         return [
-            ['setBody', Stream\create('foo')],
+            ['setBody', Stream::factory('foo')],
             ['removeHeader', 'abc'],
             ['addHeader', 'abc', '123'],
             ['addHeaders', []],

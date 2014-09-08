@@ -36,9 +36,14 @@ class CanceledResponse implements ResponseInterface
         return [];
     }
 
-    public function getHeader($header, $asArray = false)
+    public function getHeader($header)
     {
-        return $asArray ? [] : '';
+        return '';
+    }
+
+    public function getHeaderLines($header)
+    {
+        return [];
     }
 
     public function hasHeader($header)
