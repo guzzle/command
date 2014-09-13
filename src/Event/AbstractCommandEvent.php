@@ -20,7 +20,7 @@ class AbstractCommandEvent extends AbstractEvent
      */
     public function getCommand()
     {
-        return $this->trans->getCommand();
+        return $this->trans->command;
     }
 
     /**
@@ -30,7 +30,7 @@ class AbstractCommandEvent extends AbstractEvent
      */
     public function getRequest()
     {
-        return $this->trans->getRequest();
+        return $this->trans->request;
     }
 
     /**
@@ -40,7 +40,7 @@ class AbstractCommandEvent extends AbstractEvent
      */
     public function getResult()
     {
-        return $this->trans->getResult();
+        return $this->trans->result;
     }
 
     /**
@@ -50,7 +50,7 @@ class AbstractCommandEvent extends AbstractEvent
      */
     public function getClient()
     {
-        return $this->trans->getClient();
+        return $this->trans->client;
     }
 
     /**
@@ -64,7 +64,7 @@ class AbstractCommandEvent extends AbstractEvent
      */
     public function getContext()
     {
-        return $this->trans->getContext();
+        return $this->trans->context;
     }
 
     /**

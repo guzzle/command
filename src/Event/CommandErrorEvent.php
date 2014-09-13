@@ -28,7 +28,7 @@ class CommandErrorEvent extends AbstractCommandEvent
      */
     public function getException()
     {
-        return $this->trans->getException();
+        return $this->trans->commandException;
     }
 
     /**
@@ -39,7 +39,7 @@ class CommandErrorEvent extends AbstractCommandEvent
      */
     public function getResponse()
     {
-        return $this->trans->getResponse();
+        return $this->trans->response;
     }
 
     /**
@@ -49,7 +49,7 @@ class CommandErrorEvent extends AbstractCommandEvent
      */
     public function setResult($result)
     {
-        $this->trans->setResult($result);
+        $this->trans->result = $result;
         $this->stopPropagation();
     }
 }

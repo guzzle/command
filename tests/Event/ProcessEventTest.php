@@ -19,8 +19,8 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
         $trans = new CommandTransaction($client, $command);
         $request = new Request('GET', 'http://httbin.org');
         $response = new Response(200);
-        $trans->setRequest($request);
-        $trans->setResponse($response);
+        $trans->request = $request;
+        $trans->response = $response;
         $event = new ProcessEvent($trans);
         $this->assertSame($command, $event->getCommand());
         $this->assertSame($client, $event->getClient());
@@ -39,7 +39,7 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
         $event = new ProcessEvent($trans);
         $event->setResult('foo');
         $this->assertSame('foo', $event->getResult());
-        $this->assertSame('foo', $trans->getResult());
+        $this->assertSame('foo', $trans->result);
         $this->assertFalse($event->isPropagationStopped());
     }
 
@@ -48,7 +48,7 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
         $trans = new CommandTransaction($client, $command);
-        $trans->setResult('foo');
+        $trans->result = 'foo';
         $event = new ProcessEvent($trans);
         $this->assertSame('foo', $event->getResult());
     }

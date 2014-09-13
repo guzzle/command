@@ -4,13 +4,13 @@ namespace GuzzleHttp\Command;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Collection;
 use GuzzleHttp\Command\Exception\CommandException;
-use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Message\FutureResponse;
 
 /**
  * Abstract client implementation that provides a basic implementation of
@@ -73,16 +73,22 @@ abstract class AbstractClient implements ServiceClientInterface
     {
         $t = new CommandTransaction($this, $command);
         CommandEvents::prepare($t);
+
         // Listeners can intercept the event and inject a result. If that
         // happened, then we must not emit further events and just
         // return the result.
-        if (null !== ($result = $t->getResult())) {
+        if (null !== ($result = $t->result)) {
             return $result;
         }
-        $t->setResponse($this->client->send($t->getRequest()));
-        CommandEvents::process($t);
 
-        return $t->getResult();
+        $t->response = $this->client->send($t->request);
+
+        if (!($t->response instanceof FutureResponse)) {
+            CommandEvents::process($t);
+            return $t->result;
+        }
+
+        
     }
 
     public function executeAll($commands, array $options = [])
@@ -90,8 +96,8 @@ abstract class AbstractClient implements ServiceClientInterface
         $requestOptions = [];
 
         // Move all of the options over that affect the request transfer
-        if (isset($options['parallel'])) {
-            $requestOptions['parallel'] = $options['parallel'];
+        if (isset($options['pool_size'])) {
+            $requestOptions['pool_size'] = $options['pool_size'];
         }
 
         // Create an iterator that yields requests from commands and send all
@@ -135,7 +141,7 @@ abstract class AbstractClient implements ServiceClientInterface
                 $hash[$request] = new CommandException(
                     'Error executing command',
                     $trans,
-                    $trans->getException()
+                    $trans->commandException
                 );
             }
         }
@@ -172,8 +178,8 @@ abstract class AbstractClient implements ServiceClientInterface
     ) {
         $cn = 'GuzzleHttp\\Command\\Exception\\CommandException';
 
-        if ($response = $transaction->getResponse()) {
-            $statusCode = (string) $response->getStatusCode();
+        if ($transaction->response) {
+            $statusCode = (string) $transaction->response->getStatusCode();
             if ($statusCode[0] == '4') {
                 $cn = 'GuzzleHttp\\Command\\Exception\\CommandClientException';
             } elseif ($statusCode[0] == '5') {

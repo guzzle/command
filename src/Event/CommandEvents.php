@@ -25,7 +25,7 @@ class CommandEvents
     {
         try {
             $ev = new PrepareEvent($trans);
-            $trans->getCommand()->getEmitter()->emit('prepare', $ev);
+            $trans->command->getEmitter()->emit('prepare', $ev);
         } catch (\Exception $e) {
             self::emitError($trans, $e);
             return;
@@ -34,7 +34,7 @@ class CommandEvents
         if ($ev->isPropagationStopped()) {
             // Event was intercepted with a result, so emit process
             self::process($trans);
-        } elseif ($trans->getRequest()) {
+        } elseif ($trans->request) {
             self::injectErrorHandler($trans);
         } else {
             throw new \RuntimeException('No request was prepared for the'
@@ -53,13 +53,13 @@ class CommandEvents
     public static function process(CommandTransaction $trans)
     {
         // Throw if an exception occurred while sending the request
-        if ($e = $trans->getException()) {
-            $trans->setException(null);
+        if ($e = $trans->commandException) {
+            $trans->commandException = null;
             throw $e;
         }
 
         try {
-            $trans->getCommand()->getEmitter()->emit(
+            $trans->command->getEmitter()->emit(
                 'process',
                 new ProcessEvent($trans)
             );
@@ -79,7 +79,7 @@ class CommandEvents
         CommandTransaction $trans,
         \Exception $e
     ) {
-        $trans->setException($e);
+        $trans->commandException = $e;
 
         // If this exception has already emitted, then throw it now.
         if (isset($e->_emittedError)) {
@@ -88,7 +88,7 @@ class CommandEvents
 
         $e->_emittedError = true;
         $event = new CommandErrorEvent($trans);
-        $trans->getCommand()->getEmitter()->emit('error', $event);
+        $trans->command->getEmitter()->emit('error', $event);
 
         if (!$event->isPropagationStopped()) {
             throw $e;
@@ -100,16 +100,16 @@ class CommandEvents
      */
     private static function injectErrorHandler(CommandTransaction $trans)
     {
-        $trans->getRequest()->getEmitter()->on(
+        $trans->request->getEmitter()->on(
             'error',
             function (ErrorEvent $re) use ($trans) {
                 $re->stopPropagation();
-                $trans->setException(self::exceptionFromError($trans, $re));
+                $trans->commandException = self::exceptionFromError($trans, $re);
                 $cev = new CommandErrorEvent($trans);
-                $trans->getCommand()->getEmitter()->emit('error', $cev);
+                $trans->command->getEmitter()->emit('error', $cev);
 
                 if ($cev->isPropagationStopped()) {
-                    $trans->setException(null);
+                    $trans->commandException = null;
                 }
             },
             RequestEvents::LATE
@@ -127,12 +127,12 @@ class CommandEvents
         ErrorEvent $re
     ) {
         if ($response = $re->getResponse()) {
-            $trans->setResponse($response);
+            $trans->response = $response;
         } else {
             self::stopRequestError($re);
         }
 
-        return $trans->getClient()->createCommandException(
+        return $trans->client->createCommandException(
             $trans,
             $re->getException()
         );

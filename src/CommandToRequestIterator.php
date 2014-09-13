@@ -20,9 +20,6 @@ class CommandToRequestIterator implements \Iterator
     /** @var \Iterator */
     private $commands;
 
-    /** @var array */
-    private $options;
-
     /** @var ServiceClientInterface */
     private $client;
 
@@ -44,8 +41,6 @@ class CommandToRequestIterator implements \Iterator
      *       event chain.
      *     - error: Callable to invoke when the "error" event of a command is
      *       emitted. This callable is invoked near the end of the event chain.
-     *     - parallel: Integer representing the maximum allowed number of
-     *       requests to send in parallel. Defaults to 50.
      *
      * @throws \InvalidArgumentException If the source is invalid
      */
@@ -55,7 +50,6 @@ class CommandToRequestIterator implements \Iterator
         array $options = []
     ) {
         $this->client = $client;
-        $this->options = $options;
 
         $this->eventListeners = $this->prepareListeners(
             $options,
@@ -112,7 +106,7 @@ class CommandToRequestIterator implements \Iterator
         // Handle the command being intercepted with a result or failing by
         // not generating a request by going to the next command and returning
         // it's validity
-        if ($trans->getResult() !== null || !$trans->getRequest()) {
+        if ($trans->result !== null || !$trans->request) {
             $this->commands->next();
             return $this->valid();
         }
@@ -136,7 +130,7 @@ class CommandToRequestIterator implements \Iterator
      */
     private function prepare(CommandTransaction $trans)
     {
-        $this->attachListeners($trans->getCommand(), $this->eventListeners);
+        $this->attachListeners($trans->command, $this->eventListeners);
         CommandEvents::prepare($trans);
     }
 
@@ -146,14 +140,14 @@ class CommandToRequestIterator implements \Iterator
      */
     private function processCurrentRequest(CommandTransaction $trans)
     {
-        $this->currentRequest = $trans->getRequest();
+        $this->currentRequest = $trans->request;
 
         if ($this->currentRequest) {
             // Emit the command's process event when the request completes
             $this->currentRequest->getEmitter()->on(
                 'complete',
                 function (CompleteEvent $event) use ($trans) {
-                    $trans->setResponse($event->getResponse());
+                    $trans->response = $event->getResponse();
                     CommandEvents::process($trans);
                 }
             );

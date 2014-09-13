@@ -189,13 +189,13 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
             ->method('sendAll')
             ->will($this->returnCallback(
                 function ($requests, $options) use ($request) {
-                    $this->assertEquals(10, $options['parallel']);
+                    $this->assertEquals(10, $options['pool_size']);
                     $this->assertTrue($requests->valid());
                     $this->assertSame($request, $requests->current());
                 }
             ));
 
-        $mock->executeAll([$command], ['parallel' => 10]);
+        $mock->executeAll([$command], ['pool_size' => 10]);
     }
 
     public function testExecutesCommandsInBatch()

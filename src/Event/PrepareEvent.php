@@ -27,7 +27,7 @@ class PrepareEvent extends AbstractCommandEvent
      */
     public function setRequest(RequestInterface $request)
     {
-        $this->trans->setRequest($request);
+        $this->trans->request = $request;
     }
 
     /**
@@ -37,7 +37,7 @@ class PrepareEvent extends AbstractCommandEvent
      */
     public function setResult($result)
     {
-        $this->trans->setResult($result);
+        $this->trans->result = $result;
         $this->stopPropagation();
     }
 }

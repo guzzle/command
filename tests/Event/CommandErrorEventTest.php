@@ -18,8 +18,8 @@ class ErrorEventTest extends \PHPUnit_Framework_TestCase
         $ctrans = new CommandTransaction($client, $command);
         $response = new Response(200);
         $ex = new \Exception('foo');
-        $ctrans->setException($ex);
-        $ctrans->setResponse($response);
+        $ctrans->commandException = $ex;
+        $ctrans->response = $response;
 
         $event = new CommandErrorEvent($ctrans);
         $this->assertSame($ctrans, $event->getTransaction());
@@ -34,6 +34,6 @@ class ErrorEventTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($event->isPropagationStopped());
 
         $event->getContext()->set('abc', '123');
-        $this->assertEquals('123', $ctrans->getContext()->get('abc'));
+        $this->assertEquals('123', $ctrans->context->get('abc'));
     }
 }

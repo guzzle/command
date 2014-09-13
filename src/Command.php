@@ -16,7 +16,7 @@ class Command implements CommandInterface
     private $name;
 
     /** @var bool */
-    private $future;
+    private $future = false;
 
     /**
      * @param string $name    Name of the command
@@ -72,7 +72,7 @@ class Command implements CommandInterface
         $trans = new CommandTransaction($client, $command);
         CommandEvents::prepare($trans);
 
-        return $trans->getRequest();
+        return $trans->request;
     }
 
     public function getName()

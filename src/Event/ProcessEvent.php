@@ -31,7 +31,7 @@ class ProcessEvent extends AbstractCommandEvent
      */
     public function getResponse()
     {
-        return $this->trans->getResponse();
+        return $this->trans->response;
     }
 
     /**
@@ -41,6 +41,6 @@ class ProcessEvent extends AbstractCommandEvent
      */
     public function setResult($result)
     {
-        $this->trans->setResult($result);
+        $this->trans->result = $result;
     }
 }

@@ -1,24 +1,27 @@
 <?php
 namespace GuzzleHttp\Command;
 
+use GuzzleHttp\Ring\BaseFutureTrait;
+use GuzzleHttp\Ring\Exception\CancelledFutureAccessException;
 use GuzzleHttp\HasDataTrait;
 
 /**
  * Future model result that may not have finished.
  */
-class FutureModel implements FutureResultInterface
+class FutureModel implements FutureModelInterface
 {
+    use BaseFutureTrait;
     use HasDataTrait;
 
-    private $deref;
-
-    public function __construct(callable $deref)
+    public function __construct(callable $deref, callable $cancel = null)
     {
-        $this->deref = $deref;
+        $this->dereffn = $deref;
+        $this->cancelfn = $cancel;
+        // Unset $data so that we deref when access the first time.
         unset($this->data);
     }
 
-    public function getResult()
+    public function deref()
     {
         return $this->data;
     }
@@ -30,16 +33,21 @@ class FutureModel implements FutureResultInterface
 
     public function __get($name)
     {
-        if ($name == 'data') {
-            $deref = $this->deref;
-            $this->data = $deref();
-            unset($this->deref);
-            if (!is_array($this->data)) {
-                throw new \RuntimeException('Future result must be an array');
-            }
-            return $this->data;
+        if ($name !== 'data') {
+            throw new \RuntimeException("Result has no property $name");
+        } elseif ($this->isCancelled) {
+            throw new CancelledFutureAccessException('You are attempting '
+                . 'to access a future that has been cancelled.');
         }
 
-        throw new \RuntimeException("Result has no property $name");
+        $deref = $this->dereffn;
+        $this->dereffn = $this->cancelfn = null;
+        $this->data = $deref();
+
+        if (!is_array($this->data)) {
+            throw new \RuntimeException('Future result must be an array');
+        }
+
+        return $this->data;
     }
 }

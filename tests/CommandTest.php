@@ -51,4 +51,12 @@ class CommandTest extends \PHPUnit_Framework_TestCase
         );
         $this->assertSame($request,  Command::createRequest($client, $command));
     }
+
+    public function testCanControlFuture()
+    {
+        $command = new Command('foo');
+        $this->assertFalse($command->isFuture());
+        $command->setFuture(true);
+        $this->assertTrue($command->isFuture());
+    }
 }

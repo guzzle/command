@@ -16,7 +16,7 @@ class FutureModelTest extends \PHPUnit_Framework_TestCase
             return ['a' => 1];
         });
         $this->assertFalse($called);
-        $this->assertEquals(['a' => 1], $c->getResult());
+        $this->assertEquals(['a' => 1], $c->deref());
         $this->assertTrue($called);
     }
 
@@ -28,7 +28,7 @@ class FutureModelTest extends \PHPUnit_Framework_TestCase
         $c = new FutureModel(function () use (&$called) {
             return true;
         });
-        $c->getResult();
+        $c->deref();
     }
 
     public function testProxiesToUnderlyingData()
@@ -58,5 +58,15 @@ class FutureModelTest extends \PHPUnit_Framework_TestCase
     {
         $c = new FutureModel(function () { return ['a' => 1]; });
         $c->notThere;
+    }
+
+    /**
+     * @expectedException \GuzzleHttp\Ring\Exception\CancelledFutureAccessException
+     */
+    public function testThrowsWhenAccessingCancelledFuture()
+    {
+        $c = new FutureModel(function () {});
+        $c->cancel();
+        $c['foo'];
     }
 }

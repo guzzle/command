@@ -34,8 +34,8 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             }
         );
         CommandEvents::prepare($trans);
-        $this->assertSame($request, $trans->getRequest());
-        $this->assertNull($trans->getResult());
+        $this->assertSame($request, $trans->request);
+        $this->assertNull($trans->result);
     }
 
     /**
@@ -69,8 +69,8 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             }
         );
         CommandEvents::prepare($trans);
-        $this->assertNull($trans->getRequest());
-        $this->assertEquals('123', $trans->getResult());
+        $this->assertNull($trans->request);
+        $this->assertEquals('123', $trans->result);
         $this->assertTrue($called);
     }
 
@@ -92,7 +92,7 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             $this->fail('Did not throw');
         } catch (CommandException $e) {
             $this->assertSame($ex, $e);
-            $this->assertSame($ex, $trans->getException());
+            $this->assertSame($ex, $trans->commandException);
         }
     }
 
@@ -103,8 +103,8 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $cmd = new Command('foo', []);
         $trans = new CommandTransaction($client, $cmd);
-        $trans->setRequest($req);
-        $trans->setResponse($res);
+        $trans->request = $req;
+        $trans->response = $res;
         $c = false;
         $cmd->getEmitter()->on(
             'process',
@@ -118,7 +118,7 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             }
         );
         CommandEvents::process($trans);
-        $this->assertEquals('foo', $trans->getResult());
+        $this->assertEquals('foo', $trans->result);
         $this->assertTrue($c);
     }
 

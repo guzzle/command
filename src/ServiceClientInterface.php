@@ -46,12 +46,14 @@ interface ServiceClientInterface extends HasEmitterInterface
     public function execute(CommandInterface $command);
 
     /**
-     * Execute multiple commands in parallel.
+     * Execute multiple commands concurrently.
      *
      * @param array|\Iterator $commands Array or iterator that contains
      *     CommandInterface objects to execute.
      * @param array $options Associative array of options.
-     *     - parallel: (int) Max number of commands to send in parallel
+     *     - pool_size: (int) Max number of commands to send concurrently.
+     *       When this number of concurrent requests are created, the sendAll
+     *       function blocks until all of the futures have completed.
      *     - prepare: (callable) Receives a CommandPrepareEvent Concrete
      *       implementations MAY choose to implement this setting.
      *     - process: (callable) Receives a CommandProcessEvent. Concrete
@@ -62,15 +64,15 @@ interface ServiceClientInterface extends HasEmitterInterface
     public function executeAll($commands, array $options = []);
 
     /**
-     * Sends multiple commands in parallel and returns a hash map of commands
+     * Sends multiple commands concurrently and returns a hash map of commands
      * mapped to their corresponding result or exception.
      *
      * Note: This method keeps every command and command and result in memory,
      * and as such is NOT recommended when sending a large number or an
-     * indeterminable number of commands in parallel. Instead, you should use
+     * indeterminable number of commands concurrently. Instead, you should use
      * executeAll() and utilize the event system to work with results.
      *
-     * @param array|\Iterator $commands Commands to send in parallel
+     * @param array|\Iterator $commands Commands to send.
      * @param array           $options  Passes through the options available
      *                                  in {@see ClientInterface::executeAll()}
      *
