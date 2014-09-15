@@ -28,6 +28,12 @@ class CommandTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($emitter, $c->getEmitter());
     }
 
+    public function testCanProvideFutureSettingInConstructor()
+    {
+        $c = new Command('foo', [], ['future' => true]);
+        $this->assertTrue($c->getFuture());
+    }
+
     public function testCloneUsesDifferentEmitter()
     {
         $command = new Command('foo');

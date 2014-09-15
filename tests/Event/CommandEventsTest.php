@@ -9,11 +9,14 @@ use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Exception\CommandException;
+use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Message\FutureResponse;
 use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 use GuzzleHttp\Subscriber\Mock;
+use GuzzleHttp\Transaction;
 
 class CommandEventsTest extends \PHPUnit_Framework_TestCase
 {
@@ -253,5 +256,100 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             $mock->execute($command);
             $this->fail('Did not throw');
         } catch (CommandException $e) {}
+    }
+
+    public function testCorrectlyHandlesRequestsThatFailWhenProcessing()
+    {
+        $client = new Client();
+        $request = $client->createRequest('GET', 'http://httpbin.org');
+        $request->getEmitter()->attach(new Mock([new Response(200)]));
+        $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$client, []])
+            ->getMockForAbstractClass();
+        $command = new Command('foo');
+        $emitter = $command->getEmitter();
+        $emitter->on('prepare', function(PrepareEvent $event) use ($request) {
+            $event->setRequest($request);
+        });
+        $ex = new \Exception('baz');
+        $c = false;
+        $emitter->on('process', function(ProcessEvent $event) use ($request, $ex, &$c) {
+            $c = true;
+            throw $ex;
+        });
+        $emitter->on('error', function(CommandErrorEvent $event) use ($request, $ex) {
+            $this->assertSame($event->getException(), $ex);
+            $event->setResult('interception!');
+        });
+        $this->assertEquals('interception!', $mock->execute($command));
+        $this->assertTrue($c);
+    }
+
+    public function testProcessesEventWhenResponseCompletes()
+    {
+        $response = new Response(200);
+        $httpClient = new Client();
+        $httpClient->getEmitter()->attach(new Mock([$response]));
+        $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$httpClient])
+            ->getMockForAbstractClass();
+        $command = new Command('foo', []);
+        $request = $httpClient->createRequest('GET', 'http://httbin.org');
+        $command->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $e) use ($request) {
+                $e->setRequest($request);
+            }
+        );
+        $command->getEmitter()->on(
+            'process',
+            function (ProcessEvent $e) use ($request) {
+                $e->setResult('processed!');
+            }
+        );
+        $trans = CommandEvents::prepareTransaction($client, $command);
+        $this->assertSame($response, $client->getHttpClient()->send($trans->request));
+        $this->assertEquals('processed!', $trans->result);
+    }
+
+    public function testProcessesEventWhenFutureResponseCompletes()
+    {
+        $httpClient = new Client();
+        $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$httpClient])
+            ->getMockForAbstractClass();
+        $response = new Response(200);
+        $request = $httpClient->createRequest('GET', 'http://httbin.org');
+        // note: when mocking future responses, you need to handle emitting the
+        // complete events manually when dereferencing a response.
+        $future = new FutureResponse(function () use ($httpClient, $request, $response) {
+            $trans = new Transaction($httpClient, $request);
+            $trans->response = $response;
+            RequestEvents::emitComplete($trans);
+            return $response;
+        });
+        $request->getEmitter()->attach(new Mock([$future]));
+        $command = new Command('foo', [], ['future' => true]);
+        $command->getEmitter()->on(
+            'prepare',
+            function (PrepareEvent $e) use ($request) {
+                $e->setRequest($request);
+            }
+        );
+        $command->getEmitter()->on(
+            'process',
+            function (ProcessEvent $e) use ($request) {
+                $e->setResult('processed!');
+            }
+        );
+        $trans = CommandEvents::prepareTransaction($client, $command);
+        $this->assertTrue($trans->request->getConfig()->get('future'));
+        $res = $client->getHttpClient()->send($trans->request);
+        $this->assertInstanceOf('GuzzleHttp\Message\FutureResponse', $res);
+        $this->assertNotSame($response, $res);
+        $this->assertSame($res, $future);
+        $this->assertNull($trans->result);
+        $this->assertSame($res->deref(), $response);
+        $this->assertEquals('processed!', $trans->result);
     }
 }

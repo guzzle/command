@@ -46,11 +46,17 @@ interface ServiceClientInterface extends HasEmitterInterface
     public function execute(CommandInterface $command);
 
     /**
-     * Execute multiple commands concurrently.
+     * Executes many commands concurrently using a fixed pool size.
+     *
+     * Exceptions encountered while executing the commands will not be thrown.
+     * Instead, callers are expected to handle errors using the event system.
+     *
+     *     $commands = [$client->getCommand('foo', ['baz' => 'bar'])];
+     *     $client->executeAll($commands);
      *
      * @param array|\Iterator $commands Array or iterator that contains
      *     CommandInterface objects to execute.
-     * @param array $options Associative array of options.
+     * @param array $options Associative array of options to apply.
      *     - pool_size: (int) Max number of commands to send concurrently.
      *       When this number of concurrent requests are created, the sendAll
      *       function blocks until all of the futures have completed.
@@ -62,27 +68,6 @@ interface ServiceClientInterface extends HasEmitterInterface
      *       implementations MAY choose to implement this setting.
      */
     public function executeAll($commands, array $options = []);
-
-    /**
-     * Sends multiple commands concurrently and returns a hash map of commands
-     * mapped to their corresponding result or exception.
-     *
-     * Note: This method keeps every command and command and result in memory,
-     * and as such is NOT recommended when sending a large number or an
-     * indeterminable number of commands concurrently. Instead, you should use
-     * executeAll() and utilize the event system to work with results.
-     *
-     * @param array|\Iterator $commands Commands to send.
-     * @param array           $options  Passes through the options available
-     *                                  in {@see ClientInterface::executeAll()}
-     *
-     * @return \SplObjectStorage Commands are the key and each value is the
-     *     result of the command on success or an instance of
-     *     {@see GuzzleHttp\Command\Exception\CommandException} if a failure
-     *     occurs while executing the command.
-     * @throws \InvalidArgumentException if the event format is incorrect.
-     */
-    public function batch($commands, array $options = []);
 
     /**
      * Get the HTTP client used to send requests for the web service client

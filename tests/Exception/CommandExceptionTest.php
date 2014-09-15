@@ -21,9 +21,19 @@ class CommandExceptionTest extends \PHPUnit_Framework_TestCase
         $previous = new \Exception('bar');
         $e = new CommandException('foo', $trans, $previous);
         $this->assertSame($trans, $e->getTransaction());
+        $this->assertSame($client, $e->getClient());
         $this->assertSame($command, $e->getCommand());
         $this->assertSame($trans->request, $e->getRequest());
         $this->assertEquals('bar', $e->getContext()->get('foo'));
         $this->assertSame($previous, $e->getPrevious());
+
+        $this->assertNull($e->getResult());
+        $trans->result = 'foo';
+        $this->assertSame('foo', $e->getResult());
+
+        // Ensure the request and response are the original values that
+        // caused the exception.
+        $trans->request = clone $trans->request;
+        $this->assertNotSame($trans->request, $e->getRequest());
     }
 }

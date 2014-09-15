@@ -53,6 +53,10 @@ class CommandEvents
                 . ' event.');
         }
 
+        if ($future = $command->getFuture()) {
+            $trans->request->getConfig()->set('future', $future);
+        }
+
         self::injectErrorHandler($trans);
 
         // Process the command as soon as the request completes.
@@ -75,12 +79,6 @@ class CommandEvents
      */
     public static function process(CommandTransaction $trans)
     {
-        // Throw if an exception occurred while sending the request
-        if ($e = $trans->commandException) {
-            $trans->commandException = null;
-            throw $e;
-        }
-
         try {
             $trans->command->getEmitter()->emit(
                 'process',
@@ -103,13 +101,6 @@ class CommandEvents
         \Exception $e
     ) {
         $trans->commandException = $e;
-
-        // If this exception has already emitted, then throw it now.
-        if (isset($e->_emittedError)) {
-            throw $e;
-        }
-
-        $e->_emittedError = true;
         $event = new CommandErrorEvent($trans);
         $trans->command->getEmitter()->emit('error', $event);
 

@@ -26,8 +26,8 @@ class CommandException extends RequestException
         \Exception $previous = null
     ) {
         $this->trans = $trans;
-        $request =& $trans->request;
-        $response =& $trans->response;
+        $request = $trans->request;
+        $response = $trans->response;
         parent::__construct($message, $request, $response, $previous);
     }
 

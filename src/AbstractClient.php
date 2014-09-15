@@ -3,14 +3,10 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Collection;
-use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Event\HasEmitterTrait;
-use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Command\Event\CommandEvents;
-use GuzzleHttp\Command\Event\CommandErrorEvent;
-use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Pool;
+use GuzzleHttp\Ring\Core;
 use GuzzleHttp\Ring\FutureInterface;
 
 /**
@@ -89,56 +85,7 @@ abstract class AbstractClient implements ServiceClientInterface
 
     public function executeAll($commands, array $options = [])
     {
-        // Create an iterator that yields requests from commands and send all
-        Pool::send(
-            $this->getHttpClient(),
-            new CommandToRequestIterator(
-                $this,
-                $commands,
-                $this->preventCommandExceptions($options)
-            ),
-            isset($options['pool_size'])
-                ? ['pool_size' => $options['pool_size']]
-                : []
-        );
-    }
-
-    public function batch($commands, array $options = [])
-    {
-        $hash = new \SplObjectStorage();
-        foreach ($commands as $command) {
-            $hash->attach($command);
-        }
-
-        $options = RequestEvents::convertEventArray(
-            $options,
-            ['process', 'error'],
-            [
-                'priority' => RequestEvents::EARLY,
-                'once'     => true,
-                'fn'       => function ($e) use ($hash) {
-                    $hash[$e->getCommand()] = $e;
-                }
-            ]
-        );
-
-        $this->executeAll($commands, $options);
-
-        // Update the received value for any of the intercepted commands.
-        foreach ($hash as $request) {
-            if ($hash[$request] instanceof ProcessEvent) {
-                $hash[$request] = $hash[$request]->getResult();
-            } elseif ($hash[$request] instanceof CommandErrorEvent) {
-                $trans = $hash[$request]->getTransaction();
-                $hash[$request] = new CommandException(
-                    'Error executing command',
-                    $trans,
-                    $trans->commandException
-                );
-            }
-        }
-
-        return $hash;
+        Utils::createPool($this, $commands, $options)->deref();
     }
 
     public function getHttpClient()
@@ -201,7 +148,8 @@ abstract class AbstractClient implements ServiceClientInterface
     protected function createFutureResult(CommandTransaction $transaction)
     {
         if (!($transaction->response instanceof FutureInterface)) {
-            throw new \RuntimeException('Must be a FutureInterface');
+            throw new \RuntimeException('Must be a FutureInterface. Found '
+                . Core::describeType($transaction->response));
         }
 
         return new FutureModel(function () use ($transaction) {
@@ -210,16 +158,5 @@ abstract class AbstractClient implements ServiceClientInterface
         }, function () use ($transaction) {
             return $transaction->response->cancel();
         });
-    }
-
-    private function preventCommandExceptions(array $options)
-    {
-        // Prevent CommandExceptions from being thrown
-        return RequestEvents::convertEventArray($options, ['error'], [
-            'priority' => RequestEvents::LATE,
-            'fn' => function (CommandErrorEvent $e) {
-                $e->stopPropagation();
-            }
-        ]);
     }
 }
