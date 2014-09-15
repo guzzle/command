@@ -31,7 +31,7 @@ class PrepareEvent extends AbstractCommandEvent
     }
 
     /**
-     * Intercept the prepare event and inject a response.
+     * Intercept the prepare event and inject a result.
      *
      * @param mixed $result Result to associate with the command
      */

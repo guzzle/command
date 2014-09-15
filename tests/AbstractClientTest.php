@@ -6,9 +6,11 @@ use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Message\Response;
 use GuzzleHttp\Command\Event\PrepareEvent;
-use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Event\BeforeEvent;
-use GuzzleHttp\Subscriber\Mock;
+use GuzzleHttp\Ring\Client\MockAdapter;
+use GuzzleHttp\Ring\Future;
+use GuzzleHttp\Command\FutureModel;
+use GuzzleHttp\Event\RequestEvents;
 
 /**
  * @covers \GuzzleHttp\Command\AbstractClient
@@ -79,41 +81,6 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('foo', $mock->foo());
     }
 
-    public function testDoesNotWrapExceptionsMoreThanOnce()
-    {
-        $client = new Client();
-        $client->getEmitter()->attach(new Mock([new Response(404)]));
-
-        $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
-            ->setConstructorArgs([$client, []])
-            ->getMockForAbstractClass();
-
-        $command = new Command('foo');
-        $emitter = $command->getEmitter();
-
-        $emitter->on('prepare', function(PrepareEvent $event) {
-            $event->setRequest($event->getClient()
-                ->getHttpClient()
-                ->createRequest('PUT', 'http://httpbin.org/get'));
-        });
-
-        $cp = $ce = false;
-        $emitter->on('process', function() use (&$cp) { $cp = true; });
-        $emitter->on('error', function() use (&$ce) { $ce = true; });
-
-        try {
-            $mock->execute($command);
-            $this->fail('Did not throw');
-        } catch (CommandException $e) {
-            $this->assertContains('Error executing command:', (string) $e);
-            $this->assertFalse($cp, 'The process event was called');
-            $this->assertTrue($ce, 'The error event was not called');
-            // Ensure that there isn't a bunch of competing exception stacking
-            // where the command exception wraps the requests exception > once.
-            $this->assertEquals(2, $this->getWrapCount($e));
-        }
-    }
-
     public function testDoesNotWrapNonCommandExceptions()
     {
         $client = new Client();
@@ -168,72 +135,6 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('foo', $mock->execute($command));
     }
 
-    public function testExecutesCommandsInParallel()
-    {
-        $client = $this->getMockBuilder('GuzzleHttp\\Client')
-            ->setMethods(['sendAll'])
-            ->getMock();
-        $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
-            ->setConstructorArgs([$client, []])
-            ->getMockForAbstractClass();
-        $command = new Command('foo');
-        $request = $client->createRequest('GET', 'http://httbin.org');
-        $command->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $e) use ($request) {
-                $e->setRequest($request);
-            }
-        );
-
-        $client->expects($this->once())
-            ->method('sendAll')
-            ->will($this->returnCallback(
-                function ($requests, $options) use ($request) {
-                    $this->assertEquals(10, $options['pool_size']);
-                    $this->assertTrue($requests->valid());
-                    $this->assertSame($request, $requests->current());
-                }
-            ));
-
-        $mock->executeAll([$command], ['pool_size' => 10]);
-    }
-
-    public function testExecutesCommandsInBatch()
-    {
-        $client = new Client();
-        $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
-            ->setConstructorArgs([$client, []])
-            ->getMockForAbstractClass();
-        $request = $client->createRequest('GET', 'http://httbin.org');
-
-        $command1 = new Command('foo');
-        $command1->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $e) use ($request) {
-                $e->setResult('foo');
-            }
-        );
-
-        $command2 = new Command('foo');
-        $command2->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $e) use ($request) {
-                $e->setResult('bar');
-            }
-        );
-
-        $command3 = new Command('foo');
-        $command3->getEmitter()->on('prepare', function () {
-            throw new \Exception('foo');
-        });
-
-        $hash = $mock->batch([$command1, $command2, $command3]);
-        $this->assertCount(3, $hash);
-        $this->assertEquals('foo', $hash[$command1]);
-        $this->assertEquals('bar', $hash[$command2]);
-        $this->assertEquals('foo', $hash[$command3]->getPrevious()->getMessage());
-    }
-
     public function testCanInjectEmitter()
     {
         $guzzleClient = $this->getMock('GuzzleHttp\\ClientInterface');
@@ -249,6 +150,43 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue('foo'));
 
         $this->assertEquals('foo', $serviceClient->getEmitter()->listeners());
+    }
+
+    public function testSendsFutureCommandAsynchronously()
+    {
+        $mockAdapter = new MockAdapter(new Future(function () {
+            return ['status' => 200, 'headers' => [], 'body' => 'foo'];
+        }));
+        $client = new Client(['adapter' => $mockAdapter]);
+        $request = $client->createRequest('GET', 'http://www.foo.com');
+        $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
+            ->setConstructorArgs([$client])
+            ->setMethods(['getCommand'])
+            ->getMockForAbstractClass();
+
+        $em = $g->getEmitter();
+        $em->on('prepare', function (PrepareEvent $e) use ($request) {
+            $e->setRequest($request);
+        });
+
+        $called = 0;
+        $em->on('process', function (ProcessEvent $e) use (&$called) {
+            $called++;
+            $this->assertInstanceOf('GuzzleHttp\Message\Response', $e->getResponse());
+            $e->setResult(['foo' => 'bar']);
+        }, RequestEvents::EARLY);
+
+        $cmd = new Command('fooCommand', [], ['emitter' => $em, 'future' => true]);
+        $g->expects($this->once())
+            ->method('getCommand')
+            ->will($this->returnValue($cmd));
+
+        $command = $g->getCommand('foo');
+        $result = $g->execute($command);
+        $this->assertInstanceOf('GuzzleHttp\Command\FutureModel', $result);
+        $this->assertEquals(0, $called);
+        $this->assertEquals(['foo' => 'bar'], $result->toArray());
+        $this->assertEquals(1, $called);
     }
 
     private function getWrapCount(\Exception $e)

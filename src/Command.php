@@ -69,10 +69,7 @@ class Command implements CommandInterface
         ServiceClientInterface $client,
         CommandInterface $command
     ) {
-        $trans = new CommandTransaction($client, $command);
-        CommandEvents::prepare($trans);
-
-        return $trans->request;
+        return CommandEvents::prepareTransaction($client, $command)->request;
     }
 
     public function getName()
@@ -90,7 +87,7 @@ class Command implements CommandInterface
         $this->future = $useFuture;
     }
 
-    public function isFuture()
+    public function getFuture()
     {
         return $this->future;
     }

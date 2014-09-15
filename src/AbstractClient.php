@@ -10,7 +10,8 @@ use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Message\FutureResponse;
+use GuzzleHttp\Pool;
+use GuzzleHttp\Ring\FutureInterface;
 
 /**
  * Abstract client implementation that provides a basic implementation of
@@ -71,43 +72,34 @@ abstract class AbstractClient implements ServiceClientInterface
 
     public function execute(CommandInterface $command)
     {
-        $t = new CommandTransaction($this, $command);
-        CommandEvents::prepare($t);
+        $t = CommandEvents::prepareTransaction($this, $command);
 
-        // Listeners can intercept the event and inject a result. If that
-        // happened, then we must not emit further events and just
-        // return the result.
-        if (null !== ($result = $t->result)) {
-            return $result;
+        // Note: listeners can intercept the before event and inject a result.
+        if ($t->result !== null) {
+            return $t->result;
         }
 
         $t->response = $this->client->send($t->request);
 
-        if (!($t->response instanceof FutureResponse)) {
-            CommandEvents::process($t);
-            return $t->result;
-        }
-
-        
+        // Return results immediately when they are not a future.
+        return $t->response instanceof FutureInterface
+            ? $this->createFutureResult($t)
+            : $t->result;
     }
 
     public function executeAll($commands, array $options = [])
     {
-        $requestOptions = [];
-
-        // Move all of the options over that affect the request transfer
-        if (isset($options['pool_size'])) {
-            $requestOptions['pool_size'] = $options['pool_size'];
-        }
-
         // Create an iterator that yields requests from commands and send all
-        $this->client->sendAll(
+        Pool::send(
+            $this->getHttpClient(),
             new CommandToRequestIterator(
-                $commands,
                 $this,
+                $commands,
                 $this->preventCommandExceptions($options)
             ),
-            $requestOptions
+            isset($options['pool_size'])
+                ? ['pool_size' => $options['pool_size']]
+                : []
         );
     }
 
@@ -192,6 +184,32 @@ abstract class AbstractClient implements ServiceClientInterface
             $transaction,
             $previous
         );
+    }
+
+    /**
+     * Creates a future result for a given command transaction.
+     *
+     * This method may be overridden in subclasses to implement custom
+     * future response results.
+     *
+     * @param CommandTransaction $transaction
+     *
+     * @return FutureInterface
+     * @throws \RuntimeException if the response associated with the command
+     *                           transaction is not a FutureInterface.
+     */
+    protected function createFutureResult(CommandTransaction $transaction)
+    {
+        if (!($transaction->response instanceof FutureInterface)) {
+            throw new \RuntimeException('Must be a FutureInterface');
+        }
+
+        return new FutureModel(function () use ($transaction) {
+            $transaction->response = $transaction->response->deref();
+            return $transaction->result;
+        }, function () use ($transaction) {
+            return $transaction->response->cancel();
+        });
     }
 
     private function preventCommandExceptions(array $options)

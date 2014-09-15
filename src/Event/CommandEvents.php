@@ -1,8 +1,11 @@
 <?php
 namespace GuzzleHttp\Command\Event;
 
+use GuzzleHttp\Command\ServiceClientInterface;
 use GuzzleHttp\Command\CanceledResponse;
+use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\CommandTransaction;
+use GuzzleHttp\Event\CompleteEvent;
 use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\RequestEvents;
 
@@ -12,36 +15,56 @@ use GuzzleHttp\Event\RequestEvents;
 class CommandEvents
 {
     /**
-     * Handles the workflow of a command before it is sent.
+     * Creates a transactions and handles the workflow of a command before it
+     * is sent.
      *
      * This includes preparing a request for the command, hooking the command
      * event system up to the request's event system, and returning the
      * prepared request.
      *
-     * @param CommandTransaction $trans Command execution context
+     * @param ServiceClientInterface  $client  Client to use in the transaction
+     * @param CommandInterface        $command Command to execute
+     *
+     * @return CommandTransaction
      * @throws \RuntimeException
      */
-    public static function prepare(CommandTransaction $trans)
-    {
+    public static function prepareTransaction(
+        ServiceClientInterface $client,
+        CommandInterface $command
+    ) {
+        $trans = new CommandTransaction($client, $command);
+
         try {
             $ev = new PrepareEvent($trans);
             $trans->command->getEmitter()->emit('prepare', $ev);
         } catch (\Exception $e) {
             self::emitError($trans, $e);
-            return;
+            return $trans;
         }
 
         if ($ev->isPropagationStopped()) {
-            // Event was intercepted with a result, so emit process
+            // Event was intercepted with a result, so emit process.
             self::process($trans);
-        } elseif ($trans->request) {
-            self::injectErrorHandler($trans);
-        } else {
+            return $trans;
+        } elseif (!$trans->request) {
             throw new \RuntimeException('No request was prepared for the'
                 . ' command and no result was added to intercept the event.'
                 . ' One of the listeners must set a request in the prepare'
                 . ' event.');
         }
+
+        self::injectErrorHandler($trans);
+
+        // Process the command as soon as the request completes.
+        $trans->request->getEmitter()->on(
+            'complete',
+            function (CompleteEvent $e) use ($trans) {
+                $trans->response = $e->getResponse();
+                self::process($trans);
+            }
+        );
+
+        return $trans;
     }
 
     /**
@@ -93,6 +116,9 @@ class CommandEvents
         if (!$event->isPropagationStopped()) {
             throw $e;
         }
+
+        // It was intercepted, so remove it from the transaction.
+        $trans->commandException = null;
     }
 
     /**
@@ -107,10 +133,10 @@ class CommandEvents
                 $trans->commandException = self::exceptionFromError($trans, $re);
                 $cev = new CommandErrorEvent($trans);
                 $trans->command->getEmitter()->emit('error', $cev);
-
-                if ($cev->isPropagationStopped()) {
-                    $trans->commandException = null;
+                if (!$cev->isPropagationStopped()) {
+                    throw $trans->commandException;
                 }
+                $trans->commandException = null;
             },
             RequestEvents::LATE
         );

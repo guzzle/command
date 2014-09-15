@@ -1,16 +1,14 @@
 <?php
 namespace GuzzleHttp\Tests\Command;
 
-use GuzzleHttp\Transaction;
+use GuzzleHttp\Ring\Client\MockAdapter;
+use GuzzleHttp\Ring\Future;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\CommandToRequestIterator;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
-use GuzzleHttp\Event\CompleteEvent;
-use GuzzleHttp\Event\ErrorEvent;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 
@@ -25,7 +23,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
     public function testValidatesSource()
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        new CommandToRequestIterator('foo', $client, []);
+        new CommandToRequestIterator($client, 'foo', []);
     }
 
     public function testCanUseArray()
@@ -40,7 +38,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
             }
         );
         $commands = [$cmd];
-        $i = new CommandToRequestIterator($commands, $client, []);
+        $i = new CommandToRequestIterator($client, $commands, []);
         $this->assertTrue($i->valid());
         $this->assertSame($request, $i->current());
         $i->next();
@@ -69,7 +67,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
             }
         );
         $commands = new \ArrayIterator([$cmd, $cmd2]);
-        $i = new CommandToRequestIterator($commands, $client, []);
+        $i = new CommandToRequestIterator($client, $commands, []);
 
         $this->assertEquals(0, $i->key());
         $this->assertTrue($i->valid());
@@ -97,19 +95,29 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $commands = ['foo'];
-        $i = new CommandToRequestIterator($commands, $client);
+        $i = new CommandToRequestIterator($client, $commands);
         $i->valid();
     }
 
     public function testHooksUpEvents()
     {
-        $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request = new Request('GET', 'http://httbin.org');
-        $command = new Command('foo');
+        $http = new Client(['adapter' => new MockAdapter(
+            new Future(function () {
+                return ['status' => 200, 'headers' => []];
+            })
+        )]);
+        $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$http, []])
+            ->setMethods(['getCommand'])
+            ->getMockForAbstractClass();
+        $client->expects($this->once())
+            ->method('getCommand')
+            ->will($this->returnValue(new Command('foo')));
+        $command = $client->getCommand('foo');
+        $request = $http->createRequest('GET', 'http://httbin.org');
         $calledPrepare = $calledProcess = $calledError = $responseSet = false;
-        $commands = [$command];
 
-        $i = new CommandToRequestIterator($commands, $client, [
+        $client->executeAll([$command], [
             'prepare' => function (PrepareEvent $event) use (&$calledPrepare, $request) {
                 $calledPrepare = true;
                 $event->setRequest($request);
@@ -120,29 +128,12 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
             },
             'error' => function (CommandErrorEvent $event) use (&$calledError) {
                 $calledError = true;
-                $event->setResult(null);
             }
         ]);
 
-        $this->assertTrue($i->valid());
-        $this->assertTrue($calledPrepare);
-        $this->assertFalse($calledProcess);
+        $this->assertCount(3, $command->getEmitter()->listeners());
         $this->assertFalse($calledError);
-        $this->assertFalse($responseSet);
-
-        $transaction = new Transaction(new Client(), $request);
-        $transaction->response = new Response(200);
-        $mockComplete = new CompleteEvent($transaction);
-        $request->getEmitter()->emit('complete', $mockComplete);
         $this->assertTrue($calledProcess);
-        $this->assertFalse($calledError);
-
-        $mockError = new ErrorEvent(
-            $transaction,
-            new RequestException('foo', $request)
-        );
-        $request->getEmitter()->emit('error', $mockError);
-        $this->assertTrue($calledError);
     }
 
     public function testSkipsInterceptedCommands()
@@ -166,7 +157,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
         );
 
         $commands = [$command1, $command2];
-        $i = new CommandToRequestIterator($commands, $client);
+        $i = new CommandToRequestIterator($client, $commands);
         $this->assertTrue($i->valid());
         $this->assertSame($request, $i->current());
         $i->next();

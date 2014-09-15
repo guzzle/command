@@ -1,7 +1,6 @@
 <?php
 namespace GuzzleHttp\Command;
 
-use GuzzleHttp\Event\CompleteEvent;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Event\ListenerAttacherTrait;
@@ -11,7 +10,7 @@ use GuzzleHttp\Event\ListenerAttacherTrait;
  * that contains commands.
  *
  * This iterator is useful when implementing the
- * ``ServiceClientInterface::executeAll()`` method.
+ * {@see ServiceClientInterface::executeAll()} method.
  */
 class CommandToRequestIterator implements \Iterator
 {
@@ -30,8 +29,8 @@ class CommandToRequestIterator implements \Iterator
     private $eventListeners = [];
 
     /**
-     * @param array|\Iterator        $commands Collection of command objects
      * @param ServiceClientInterface $client   Associated service client
+     * @param array|\Iterator        $commands Collection of command objects
      * @param array                  $options  Hash of options:
      *     - prepare: Callable to invoke when the "prepare" event of a command
      *       is emitted. This callable is invoked near the end of the event
@@ -45,12 +44,11 @@ class CommandToRequestIterator implements \Iterator
      * @throws \InvalidArgumentException If the source is invalid
      */
     public function __construct(
-        $commands,
         ServiceClientInterface $client,
+        $commands,
         array $options = []
     ) {
         $this->client = $client;
-
         $this->eventListeners = $this->prepareListeners(
             $options,
             ['prepare', 'process', 'error']
@@ -84,24 +82,27 @@ class CommandToRequestIterator implements \Iterator
 
     public function valid()
     {
+        // Return true if this function has already been called for iteration.
         if ($this->currentRequest) {
             return true;
         }
 
+        // Return false if we are at the end of the provided commands iterator.
         if (!$this->commands->valid()) {
             return false;
         }
 
         $command = $this->commands->current();
+
         if (!($command instanceof CommandInterface)) {
             throw new \RuntimeException('All commands provided to the ' . __CLASS__
                 . ' must implement GuzzleHttp\\Command\\CommandInterface.'
                 . ' Encountered a ' . gettype($command) . ' value.');
         }
 
-        $command->setFuture(true);
-        $trans = new CommandTransaction($this->client, $command);
-        $this->prepare($trans);
+        $command->setFuture('lazy');
+        $this->attachListeners($command, $this->eventListeners);
+        $trans = CommandEvents::prepareTransaction($this->client, $command);
 
         // Handle the command being intercepted with a result or failing by
         // not generating a request by going to the next command and returning
@@ -111,7 +112,7 @@ class CommandToRequestIterator implements \Iterator
             return $this->valid();
         }
 
-        $this->processCurrentRequest($trans);
+        $this->currentRequest = $trans->request;
 
         return true;
     }
@@ -122,35 +123,6 @@ class CommandToRequestIterator implements \Iterator
 
         if (!($this->commands instanceof \Generator)) {
             $this->commands->rewind();
-        }
-    }
-
-    /**
-     * Prepare a command using the provided options.
-     */
-    private function prepare(CommandTransaction $trans)
-    {
-        $this->attachListeners($trans->command, $this->eventListeners);
-        CommandEvents::prepare($trans);
-    }
-
-    /**
-     * Set the current request of the iterator and hook the request's event
-     * system up to the command's event system.
-     */
-    private function processCurrentRequest(CommandTransaction $trans)
-    {
-        $this->currentRequest = $trans->request;
-
-        if ($this->currentRequest) {
-            // Emit the command's process event when the request completes
-            $this->currentRequest->getEmitter()->on(
-                'complete',
-                function (CompleteEvent $event) use ($trans) {
-                    $trans->response = $event->getResponse();
-                    CommandEvents::process($trans);
-                }
-            );
         }
     }
 }

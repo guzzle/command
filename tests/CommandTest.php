@@ -55,8 +55,8 @@ class CommandTest extends \PHPUnit_Framework_TestCase
     public function testCanControlFuture()
     {
         $command = new Command('foo');
-        $this->assertFalse($command->isFuture());
+        $this->assertFalse($command->getFuture());
         $command->setFuture(true);
-        $this->assertTrue($command->isFuture());
+        $this->assertTrue($command->getFuture());
     }
 }
