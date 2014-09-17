@@ -152,11 +152,16 @@ abstract class AbstractClient implements ServiceClientInterface
                 . Core::describeType($transaction->response));
         }
 
-        return new FutureModel(function () use ($transaction) {
-            $transaction->response = $transaction->response->deref();
-            return $transaction->result;
-        }, function () use ($transaction) {
-            return $transaction->response->cancel();
-        });
+        return new FutureModel(
+            // Deref function derefs the response which populates the result.
+            function () use ($transaction) {
+                $transaction->response = $transaction->response->deref();
+                return $transaction->result;
+            },
+            // Cancel function just proxies to the response's cancel function.
+            function () use ($transaction) {
+                return $transaction->response->cancel();
+            }
+        );
     }
 }

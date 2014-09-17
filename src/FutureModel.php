@@ -2,6 +2,7 @@
 namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Ring\BaseFutureTrait;
+use GuzzleHttp\Ring\Core;
 use GuzzleHttp\Ring\Exception\CancelledFutureAccessException;
 use GuzzleHttp\HasDataTrait;
 
@@ -17,7 +18,7 @@ class FutureModel implements FutureModelInterface
     {
         $this->dereffn = $deref;
         $this->cancelfn = $cancel;
-        // Unset $data so that we deref when access the first time.
+        // Unset $data so that we deref when accessed the first time.
         unset($this->data);
     }
 
@@ -42,12 +43,13 @@ class FutureModel implements FutureModelInterface
 
         $deref = $this->dereffn;
         $this->dereffn = $this->cancelfn = null;
-        $this->data = $deref();
+        $data = $deref();
 
-        if (!is_array($this->data)) {
-            throw new \RuntimeException('Future result must be an array');
+        if (!is_array($data)) {
+            throw new \RuntimeException('Future result must be an array. '
+                . 'Found ' . Core::describeType($data));
         }
 
-        return $this->data;
+        return $this->data = $data;
     }
 }

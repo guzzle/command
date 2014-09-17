@@ -4,6 +4,7 @@ namespace GuzzleHttp\Command;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Event\ListenerAttacherTrait;
+use GuzzleHttp\Ring\Core;
 
 /**
  * Iterator used for easily creating request objects from an iterator or array
@@ -97,7 +98,7 @@ class CommandToRequestIterator implements \Iterator
         if (!($command instanceof CommandInterface)) {
             throw new \RuntimeException('All commands provided to the ' . __CLASS__
                 . ' must implement GuzzleHttp\\Command\\CommandInterface.'
-                . ' Encountered a ' . gettype($command) . ' value.');
+                . ' Encountered a ' . Core::describeType($command) . ' value.');
         }
 
         $command->setFuture('lazy');

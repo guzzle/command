@@ -9,7 +9,6 @@ use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Exception\CommandException;
-use GuzzleHttp\Event\ErrorEvent;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Message\FutureResponse;

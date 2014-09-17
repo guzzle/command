@@ -87,16 +87,13 @@ class Utils
         $commands,
         array $options = []
     ) {
+        $options = self::preventCommandExceptions($options);
+
         return new Pool(
             $client->getHttpClient(),
-            new CommandToRequestIterator(
-                $client,
-                $commands,
-                self::preventCommandExceptions($options)
-            ),
+            new CommandToRequestIterator($client, $commands, $options),
             isset($options['pool_size'])
-                ? ['pool_size' => $options['pool_size']]
-                : []
+                ? ['pool_size' => $options['pool_size']] : []
         );
     }
 
@@ -106,8 +103,8 @@ class Utils
         return RequestEvents::convertEventArray($options, ['error'], [
             'priority' => RequestEvents::LATE,
             'fn' => function (CommandErrorEvent $e) {
-                    $e->stopPropagation();
-                }
+                $e->stopPropagation();
+            }
         ]);
     }
 }
