@@ -10,6 +10,7 @@ use GuzzleHttp\ToArrayInterface;
 interface ModelInterface extends
     \ArrayAccess,
     \IteratorAggregate,
+    \Countable,
     ToArrayInterface
 {
     /**

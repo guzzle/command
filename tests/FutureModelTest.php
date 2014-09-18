@@ -2,6 +2,7 @@
 namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Command\FutureModel;
+use GuzzleHttp\Command\Model;
 
 /**
  * @covers \GuzzleHttp\Command\FutureModel
@@ -20,6 +21,16 @@ class FutureModelTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($called);
     }
 
+    public function testResultCanBeToArray()
+    {
+        $c = new FutureModel(function () use (&$called) {
+            return new Model(['foo' => 'bar']);
+        });
+        $c->deref();
+        $this->assertEquals('bar', $c['foo']);
+        $this->assertEquals(1, count($c));
+    }
+
     /**
      * @expectedException \RuntimeException
      */
@@ -36,6 +47,7 @@ class FutureModelTest extends \PHPUnit_Framework_TestCase
         $c = new FutureModel(function () {
             return ['a' => 1];
         });
+        $this->assertEquals(1, count($c));
         $this->assertEquals(['a' => 1], $c->toArray());
         $this->assertEquals(['a' => 1], $c->getIterator()->getArrayCopy());
         $this->assertEquals(1, $c['a']);

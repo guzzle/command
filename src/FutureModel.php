@@ -1,61 +1,86 @@
 <?php
 namespace GuzzleHttp\Command;
 
-use GuzzleHttp\Ring\BaseFutureTrait;
+use GuzzleHttp\Ring\MagicFutureTrait;
 use GuzzleHttp\Ring\Core;
-use GuzzleHttp\Ring\Exception\CancelledFutureAccessException;
 use GuzzleHttp\HasDataTrait;
+use GuzzleHttp\ToArrayInterface;
+use GuzzleHttp\Utils as GuzzleUtils;
 
 /**
  * Future model result that may not have finished.
  */
 class FutureModel implements FutureModelInterface
 {
-    use BaseFutureTrait;
-    use HasDataTrait;
-
-    public function __construct(callable $deref, callable $cancel = null)
-    {
-        $this->dereffn = $deref;
-        $this->cancelfn = $cancel;
-        // Unset $data so that we deref when accessed the first time.
-        unset($this->data);
-    }
-
-    public function deref()
-    {
-        return $this->data;
-    }
+    use MagicFutureTrait;
 
     public function hasKey($name)
     {
-        return isset($this->data[$name]);
+        return isset($this->result[$name]);
     }
 
     public function get($name)
     {
-        return $this->data[$name];
+        return $this->result[$name];
     }
 
-    public function __get($name)
+    public function getIterator()
     {
-        if ($name !== 'data') {
-            throw new \RuntimeException("Result has no property $name");
-        } elseif ($this->isCancelled) {
-            throw new CancelledFutureAccessException('You are attempting '
-                . 'to access a future that has been cancelled.');
+        return new \ArrayIterator($this->result);
+    }
+
+    public function offsetGet($offset)
+    {
+        return isset($this->result[$offset]) ? $this->result[$offset] : null;
+    }
+
+    public function offsetSet($offset, $value)
+    {
+        $this->result[$offset] = $value;
+    }
+
+    public function offsetExists($offset)
+    {
+        return isset($this->result[$offset]);
+    }
+
+    public function offsetUnset($offset)
+    {
+        unset($this->result[$offset]);
+    }
+
+    public function toArray()
+    {
+        return $this->result;
+    }
+
+    public function count()
+    {
+        return count($this->result);
+    }
+
+    public function getPath($path)
+    {
+        return GuzzleUtils::getPath($this->result, $path);
+    }
+
+    public function setPath($path, $value)
+    {
+        GuzzleUtils::setPath($this->result, $path, $value);
+    }
+
+    protected function processResult($result)
+    {
+        if ($result instanceof ToArrayInterface) {
+            return $result->toArray();
         }
 
-        $deref = $this->dereffn;
-        $this->dereffn = $this->cancelfn = null;
-        $data = $deref();
-
-        if (!($data instanceof ModelInterface || is_array($data))) {
-            throw new \RuntimeException('Future result must be an array. or '
-                . 'instance of GuzzleHttp\Command\ModelInterface. Found '
-                . Core::describeType($data));
+        if (is_array($result)) {
+            return $result;
         }
 
-        return $this->data = $data;
+        throw new \RuntimeException('Future result must be an array. or '
+            . 'instance of GuzzleHttp\ToArrayInterface. Found '
+            . Core::describeType($result));
     }
 }
