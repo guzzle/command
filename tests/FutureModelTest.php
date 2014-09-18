@@ -39,6 +39,7 @@ class FutureModelTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(['a' => 1], $c->toArray());
         $this->assertEquals(['a' => 1], $c->getIterator()->getArrayCopy());
         $this->assertEquals(1, $c['a']);
+        $this->assertEquals(1, $c->get('a'));
         $this->assertNull($c['b']);
         $this->assertTrue(isset($c['a']));
         $c['b'] = 2;

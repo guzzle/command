@@ -25,7 +25,7 @@ composer.json:
 
     {
         "require": {
-            "guzzlehttp/command": "0.6.*"
+            "guzzlehttp/command": "0.7.*"
         }
     }
 
@@ -36,8 +36,8 @@ Guzzle Service Clients are HTTP web service clients that use
 ``GuzzleHttp\Client`` objects, commands, and the command event system. Event
 listeners are attached to the client to handle creating HTTP requests for a
 command, processing HTTP responses into a result (typically a
-``GuzzleHttp\Command\ModelInterface``), and wraps
-``GuzzleHttp\Exception\RequestException`` objects using a higher-level
+``GuzzleHttp\Command\ModelInterface``), and extends
+``GuzzleHttp\Exception\RequestException`` objects with a higher-level
 ``GuzzleHttp\Command\Exception\CommandException``.
 
 Service clients create commands using the ``getCommand()`` method.
@@ -49,7 +49,7 @@ Service clients create commands using the ``getCommand()`` method.
     $command = $client->getCommand($commandName, $arguments);
 
 After creating a command, you execute the command using the ``execute()``
-method.
+method of the client.
 
 .. code-block:: php
 
@@ -86,10 +86,37 @@ Values can be set using a similar notation.
     // Set by nested path, creating sub-arrays as needed
     $value = $client->setConfig('foo/baz/bar', 'value');
 
+Future Results
+--------------
+
+Service clients can create future results that return immediately and block
+when they are used (or dereferenced). When creating a command, you can provide
+the ``@future`` command parameter to control whether or not a future result is
+created. Implementations should take this special setting into account when
+creating commands.
+
+.. code-block:: php
+
+    // Create a command that's configured to get a future
+    $command = $client->getCommand('name', ['@future' => true]);
+    assert($command->getFuture() == true);
+
+    // Create and execute a future command
+    $result = $client->name(['@future' => true]);
+
+    // Using a future result will block if necessary until the future has
+    // completed (or been "realized").
+    echo $result['foo'];
+    assert($result->realized() == true);
+
+    // You can also explicitly block until the command has finished using deref
+    $result->deref();
+
 Event System
 ============
 
-Commands emit three events:
+Commands emit three events. These events are emitted immediately when an
+underyling response has completed (even if it is a future response).
 
 prepare
     Emitted before executing a command. One of the event listeners

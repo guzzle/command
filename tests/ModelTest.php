@@ -13,6 +13,7 @@ class ModelTest extends \PHPUnit_Framework_TestCase
         $c = new Model(['a' => 'b', 'c' => 'd']);
         $this->assertEquals('b', $c['a']);
         $this->assertEquals('d', $c['c']);
+        $this->assertEquals('d', $c->get('c'));
         $this->assertTrue($c->hasKey('c'));
         $this->assertFalse($c->hasKey('f'));
     }

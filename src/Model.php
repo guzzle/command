@@ -19,4 +19,9 @@ class Model implements ModelInterface
     {
         return isset($this->data[$name]);
     }
+
+    public function get($key)
+    {
+        return $this[$key];
+    }
 }

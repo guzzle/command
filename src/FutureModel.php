@@ -32,6 +32,11 @@ class FutureModel implements FutureModelInterface
         return isset($this->data[$name]);
     }
 
+    public function get($name)
+    {
+        return $this->data[$name];
+    }
+
     public function __get($name)
     {
         if ($name !== 'data') {

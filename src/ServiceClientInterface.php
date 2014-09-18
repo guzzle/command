@@ -18,22 +18,30 @@ interface ServiceClientInterface extends HasEmitterInterface
      *
      * @param string $name      Name of the command to execute.
      * @param array  $arguments Arguments to pass to the getCommand method.
+     *
      * @throws \Exception
+     * @see \GuzzleHttp\Command\ServiceClientInterface::getCommand
      */
     public function __call($name, array $arguments);
 
     /**
      * Create a command for an operation name.
      *
+     * Special keys may be set on the command to control how it behaves.
+     * Implementations SHOULD be able to utilize the following keys or throw
+     * an exception if unable.
+     *
+     * - @future: Set to true to create a future if possible. When processed,
+     *   the "@future" key value pair can be removed from the input data before
+     *   serializing the command.
+     *
      * @param string $name   Name of the operation to use in the command
      * @param array  $args   Arguments to pass to the command
-     * @param bool   $future Set to true to create a non-blocking future result
-     *                       if the underlying HTTP adapter supports it.
      *
      * @return CommandInterface
      * @throws \InvalidArgumentException if no command can be found by name
      */
-    public function getCommand($name, array $args = [], $future = false);
+    public function getCommand($name, array $args = []);
 
     /**
      * Execute a single command.

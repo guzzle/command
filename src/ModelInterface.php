@@ -29,4 +29,13 @@ interface ModelInterface extends
      * @return bool
      */
     public function hasKey($name);
+
+    /**
+     * Get a specific key value from the result model.
+     *
+     * @param string $key Key to retrieve.
+     *
+     * @return mixed|null Value of the key or NULL if not found.
+     */
+    public function get($key);
 };
