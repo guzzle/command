@@ -50,9 +50,10 @@ class FutureModel implements FutureModelInterface
         $this->dereffn = $this->cancelfn = null;
         $data = $deref();
 
-        if (!is_array($data)) {
-            throw new \RuntimeException('Future result must be an array. '
-                . 'Found ' . Core::describeType($data));
+        if (!($data instanceof ModelInterface || is_array($data))) {
+            throw new \RuntimeException('Future result must be an array. or '
+                . 'instance of GuzzleHttp\Command\ModelInterface. Found '
+                . Core::describeType($data));
         }
 
         return $this->data = $data;
