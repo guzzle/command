@@ -6,6 +6,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Command\ServiceClientInterface;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Collection;
+use GuzzleHttp\Message\Request;
 
 /**
  * Exception encountered while transferring a command.
@@ -26,7 +27,7 @@ class CommandException extends RequestException
         \Exception $previous = null
     ) {
         $this->trans = $trans;
-        $request = $trans->request;
+        $request = $trans->request ?: new Request(null, null);
         $response = $trans->response;
         parent::__construct($message, $request, $response, $previous);
     }
