@@ -1,14 +1,10 @@
 <?php
 namespace GuzzleHttp\Tests\Command;
 
-use GuzzleHttp\Command\CommandTransaction;
-use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Utils;
-use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
-use GuzzleHttp\Pool;
 use GuzzleHttp\Ring\Client\MockAdapter;
 use GuzzleHttp\Ring\Future;
 use GuzzleHttp\Client;
@@ -99,11 +95,24 @@ class UtilsTest extends \PHPUnit_Framework_TestCase
             $client->getCommand('foo'),
             $client->getCommand('foo')
         ];
-        $results = Utils::batch($client, $commands);
+        $results = Utils::batch($client, $commands, [
+            'error' => function () use (&$calledError) {
+                    $calledError = true;
+                },
+            'process' => function () use (&$calledProcess) {
+                    $calledProcess = true;
+                },
+            'prepare' => function () use (&$calledPrepare) {
+                    $calledPrepare = true;
+                },
+        ]);
         $this->assertEquals(200, $results[$commands[1]]);
         $this->assertInstanceOf(
             'GuzzleHttp\Command\Exception\CommandException',
             $results[$commands[0]]
         );
+        $this->assertTrue($calledError);
+        $this->assertTrue($calledProcess);
+        $this->assertTrue($calledPrepare);
     }
 }

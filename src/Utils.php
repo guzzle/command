@@ -47,7 +47,6 @@ class Utils
             ['process', 'error'],
             [
                 'priority' => RequestEvents::EARLY,
-                'once'     => true,
                 'fn'       => function ($e) use ($hash) {
                     $hash[$e->getCommand()] = $e;
                 }
@@ -102,7 +101,7 @@ class Utils
         // Prevent CommandExceptions from being thrown
         return RequestEvents::convertEventArray($options, ['error'], [
             'priority' => RequestEvents::LATE,
-            'fn' => function (CommandErrorEvent $e) {
+            'fn'       => function (CommandErrorEvent $e) {
                 $e->stopPropagation();
             }
         ]);

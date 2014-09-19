@@ -251,10 +251,17 @@ class CommandEventsTest extends \PHPUnit_Framework_TestCase
             $event->setRequest($request);
         });
 
+        $called = false;
+        $emitter->on('error', function() use ($request, &$called) {
+            $called = true;
+        });
+
         try {
             $mock->execute($command);
             $this->fail('Did not throw');
-        } catch (CommandException $e) {}
+        } catch (CommandException $e) {
+            $this->assertTrue($called);
+        }
     }
 
     public function testCorrectlyHandlesRequestsThatFailWhenProcessing()
