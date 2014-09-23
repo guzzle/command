@@ -42,22 +42,6 @@ class CommandTest extends \PHPUnit_Framework_TestCase
         $this->assertNotSame($e1, $command2->getEmitter());
     }
 
-    public function testCanCreateRequestsFromCommand()
-    {
-        $client = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
-            ->setConstructorArgs([new Client()])
-            ->getMockForAbstractClass();
-        $request = new Request('GET', 'http://httpbin.org/get');
-        $command = new Command('foo');
-        $command->getEmitter()->on(
-            'prepare',
-            function(PrepareEvent $event) use ($request) {
-                $event->setRequest($request);
-            }
-        );
-        $this->assertSame($request,  Command::createRequest($client, $command));
-    }
-
     public function testCanControlFuture()
     {
         $command = new Command('foo');

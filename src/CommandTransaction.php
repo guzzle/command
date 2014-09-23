@@ -2,40 +2,43 @@
 namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Message\RequestInterface;
-use GuzzleHttp\Message\ResponseInterface;
+use GuzzleHttp\Transaction;
 use GuzzleHttp\Collection;
+use GuzzleHttp\Command\Exception\CommandException;
 
 /**
  * Represents a command transaction as it is sent over the wire and inspected
  * by event listeners.
  */
-class CommandTransaction
+class CommandTransaction extends Transaction
 {
-    /** @var ServiceClientInterface Client used in the transaction */
-    public $client;
+    /**
+     * Web service client used in the transaction
+     *
+     * @var ServiceClientInterface
+     */
+    public $serviceClient;
 
-    /** @var CommandInterface The command being transferred */
+    /**
+     * The command being executed.
+     *
+     * @var CommandInterface
+     */
     public $command;
 
     /**
-     * Request of the the transaction (if available)
+     * The result of the command (if available)
      *
-     * @var RequestInterface|null
+     * @var mixed|null
      */
-    public $request;
-
-    /** @var ResponseInterface Response that was received (if any) */
-    public $response;
-
-    /** @var mixed|null The result of the command (if available) */
     public $result;
 
     /**
      * The exception that was received while transferring (if any).
      *
-     * @var \Exception|null
+     * @var CommandException
      */
-    public $commandException;
+    public $exception;
 
     /**
      * Contains contextual information about the transaction.
@@ -48,17 +51,21 @@ class CommandTransaction
     public $context;
 
     /**
-     * @param ServiceClientInterface $client  Client that executes commands
-     * @param CommandInterface       $command Command being executed
-     * @param array                  $context Command context array of data
+     * @param ServiceClientInterface $client  Client that executes commands.
+     * @param CommandInterface       $command Command being executed.
+     * @param RequestInterface       $request Request to send.
+     * @param array                  $context Command context array of data.
      */
     public function __construct(
         ServiceClientInterface $client,
         CommandInterface $command,
+        RequestInterface $request,
         array $context = []
     ) {
-        $this->client = $client;
+        $this->serviceClient = $client;
         $this->command = $command;
+        $this->request = $request;
         $this->context = new Collection($context);
+        $this->client = $client->getHttpClient();
     }
 }

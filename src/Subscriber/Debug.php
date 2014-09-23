@@ -2,6 +2,8 @@
 namespace GuzzleHttp\Command\Subscriber;
 
 use GuzzleHttp\Command\CommandInterface;
+use GuzzleHttp\Command\Event\CommandBeforeEvent;
+use GuzzleHttp\Command\Event\CommandEndEvent;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
@@ -67,6 +69,10 @@ class Debug implements SubscriberInterface
                 ['beforePrepare', 'first'],
                 ['afterPrepare', 'last']
             ],
+            'before' => [
+                ['beforeBefore', 'first'],
+                ['afterBefore', 'last']
+            ],
             'process' => [
                 ['beforeProcess', 'first'],
                 ['afterProcess', 'last']
@@ -74,6 +80,10 @@ class Debug implements SubscriberInterface
             'error' => [
                 ['beforeError', 'first'],
                 ['afterError', 'last']
+            ],
+            'end' => [
+                ['beforeEnd', 'first'],
+                ['afterEnd', 'last']
             ]
         ];
     }
@@ -164,10 +174,20 @@ class Debug implements SubscriberInterface
             $this->proxyReqEvent('endEvent', $e, $after);
         };
 
-        foreach (['before', 'complete', 'error'] as $event) {
+        foreach (['before', 'complete', 'error', 'end'] as $event) {
             $request->getEmitter()->on($event, $before, RequestEvents::EARLY);
             $request->getEmitter()->on($event, $after, RequestEvents::LATE);
         }
+    }
+
+    public function beforeBefore(CommandBeforeEvent $e)
+    {
+        $this->proxyEvent('command:before', $e);
+    }
+
+    public function afterBefore(CommandBeforeEvent $e)
+    {
+        $this->proxyEvent('command:before', $e);
     }
 
     public function beforeProcess(ProcessEvent $e)
@@ -188,6 +208,16 @@ class Debug implements SubscriberInterface
     public function afterError(CommandErrorEvent $e)
     {
         $this->proxyEvent('command:error', $e);
+    }
+
+    public function beforeEnd(CommandEndEvent $e)
+    {
+        $this->proxyEvent('command:end', $e);
+    }
+
+    public function afterEnd(CommandEndEvent $e)
+    {
+        $this->proxyEvent('command:end', $e);
     }
 
     /**

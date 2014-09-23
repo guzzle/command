@@ -10,7 +10,7 @@ use GuzzleHttp\Pool;
 /**
  * Provides useful functions for interacting with web service clients.
  */
-class Utils
+class CommandUtils
 {
     /**
      * Sends multiple commands concurrently and returns a hash map of commands
@@ -62,7 +62,7 @@ class Utils
                 $hash[$request] = new CommandException(
                     'Error executing command',
                     $trans,
-                    $trans->commandException
+                    $trans->exception
                 );
             }
         }
@@ -86,24 +86,11 @@ class Utils
         $commands,
         array $options = []
     ) {
-        $options = self::preventCommandExceptions($options);
-
         return new Pool(
             $client->getHttpClient(),
             new CommandToRequestIterator($client, $commands, $options),
             isset($options['pool_size'])
                 ? ['pool_size' => $options['pool_size']] : []
         );
-    }
-
-    private static function preventCommandExceptions(array $options)
-    {
-        // Prevent CommandExceptions from being thrown
-        return RequestEvents::convertEventArray($options, ['error'], [
-            'priority' => RequestEvents::LATE,
-            'fn'       => function (CommandErrorEvent $e) {
-                $e->stopPropagation();
-            }
-        ]);
     }
 }

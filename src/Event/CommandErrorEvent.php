@@ -1,7 +1,6 @@
 <?php
 namespace GuzzleHttp\Command\Event;
 
-use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Message\ResponseInterface;
 
 /**
@@ -14,21 +13,13 @@ use GuzzleHttp\Message\ResponseInterface;
 class CommandErrorEvent extends AbstractCommandEvent
 {
     /**
-     * @param CommandTransaction $trans Command transfer context
-     */
-    public function __construct(CommandTransaction $trans)
-    {
-        $this->trans = $trans;
-    }
-
-    /**
      * Returns the exception that was encountered.
      *
      * @return \Exception
      */
     public function getException()
     {
-        return $this->trans->commandException;
+        return $this->trans->exception;
     }
 
     /**
@@ -43,13 +34,12 @@ class CommandErrorEvent extends AbstractCommandEvent
     }
 
     /**
-     * Intercept the error and inject a result
-     *
-     * @param mixed $result Result to associate with the command
+     * Mark the command as needing a retry and stop event propagation.
      */
-    public function setResult($result)
+    public function retry()
     {
-        $this->trans->result = $result;
+        $this->trans->result = $this->trans->exception = null;
+        $this->trans->state = 'before';
         $this->stopPropagation();
     }
 }

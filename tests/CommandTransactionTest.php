@@ -3,6 +3,7 @@ namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\CommandTransaction;
+use GuzzleHttp\Message\Request;
 
 class CommandTransactionTest extends \PHPUnit_Framework_TestCase
 {
@@ -10,13 +11,15 @@ class CommandTransactionTest extends \PHPUnit_Framework_TestCase
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
-        $trans = new CommandTransaction($client, $command, ['foo' => 'bar']);
-        $this->assertSame($client, $trans->client);
+        $req = new Request('GET', 'http://foo.com');
+        $trans = new CommandTransaction($client, $command, $req, ['foo' => 'bar']);
+        $this->assertSame($req, $trans->request);
+        $this->assertSame($client, $trans->serviceClient);
         $this->assertSame($command, $trans->command);
         $this->assertSame('bar', $trans->context->get('foo'));
         $this->assertNull($trans->result);
         $this->assertNull($trans->response);
-        $this->assertNull($trans->request);
-        $this->assertNull($trans->commandException);
+        $this->assertSame($req, $trans->request);
+        $this->assertNull($trans->exception);
     }
 }

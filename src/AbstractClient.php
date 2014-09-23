@@ -3,11 +3,14 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Collection;
+use GuzzleHttp\Command\Event\PrepareEvent;
+use GuzzleHttp\Event\EndEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
-use GuzzleHttp\Command\Event\CommandEvents;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Ring\Core;
 use GuzzleHttp\Ring\FutureInterface;
+use GuzzleHttp\Fsm;
+use GuzzleHttp\Event\RequestEvents;
+use GuzzleHttp\Message\RequestInterface;
 
 /**
  * Abstract client implementation that provides a basic implementation of
@@ -24,6 +27,9 @@ abstract class AbstractClient implements ServiceClientInterface
     /** @var Collection Service client configuration data */
     private $config;
 
+    /** @var Fsm */
+    private $fsm;
+
     /**
      * The default client constructor is responsible for setting private
      * properties on the client and accepts an associative array of
@@ -31,18 +37,23 @@ abstract class AbstractClient implements ServiceClientInterface
      *
      * - defaults: Associative array of default command parameters to add to
      *   each command created by the client.
+     * - fsm: (internal only) The state machine used to transition commands.
+     * - emitter: (internal only) A custom event emitter to use with the client.
      *
      * Concrete implementations may choose to support additional configuration
      * settings as needed.
      *
      * @param ClientInterface $client Client used to send HTTP requests
      * @param array           $config Client configuration options
+     *
+     * @throws \InvalidArgumentException
      */
     public function __construct(
         ClientInterface $client,
         array $config = []
     ) {
         $this->client = $client;
+
         // Ensure the defaults key is an array so we can easily merge later.
         if (!isset($config['defaults'])) {
             $config['defaults'] = [];
@@ -50,6 +61,14 @@ abstract class AbstractClient implements ServiceClientInterface
 
         if (isset($config['emitter'])) {
             $this->emitter = $config['emitter'];
+            unset($config['emitter']);
+        }
+
+        if (!isset($config['fsm'])) {
+            $this->fsm = new CommandFsm();
+        } else {
+            $this->fsm = $config['fsm'];
+            unset($config['fsm']);
         }
 
         $this->config = new Collection($config);
@@ -65,26 +84,28 @@ abstract class AbstractClient implements ServiceClientInterface
         );
     }
 
+    public function buildRequest(CommandInterface $command)
+    {
+        $request = $this->serializeRequest($command);
+        $trans = new CommandTransaction($this, $command, $request);
+        $this->bridgeHttp($trans);
+
+        return $request;
+    }
+
     public function execute(CommandInterface $command)
     {
-        $t = CommandEvents::prepareTransaction($this, $command);
+        $request = $this->serializeRequest($command);
+        $trans = new CommandTransaction($this, $command, $request);
+        $this->bridgeHttp($trans);
+        $this->fsm->run($trans);
 
-        // Note: listeners can intercept the before event and inject a result.
-        if ($t->result !== null) {
-            return $t->result;
-        }
-
-        $t->response = $this->client->send($t->request);
-
-        // Return results immediately when they are not a future.
-        return $t->response instanceof FutureInterface
-            ? $this->createFutureResult($t)
-            : $t->result;
+        return $trans->result;
     }
 
     public function executeAll($commands, array $options = [])
     {
-        Utils::createPool($this, $commands, $options)->deref();
+        CommandUtils::createPool($this, $commands, $options)->deref();
     }
 
     public function getHttpClient()
@@ -112,7 +133,7 @@ abstract class AbstractClient implements ServiceClientInterface
 
     public function createCommandException(
         CommandTransaction $transaction,
-        RequestException $previous
+        \Exception $previous
     ) {
         $cn = 'GuzzleHttp\\Command\\Exception\\CommandException';
 
@@ -131,6 +152,15 @@ abstract class AbstractClient implements ServiceClientInterface
             $previous
         );
     }
+
+    /**
+     * Prepares a request for the command.
+     *
+     * @param CommandInterface $command Command to serialize.
+     *
+     * @return RequestInterface
+     */
+    abstract protected function serializeRequest(CommandInterface $command);
 
     /**
      * Creates a future result for a given command transaction.
@@ -160,6 +190,53 @@ abstract class AbstractClient implements ServiceClientInterface
             // Cancel function just proxies to the response's cancel function.
             function () use ($transaction) {
                 return $transaction->response->cancel();
+            }
+        );
+    }
+
+    /**
+     * Bridges the HTTP event loop with the command event loop.
+     *
+     * @param CommandTransaction $trans
+     */
+    private function bridgeHttp(CommandTransaction $trans)
+    {
+        if ($future = $trans->command->getFuture()) {
+            $trans->request->getConfig()->set('future', $future);
+        }
+
+        $trans->command->getEmitter()->emit('prepare', new PrepareEvent($trans));
+        $trans->state = 'before';
+        $trans->request->getEmitter()->on(
+            'end',
+            function (EndEvent $e) use ($trans) {
+                $trans->request = $e->getRequest();
+                $trans->response = $e->getResponse();
+
+                // Transition based on if an exception was encountered.
+                if ($ex = $e->getException()) {
+                    $trans->exception = $ex;
+                    $trans->state = 'error';
+                    $needsCleanup = true;
+                } else {
+                    $trans->state = 'process';
+                    $needsCleanup = false;
+                }
+
+                // Finish the command FSM in the request end event. If an
+                // exception is thrown for the command, then that is thrown
+                // in the request layer as-is because CommandException
+                // extends from RequestException.
+                $this->fsm->run($trans);
+
+                // If no exception was thrown while finishing the command,
+                // then the command completed successfully. Cleanup the
+                // request FSM if the request had an exception.
+                if ($needsCleanup) {
+                    // Prevent request state exception by intercepting the
+                    // request "end" event with a future response.
+                    RequestEvents::stopException($e);
+                }
             }
         );
     }

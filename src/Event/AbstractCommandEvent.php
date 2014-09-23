@@ -14,6 +14,14 @@ class AbstractCommandEvent extends AbstractEvent
     protected $trans;
 
     /**
+     * @param CommandTransaction $trans Command transaction
+     */
+    public function __construct(CommandTransaction $trans)
+    {
+        $this->trans = $trans;
+    }
+
+    /**
      * Get the command associated with the event
      *
      * @return CommandInterface
@@ -44,13 +52,13 @@ class AbstractCommandEvent extends AbstractEvent
     }
 
     /**
-     * Get the client associated with the command transfer.
+     * Get the service client associated with the command transfer.
      *
      * @return ServiceClientInterface
      */
     public function getClient()
     {
-        return $this->trans->client;
+        return $this->trans->serviceClient;
     }
 
     /**

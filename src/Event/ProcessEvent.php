@@ -2,7 +2,6 @@
 namespace GuzzleHttp\Command\Event;
 
 use GuzzleHttp\Message\ResponseInterface;
-use GuzzleHttp\Command\CommandTransaction;
 
 /**
  * Event emitted when the HTTP response of a command is being processed.
@@ -17,14 +16,6 @@ use GuzzleHttp\Command\CommandTransaction;
 class ProcessEvent extends AbstractCommandEvent
 {
     /**
-     * @param CommandTransaction $trans Contextual transfer information
-     */
-    public function __construct(CommandTransaction $trans)
-    {
-        $this->trans = $trans;
-    }
-
-    /**
      * Get the response that was received for the request (if one is present).
      *
      * @return ResponseInterface|null
@@ -35,12 +26,24 @@ class ProcessEvent extends AbstractCommandEvent
     }
 
     /**
-     * Set the processed result on the event.
+     * Set the processed result on the event. Subsequent listeners ARE STILL
+     * emitted even when a result is set.
      *
      * @param mixed $result Result to associate with the command
      */
     public function setResult($result)
     {
+        $this->trans->exception = null;
         $this->trans->result = $result;
+    }
+
+    /**
+     * Mark the command as needing a retry and stop event propagation.
+     */
+    public function retry()
+    {
+        $this->trans->result = $this->trans->exception = null;
+        $this->trans->state = 'before';
+        $this->stopPropagation();
     }
 }

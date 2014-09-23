@@ -3,7 +3,6 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\HasDataTrait;
 use GuzzleHttp\Event\HasEmitterTrait;
-use GuzzleHttp\Command\Event\CommandEvents;
 
 /**
  * Default command implementation.
@@ -51,25 +50,6 @@ class Command implements CommandInterface
         if ($this->emitter) {
             $this->emitter = clone $this->emitter;
         }
-    }
-
-    /**
-     * Creates and prepares an HTTP request for a command but does not execute
-     * the command.
-     *
-     * When the request is created, it is no longer associated with the command
-     * and the event system of the command should no longer be depended upon.
-     *
-     * @param ServiceClientInterface $client  Client used to create requests
-     * @param CommandInterface       $command Command to convert into a request
-     *
-     * @return \GuzzleHttp\Message\RequestInterface
-     */
-    public static function createRequest(
-        ServiceClientInterface $client,
-        CommandInterface $command
-    ) {
-        return CommandEvents::prepareTransaction($client, $command)->request;
     }
 
     public function getName()

@@ -3,11 +3,11 @@ namespace GuzzleHttp\Tests\Command\Event;
 
 use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\Command\CommandTransaction;
+use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 
 /**
  * @covers \GuzzleHttp\Command\Event\CommandErrorEvent
- * @covers \GuzzleHttp\Command\Event\AbstractCommandEvent
  */
 class ErrorEventTest extends \PHPUnit_Framework_TestCase
 {
@@ -15,25 +15,17 @@ class ErrorEventTest extends \PHPUnit_Framework_TestCase
     {
         $command = $this->getMock('GuzzleHttp\\Command\\CommandInterface');
         $client = $this->getMock('GuzzleHttp\\Command\\ServiceClientInterface');
-        $ctrans = new CommandTransaction($client, $command);
-        $response = new Response(200);
+        $request = new Request('GET', 'http://foo.com');
+        $ctrans = new CommandTransaction($client, $command, $request);
         $ex = new \Exception('foo');
-        $ctrans->commandException = $ex;
-        $ctrans->response = $response;
-
+        $ctrans->exception = $ex;
+        $ctrans->response = new Response(200);
         $event = new CommandErrorEvent($ctrans);
-        $this->assertSame($ctrans, $event->getTransaction());
-        $this->assertSame($command, $event->getCommand());
-        $this->assertSame($client, $event->getClient());
         $this->assertSame($ex, $event->getException());
-        $this->assertSame($response, $event->getResponse());
-        $this->assertNull($event->getResult());
-
-        $event->setResult('foo');
-        $this->assertSame('foo', $event->getResult());
+        $this->assertSame($ctrans->response, $event->getResponse());
+        $event->retry();
         $this->assertTrue($event->isPropagationStopped());
-
-        $event->getContext()->set('abc', '123');
-        $this->assertEquals('123', $ctrans->context->get('abc'));
+        $this->assertSame('before', $ctrans->state);
+        $this->assertNull($ctrans->exception);
     }
 }

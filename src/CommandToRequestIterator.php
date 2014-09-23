@@ -2,7 +2,6 @@
 namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Message\RequestInterface;
-use GuzzleHttp\Command\Event\CommandEvents;
 use GuzzleHttp\Event\ListenerAttacherTrait;
 use GuzzleHttp\Ring\Core;
 
@@ -33,14 +32,16 @@ class CommandToRequestIterator implements \Iterator
      * @param ServiceClientInterface $client   Associated service client
      * @param array|\Iterator        $commands Collection of command objects
      * @param array                  $options  Hash of options:
-     *     - prepare: Callable to invoke when the "prepare" event of a command
-     *       is emitted. This callable is invoked near the end of the event
-     *       chain.
-     *     - process: Callable to invoke when the "process" event of a command
-     *       is emitted. This callable is triggered at or near the end of the
-     *       event chain.
+     *     - prepare: Callable to invoke for the "prepare" event. This event is
+     *       called only once per execution.
+     *     - before: Callable to invoke when the "process" event is fired. This
+     *       event is fired one or more times.
+     *     - process: Callable to invoke when the "process" event is fired. This
+     *       event can be fired one or more times.
      *     - error: Callable to invoke when the "error" event of a command is
-     *       emitted. This callable is invoked near the end of the event chain.
+     *       emitted. This event can be fired one or more times.
+     *     - end: Callable to invoke when the terminal "end" event of a command
+     *       is emitted. This event is fired once per command execution.
      *
      * @throws \InvalidArgumentException If the source is invalid
      */
@@ -52,7 +53,7 @@ class CommandToRequestIterator implements \Iterator
         $this->client = $client;
         $this->eventListeners = $this->prepareListeners(
             $options,
-            ['prepare', 'process', 'error']
+            ['prepare', 'before', 'process', 'error', 'end']
         );
 
         if ($commands instanceof \Iterator) {
@@ -103,17 +104,7 @@ class CommandToRequestIterator implements \Iterator
 
         $command->setFuture('lazy');
         $this->attachListeners($command, $this->eventListeners);
-        $trans = CommandEvents::prepareTransaction($this->client, $command);
-
-        // Handle the command being intercepted with a result or failing by
-        // not generating a request by going to the next command and returning
-        // it's validity
-        if ($trans->result !== null || !$trans->request) {
-            $this->commands->next();
-            return $this->valid();
-        }
-
-        $this->currentRequest = $trans->request;
+        $this->currentRequest = $this->client->buildRequest($command);
 
         return true;
     }

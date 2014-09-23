@@ -39,7 +39,7 @@ class CommandException extends RequestException
      */
     public function getClient()
     {
-        return $this->trans->client;
+        return $this->trans->serviceClient;
     }
 
     /**

@@ -2,6 +2,11 @@
 Changelog
 =========
 
+0.7.0 (TBD)
+-----------
+
+* Basically a rewrite to use Guzzle 5.
+
 0.6.0 (2014-08-08)
 ------------------
 

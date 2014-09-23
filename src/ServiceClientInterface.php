@@ -3,7 +3,7 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Event\HasEmitterInterface;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Message\RequestInterface;
 
 /**
  * Web service client interface.
@@ -42,6 +42,15 @@ interface ServiceClientInterface extends HasEmitterInterface
      * @throws \InvalidArgumentException if no command can be found by name
      */
     public function getCommand($name, array $args = []);
+
+    /**
+     * Build an HTTP request for the provided command object without sending.
+     *
+     * @param CommandInterface $command Command to build a request for.
+     *
+     * @return RequestInterface
+     */
+    public function buildRequest(CommandInterface $command);
 
     /**
      * Execute a single command.
@@ -107,19 +116,19 @@ interface ServiceClientInterface extends HasEmitterInterface
     public function setConfig($keyOrPath, $value);
 
     /**
-     * Create an exception for a command based on a request exception.
+     * Create an exception for a command based on a previous exception.
      *
-     * This method is invoked when an exception occurs while transferring an
-     * HTTP request for a specific command. This method MUST return an instance
-     * of \Exception that will be thrown for the given command.
+     * This method is invoked when an exception occurs while executing a
+     * command. You may choose to use a custom exception class for exceptions
+     * or return the provided exception as-is.
      *
      * @param CommandTransaction $transaction Command transaction context
-     * @param RequestException   $previous    Request exception encountered
+     * @param \Exception         $previous    Exception encountered
      *
      * @return \Exception
      */
     public function createCommandException(
         CommandTransaction $transaction,
-        RequestException $previous
+        \Exception $previous
     );
 }

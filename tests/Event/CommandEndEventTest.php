@@ -1,16 +1,15 @@
 <?php
 namespace GuzzleHttp\Tests\Command\Event;
 
-use GuzzleHttp\Command\Event\ProcessEvent;
+use GuzzleHttp\Command\Event\CommandEndEvent;
 use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 
 /**
- * @covers \GuzzleHttp\Command\Event\ProcessEvent
- * @covers \GuzzleHttp\Command\Event\AbstractCommandEvent
+ * @covers \GuzzleHttp\Command\Event\CommandEndEvent
  */
-class ProcessEventTest extends \PHPUnit_Framework_TestCase
+class CommandEndEventTest extends \PHPUnit_Framework_TestCase
 {
     public function testHasData()
     {
@@ -21,13 +20,8 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
         $ex = new \Exception('foo');
         $ctrans->exception = $ex;
         $ctrans->response = new Response(200);
-        $event = new ProcessEvent($ctrans);
+        $event = new CommandEndEvent($ctrans);
+        $this->assertSame($ex, $event->getException());
         $this->assertSame($ctrans->response, $event->getResponse());
-        $event->setResult('foo');
-        $this->assertSame('foo', $ctrans->result);
-        $this->assertFalse($event->isPropagationStopped());
-        $event->retry();
-        $this->assertTrue($event->isPropagationStopped());
-        $this->assertSame('before', $ctrans->state);
     }
 }

@@ -119,36 +119,50 @@ Commands emit three events. These events are emitted immediately when an
 underyling response has completed (even if it is a future response).
 
 prepare
-    Emitted before executing a command. One of the event listeners
-    MUST inject a ``GuzzleHttp\Message\RequestInterface`` object onto the
-    emitted ``GuzzleHttp\Command\Event\PrepareEvent`` object.
-
-    An event listener MAY inject a result onto the event using ``setResult()``.
-    Injecting a result MUST prevent the command from sending a request, and MUST
-    trigger the "process" event so that subsequent listeners can modify the
-    result of a command as needed.
+    Emitted immediately after a request has been prepared for a command. This
+    event is fired only once per command execution. Use this event to hook into
+    the request lifecycle events.
 
     .. code-block:: php
 
         use GuzzleHttp\Command\Event\PrepareEvent;
 
         $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
-            // Set a request on the command
-            $request = $event->getClient()->createRequest(
-                'GET',
-                'http://httpbin.org/get'
-            );
-            $event->setRequest($request);
+            echo $event->getRequest();
         });
 
+    Any exceptions thrown while emitting the "prepare" event will fail
+    immediately. The command will not transition to the error state.
+
+before
+    Emitted before executing a prepared command. You can intercept this event
+    and set a result for a command to prevent the request from being sent at
+    the HTTP layer. This event MAY be emitted multiple times for a single
+    command execution.
+
+    .. code-block:: php
+
+        use GuzzleHttp\Command\Event\CommandBeforeEvent;
+
+        $command->getEmitter()->on(
+            'before',
+            function(CommandBeforeEvent $event) {
+                // Prevent the request from being sent.
+                $event->setResult(['foo' => 'bar']);
+            }
+        );
+
 process
-    Emitted after a HTTP response has been received for the command
-    OR when a result is injected into an emitted "prepare" or "error" event.
+    The process event is emitted when processing an HTTP response or processing
+    a previously set command result. It is important to note that a previously
+    executed listener may have already set a result. Take this into account
+    when writing process event listeners. It is also important to understand
+    that an HTTP response may not be available in the process event.
+
     Event listeners MAY modify the result of the command using the
-    ``setResult()`` method of the ``GuzzleHttp\Command\Event\ProcessEvent``.
-    Because this event is also emitted when a result is injected onto a
-    PrepareEvent and CommandErrorEvent, there may not be a request or response
-    available to the event.
+    ``setResult()`` method of the emitted ``GuzzleHttp\Command\Event\ProcessEvent``.
+
+    This event MAY be called multiple times during the execution of a command.
 
     .. code-block:: php
 
@@ -165,28 +179,34 @@ process
         });
 
 error
-    Emitted when an error occurs after receiving an HTTP response. You
-    MAY inject a result onto the ``GuzzleHttp\Command\Event\CommandErrorEvent``,
-    which will prevent an exception from being thrown. When a result is injected,
-    the "process" event is triggered. When the CommandErrorEvent is not
-    intercepted with a result, then a
-    ``GuzzleHttp\Command\Exception\CommandException`` is thrown.
+    Emitted when an error occurs while executing a command.  You MAY inject a
+    result onto the ``GuzzleHttp\Command\Event\CommandErrorEvent``, which will
+    prevent an exception from being thrown. When a result is injected, the
+    "process" event is triggered. When the CommandErrorEvent is not intercepted
+    with a result, then a ``GuzzleHttp\Command\Exception\CommandException`` is
+    thrown.
 
-    Event listeners can add custom metadata to the CommandErrorEvent by
-    treating the event like an associative array. In addition to being able to
-    store custom key/value pairs, you can iterate over the custom keys of the
-    event using ``foreach()``.
+    Event listeners can add custom metadata to the CommandErrorEvent using the
+    `getContext()` method.
+
+    This event MAY be called multiple times during the execution of a command.
 
     .. code-block:: php
 
         $command->getEmitter()->on('error', function(CommandErrorEvent $e) {
-            $e['custom'] = 'data';
-            echo $e['custom']; // outputs "data"
-            // You can iterate over the event like an array
-            foreach ($event as $key => $value) {
-                echo $key . ' = ' . $value . "\n";
-            }
+            $e->getContext()->set('custom', 'data');
         });
 
-Implementations SHOULD use ``GuzzleHttp\Command\Event\CommandEvents`` to
-implement the event system correctly.
+end
+    Emitted when a command completes, whether for a success or failure. This
+    event will be invoked once, and only once, for a command execution.
+
+    .. code-block:: php
+
+        $command->getEmitter()->on('end', function(CommandEndEvent $e) {
+            if ($e->getException()) {
+                echo 'Oh no!';
+            } else {
+                var_dump($e->getResult());
+            }
+        });

@@ -1,9 +1,10 @@
 <?php
 namespace GuzzleHttp\Tests\Command;
 
-use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
-use GuzzleHttp\Command\Utils;
+use GuzzleHttp\Command\CommandUtils;
+use GuzzleHttp\Message\Request;
+use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Message\Response;
 use GuzzleHttp\Ring\Client\MockAdapter;
 use GuzzleHttp\Ring\Future;
@@ -13,7 +14,7 @@ use GuzzleHttp\Subscriber\Mock;
 
 class UtilsTest extends \PHPUnit_Framework_TestCase
 {
-    private function getClient()
+    private function getClient(RequestInterface $request)
     {
         $http = new Client(['adapter' => new MockAdapter(
             new Future(function () {
@@ -23,25 +24,29 @@ class UtilsTest extends \PHPUnit_Framework_TestCase
 
         $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$http, []])
-            ->setMethods(['getCommand'])
+            ->setMethods(['getCommand', 'serializeRequest'])
             ->getMockForAbstractClass();
 
         $client->expects($this->any())
             ->method('getCommand')
             ->will($this->returnCallback(function () use ($client) {
-                    return new Command('foo', [], [
-                        'emitter' => clone $client->getEmitter()
-                    ]);
-                }));
+                return new Command('foo', [], [
+                    'emitter' => clone $client->getEmitter()
+                ]);
+            }));
+
+        $client->expects($this->any())
+            ->method('serializeRequest')
+            ->will($this->returnValue($request));
 
         return $client;
     }
 
     public function testCreatesPool()
     {
-        $client = $this->getClient();
+        $client = $this->getClient(new Request('GET', 'http://www.foo.com'));
         $commands = [$client->getCommand('foo')];
-        $pool = Utils::createPool($client, $commands, ['pool_size' => 10]);
+        $pool = CommandUtils::createPool($client, $commands, ['pool_size' => 10]);
         $this->assertInstanceOf('GuzzleHttp\Pool', $pool);
         $this->assertFalse($pool->realized());
         $this->assertEquals(10, $this->readAttribute($pool, 'poolSize'));
@@ -53,18 +58,14 @@ class UtilsTest extends \PHPUnit_Framework_TestCase
      */
     public function testDoesNotThrowPoolErrors($things)
     {
-        list($client, $commands, $pool) = $things;
+        $client = $this->getClient(new Request('GET', 'http://foo.com'));
+        $commands = [$client->getCommand('foo')];
+        $pool = CommandUtils::createPool($client, $commands, ['pool_size' => 10]);
         $client->getHttpClient()->getEmitter()->attach(new Mock([
             new Response(404),
             new Response(404),
         ]));
         $called = false;
-        $commands[0]->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $e) use ($client) {
-                $e->setRequest($client->getHttpClient()->createRequest('GET', 'http://foo.com'));
-            }
-        );
         $commands[0]->getEmitter()->on('error', function () use (&$called) {
             $called = true;
         });
@@ -74,13 +75,7 @@ class UtilsTest extends \PHPUnit_Framework_TestCase
 
     public function testSendsBatch()
     {
-        $client = $this->getClient();
-        $client->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $e) use ($client) {
-                $e->setRequest($client->getHttpClient()->createRequest('GET', 'http://foo.com'));
-            }
-        );
+        $client = $this->getClient(new Request('GET', 'http://foo.com'));
         $client->getEmitter()->on(
             'process',
             function (ProcessEvent $e) use ($client) {
@@ -95,16 +90,16 @@ class UtilsTest extends \PHPUnit_Framework_TestCase
             $client->getCommand('foo'),
             $client->getCommand('foo')
         ];
-        $results = Utils::batch($client, $commands, [
+        $results = CommandUtils::batch($client, $commands, [
             'error' => function () use (&$calledError) {
-                    $calledError = true;
-                },
+                $calledError = true;
+            },
             'process' => function () use (&$calledProcess) {
-                    $calledProcess = true;
-                },
+                $calledProcess = true;
+            },
             'prepare' => function () use (&$calledPrepare) {
-                    $calledPrepare = true;
-                },
+                $calledPrepare = true;
+            },
         ]);
         $this->assertEquals(200, $results[$commands[1]]);
         $this->assertInstanceOf(
