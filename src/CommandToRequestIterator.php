@@ -19,8 +19,8 @@ class CommandToRequestIterator implements \Iterator
     /** @var \Iterator */
     private $commands;
 
-    /** @var ServiceClientInterface */
-    private $client;
+    /** @var callable request builder function */
+    private $requestBuilder;
 
     /** @var RequestInterface|null Current request */
     private $currentRequest;
@@ -29,7 +29,10 @@ class CommandToRequestIterator implements \Iterator
     private $eventListeners = [];
 
     /**
-     * @param ServiceClientInterface $client   Associated service client
+     * @param callable $requestBuilder A function that accepts a command and
+     *       returns a hash containing a request key mapping to a request that
+     *       has emitted it's prepare and before event, and a result key
+     *       mapping to the result if one was injected in the before event.
      * @param array|\Iterator        $commands Collection of command objects
      * @param array                  $options  Hash of options:
      *     - prepare: Callable to invoke for the "prepare" event. This event is
@@ -46,14 +49,14 @@ class CommandToRequestIterator implements \Iterator
      * @throws \InvalidArgumentException If the source is invalid
      */
     public function __construct(
-        ServiceClientInterface $client,
+        callable $requestBuilder,
         $commands,
         array $options = []
     ) {
-        $this->client = $client;
+        $this->requestBuilder = $requestBuilder;
         $this->eventListeners = $this->prepareListeners(
             $options,
-            ['prepare', 'before', 'process', 'error', 'end']
+            ['prepare', 'process', 'error', 'end']
         );
 
         if ($commands instanceof \Iterator) {
@@ -104,7 +107,18 @@ class CommandToRequestIterator implements \Iterator
 
         $command->setFuture('lazy');
         $this->attachListeners($command, $this->eventListeners);
-        $this->currentRequest = $this->client->buildRequest($command);
+        $builder = $this->requestBuilder;
+        $result = $builder($command);
+
+        // Handle the command being intercepted with a result or failing by
+        // not generating a request by going to the next command and returning
+        // it's validity
+        if (isset($result['result']) || !isset($result['request'])) {
+            $this->commands->next();
+            return $this->valid();
+        }
+
+        $this->currentRequest = $result['request'];
 
         return true;
     }

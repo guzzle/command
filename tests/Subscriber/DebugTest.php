@@ -5,8 +5,6 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Subscriber\Debug;
-use GuzzleHttp\Event\BeforeEvent;
-use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 use GuzzleHttp\Stream\Stream;
 use GuzzleHttp\Subscriber\Mock;
@@ -62,8 +60,6 @@ class DebugTest extends \PHPUnit_Framework_TestCase
         $checks = [
             'Starting the command:prepare event for ',
             'Done with the command:prepare event for ',
-            'Starting the command:before event for ',
-            'Done with the command:before event for ',
             '(took ',
             'Starting the request:before event for ',
             'Done with the request:before event for ',

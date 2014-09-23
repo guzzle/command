@@ -34,12 +34,17 @@ class CommandErrorEvent extends AbstractCommandEvent
     }
 
     /**
-     * Mark the command as needing a retry and stop event propagation.
+     * Rescue the error by setting a result.
+     *
+     * Subsequent listeners ARE NOT emitted even when a result is set in the
+     * error event.
+     *
+     * @param mixed $result Result to associate with the command
      */
-    public function retry()
+    public function intercept($result)
     {
-        $this->trans->result = $this->trans->exception = null;
-        $this->trans->state = 'before';
+        $this->trans->exception = null;
+        $this->trans->result = $result;
         $this->stopPropagation();
     }
 }

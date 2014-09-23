@@ -1,11 +1,12 @@
 <?php
 namespace GuzzleHttp\Command;
 
+use GuzzleHttp\Command\Event\CommandEndEvent;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Event\CommandErrorEvent;
-use GuzzleHttp\Pool;
+use GuzzleHttp\BatchResults;
 
 /**
  * Provides useful functions for interacting with web service clients.
@@ -26,10 +27,7 @@ class CommandUtils
      * @param array                  $options  Passes through the options available
      *                                         in {@see ServiceClientInterface::createPool()}
      *
-     * @return \SplObjectStorage Commands are the key and each value is the
-     *     result of the command on success or an instance of
-     *     {@see GuzzleHttp\Command\Exception\CommandException} if a failure
-     *     occurs while executing the command.
+     * @return BatchResults
      * @throws \InvalidArgumentException if the event format is incorrect.
      */
     public static function batch(
@@ -44,11 +42,13 @@ class CommandUtils
 
         $client->executeAll($commands, RequestEvents::convertEventArray(
             $options,
-            ['process', 'error'],
+            ['end'],
             [
-                'priority' => RequestEvents::EARLY,
-                'fn'       => function ($e) use ($hash) {
-                    $hash[$e->getCommand()] = $e;
+                'priority' => RequestEvents::LATE,
+                'fn'       => function (CommandEndEvent $e) use ($hash) {
+                    $hash[$e->getCommand()] = $e->getException()
+                        ? $e->getException()
+                        : $e->getResult();
                 }
             ]
         ));
@@ -67,30 +67,6 @@ class CommandUtils
             }
         }
 
-        return $hash;
-    }
-
-    /**
-     * Creates a pool from a list of commands that allows the commands to be
-     * sent concurrently.
-     *
-     * @param ServiceClientInterface $client   Client that sends the commands.
-     * @param array|\Iterator        $commands Commands to send
-     * @param array                  $options  Options specified in
-     *                                         {@see ServiceClientInterface::executeAll()}
-     *
-     * @return Pool
-     */
-    public static function createPool(
-        ServiceClientInterface $client,
-        $commands,
-        array $options = []
-    ) {
-        return new Pool(
-            $client->getHttpClient(),
-            new CommandToRequestIterator($client, $commands, $options),
-            isset($options['pool_size'])
-                ? ['pool_size' => $options['pool_size']] : []
-        );
+        return new BatchResults($hash);
     }
 }

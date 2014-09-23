@@ -4,7 +4,7 @@ namespace GuzzleHttp\Tests\Subscriber;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\CommandTransaction;
-use GuzzleHttp\Command\Event\CommandBeforeEvent;
+use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Model;
 use GuzzleHttp\Command\Subscriber\ResultMock;
 use GuzzleHttp\Message\Request;
@@ -54,20 +54,20 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
             ->addException($e2);
 
         // 1. The Model object
-        $event = new CommandBeforeEvent($trans);
+        $event = new PrepareEvent($trans);
         $plugin->onBefore($event);
         $this->assertInstanceOf('GuzzleHttp\Command\Model', $event->getResult());
 
         // 2. The Exception with "Foo"
         try {
-            $plugin->onBefore(new CommandBeforeEvent($trans));
+            $plugin->onBefore(new PrepareEvent($trans));
         } catch (\Exception $e) {
             $this->assertEquals('Foo', $e->getMessage());
         }
 
         // 2. The Exception with "Bar"
         try {
-            $plugin->onBefore(new CommandBeforeEvent($trans));
+            $plugin->onBefore(new PrepareEvent($trans));
         } catch (\Exception $e) {
             $this->assertEquals('Bar', $e->getMessage());
         }
@@ -82,7 +82,7 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
             ->setConstructorArgs([new Client])
             ->getMockForAbstractClass();
         $request = new Request('GET', 'http://foo.com');
-        $event = new CommandBeforeEvent(
+        $event = new PrepareEvent(
             new CommandTransaction($client, new Command('foo'), $request)
         );
         (new ResultMock)->onBefore($event);

@@ -26,8 +26,5 @@ class ProcessEventTest extends \PHPUnit_Framework_TestCase
         $event->setResult('foo');
         $this->assertSame('foo', $ctrans->result);
         $this->assertFalse($event->isPropagationStopped());
-        $event->retry();
-        $this->assertTrue($event->isPropagationStopped());
-        $this->assertSame('before', $ctrans->state);
     }
 }

@@ -3,7 +3,6 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Event\HasEmitterInterface;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Message\RequestInterface;
 
 /**
  * Web service client interface.
@@ -42,15 +41,6 @@ interface ServiceClientInterface extends HasEmitterInterface
      * @throws \InvalidArgumentException if no command can be found by name
      */
     public function getCommand($name, array $args = []);
-
-    /**
-     * Build an HTTP request for the provided command object without sending.
-     *
-     * @param CommandInterface $command Command to build a request for.
-     *
-     * @return RequestInterface
-     */
-    public function buildRequest(CommandInterface $command);
 
     /**
      * Execute a single command.

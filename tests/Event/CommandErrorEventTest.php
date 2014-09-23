@@ -23,9 +23,8 @@ class ErrorEventTest extends \PHPUnit_Framework_TestCase
         $event = new CommandErrorEvent($ctrans);
         $this->assertSame($ex, $event->getException());
         $this->assertSame($ctrans->response, $event->getResponse());
-        $event->retry();
+        $event->intercept('foo');
         $this->assertTrue($event->isPropagationStopped());
-        $this->assertSame('before', $ctrans->state);
-        $this->assertNull($ctrans->exception);
+        $this->assertEquals('foo', $event->getResult());
     }
 }

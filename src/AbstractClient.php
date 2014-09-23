@@ -6,6 +6,8 @@ use GuzzleHttp\Collection;
 use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Event\EndEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
+use GuzzleHttp\Message\FutureResponse;
+use GuzzleHttp\Pool;
 use GuzzleHttp\Ring\Core;
 use GuzzleHttp\Ring\FutureInterface;
 use GuzzleHttp\Fsm;
@@ -84,28 +86,36 @@ abstract class AbstractClient implements ServiceClientInterface
         );
     }
 
-    public function buildRequest(CommandInterface $command)
-    {
-        $request = $this->serializeRequest($command);
-        $trans = new CommandTransaction($this, $command, $request);
-        $this->bridgeHttp($trans);
-
-        return $request;
-    }
-
     public function execute(CommandInterface $command)
     {
-        $request = $this->serializeRequest($command);
-        $trans = new CommandTransaction($this, $command, $request);
-        $this->bridgeHttp($trans);
-        $this->fsm->run($trans);
+        $trans = $this->initTransaction($command);
 
-        return $trans->result;
+        if ($trans->result) {
+            return $trans->result;
+        }
+
+        $response = $this->client->send($trans->request);
+
+        return $response instanceof FutureResponse
+            ? $this->createFutureResult($trans)
+            : $trans->result;
     }
 
     public function executeAll($commands, array $options = [])
     {
-        CommandUtils::createPool($this, $commands, $options)->deref();
+        $fn = function (CommandInterface $command) {
+            $trans = $this->initTransaction($command);
+            return ['request' => $trans->request, 'result' => $trans->result];
+        };
+
+        $pool = new Pool(
+            $this->client,
+            new CommandToRequestIterator($fn, $commands, $options),
+            isset($options['pool_size'])
+                ? ['pool_size' => $options['pool_size']] : []
+        );
+
+        $pool->deref();
     }
 
     public function getHttpClient()
@@ -171,16 +181,9 @@ abstract class AbstractClient implements ServiceClientInterface
      * @param CommandTransaction $transaction
      *
      * @return FutureInterface
-     * @throws \RuntimeException if the response associated with the command
-     *                           transaction is not a FutureInterface.
      */
     protected function createFutureResult(CommandTransaction $transaction)
     {
-        if (!($transaction->response instanceof FutureInterface)) {
-            throw new \RuntimeException('Must be a FutureInterface. Found '
-                . Core::describeType($transaction->response));
-        }
-
         return new FutureModel(
             // Deref function derefs the response which populates the result.
             function () use ($transaction) {
@@ -195,49 +198,64 @@ abstract class AbstractClient implements ServiceClientInterface
     }
 
     /**
-     * Bridges the HTTP event loop with the command event loop.
+     * Initialize a transaction for a command and send the prepare event.
      *
-     * @param CommandTransaction $trans
+     * @param CommandInterface $command Command to associate with the trans.
+     * @param bool             $addHttpEvents Set to false to disable adding
+     *                                        HTTP events to the request.
+     *
+     * @return CommandTransaction
      */
-    private function bridgeHttp(CommandTransaction $trans)
-    {
-        if ($future = $trans->command->getFuture()) {
-            $trans->request->getConfig()->set('future', $future);
+    protected function initTransaction(
+        CommandInterface $command,
+        $addHttpEvents = true
+    ) {
+        $request = $this->serializeRequest($command);
+
+        if ($future = $command->getFuture()) {
+            $request->getConfig()->set('future', $future);
         }
 
-        $trans->command->getEmitter()->emit('prepare', new PrepareEvent($trans));
-        $trans->state = 'before';
-        $trans->request->getEmitter()->on(
-            'end',
-            function (EndEvent $e) use ($trans) {
-                $trans->request = $e->getRequest();
-                $trans->response = $e->getResponse();
+        $trans = new CommandTransaction($this, $command, $request);
+        $command->getEmitter()->emit('prepare', new PrepareEvent($trans));
 
-                // Transition based on if an exception was encountered.
-                if ($ex = $e->getException()) {
-                    $trans->exception = $ex;
-                    $trans->state = 'error';
-                    $needsCleanup = true;
-                } else {
-                    $trans->state = 'process';
-                    $needsCleanup = false;
+        if ($addHttpEvents) {
+            // When a request completes, process the request at the command
+            // layer.
+            $trans->request->getEmitter()->on(
+                'end',
+                function (EndEvent $e) use ($trans) {
+                    $trans->request = $e->getRequest();
+                    $trans->response = $e->getResponse();
+
+                    // Transition based on if an exception was encountered.
+                    if ($ex = $e->getException()) {
+                        $trans->exception = $ex;
+                        $trans->state = 'error';
+                        $needsCleanup = true;
+                    } else {
+                        $trans->state = 'process';
+                        $needsCleanup = false;
+                    }
+
+                    // Finish the command FSM in the request end event. If an
+                    // exception is thrown for the command, then that is thrown
+                    // in the request layer as-is because CommandException
+                    // extends from RequestException.
+                    $this->fsm->run($trans);
+
+                    // If no exception was thrown while finishing the command,
+                    // then the command completed successfully. Cleanup the
+                    // request FSM if the request had an exception.
+                    if ($needsCleanup) {
+                        // Prevent request state exception by intercepting the
+                        // request "end" event with a future response.
+                        RequestEvents::stopException($e);
+                    }
                 }
+            );
+        }
 
-                // Finish the command FSM in the request end event. If an
-                // exception is thrown for the command, then that is thrown
-                // in the request layer as-is because CommandException
-                // extends from RequestException.
-                $this->fsm->run($trans);
-
-                // If no exception was thrown while finishing the command,
-                // then the command completed successfully. Cleanup the
-                // request FSM if the request had an exception.
-                if ($needsCleanup) {
-                    // Prevent request state exception by intercepting the
-                    // request "end" event with a future response.
-                    RequestEvents::stopException($e);
-                }
-            }
-        );
+        return $trans;
     }
 }

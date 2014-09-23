@@ -5,9 +5,9 @@ use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Message\Request;
 
 /**
- * @covers \GuzzleHttp\Command\Event\InterceptableCommandEvent
+ * @covers \GuzzleHttp\Command\Event\PrepareEvent
  */
-class InterceptableCommandEventTest extends \PHPUnit_Framework_TestCase
+class PrepareEventTest extends \PHPUnit_Framework_TestCase
 {
     public function testCanIntercept()
     {
@@ -16,10 +16,10 @@ class InterceptableCommandEventTest extends \PHPUnit_Framework_TestCase
         $request = new Request('GET', 'http://www.foo.com');
         $ctrans = new CommandTransaction($client, $command, $request);
         $ctrans->request = new Request('GET', 'http://www.goo.com');
-        $event = $this->getMockBuilder('GuzzleHttp\Command\Event\InterceptableCommandEvent')
+        $event = $this->getMockBuilder('GuzzleHttp\Command\Event\PrepareEvent')
             ->setConstructorArgs([$ctrans])
             ->getMockForAbstractClass();
-        $event->setResult('foo');
+        $event->intercept('foo');
         $this->assertTrue($event->isPropagationStopped());
         $this->assertEquals('foo', $event->getResult());
         $this->assertEquals('foo', $ctrans->result);

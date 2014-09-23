@@ -26,8 +26,9 @@ class ProcessEvent extends AbstractCommandEvent
     }
 
     /**
-     * Set the processed result on the event. Subsequent listeners ARE STILL
-     * emitted even when a result is set.
+     * Set the processed result on the event.
+     *
+     * Subsequent listeners ARE STILL emitted even when a result is set.
      *
      * @param mixed $result Result to associate with the command
      */
@@ -35,15 +36,5 @@ class ProcessEvent extends AbstractCommandEvent
     {
         $this->trans->exception = null;
         $this->trans->result = $result;
-    }
-
-    /**
-     * Mark the command as needing a retry and stop event propagation.
-     */
-    public function retry()
-    {
-        $this->trans->result = $this->trans->exception = null;
-        $this->trans->state = 'before';
-        $this->stopPropagation();
     }
 }
