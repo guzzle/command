@@ -126,6 +126,32 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(['process'], $called);
     }
 
+    public function testEmitsProcessWhenCommandFailsInPrepare()
+    {
+        $client = new Client();
+        $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$client, []])
+            ->setMethods(['serializeRequest'])
+            ->getMockForAbstractClass();
+        $mock->expects($this->once())
+            ->method('serializeRequest')
+            ->will($this->returnValue(new Request('GET', 'http://foo.com')));
+        $command = new Command('foo');
+        $called = [];
+        $command->getEmitter()->on('prepared', function() use (&$called) {
+            $called[] = 'prepared';
+            throw new \Exception('test');
+        });
+        $command->getEmitter()->on('process', function(ProcessEvent $event) use (&$called) {
+            $this->assertNotNull($event->getException());
+            $called[] = 'process';
+            $event->setResult(['foo' => 'bar']);
+            $this->assertNull($event->getException());
+        });
+        $this->assertEquals(['foo' => 'bar'], $mock->execute($command));
+        $this->assertEquals(['prepared', 'process'], $called);
+    }
+
     public function testReturnsProcessedResponse()
     {
         $client = new Client();

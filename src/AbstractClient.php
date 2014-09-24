@@ -208,6 +208,8 @@ abstract class AbstractClient implements ServiceClientInterface
     protected function initTransaction(CommandInterface $command)
     {
         $trans = new CommandTransaction($this, $command);
+
+        // Throwing in the init event WILL NOT emit an error event.
         $command->getEmitter()->emit('init', new InitEvent($trans));
         $request = $this->serializeRequest($trans);
         $trans->request = $request;
@@ -218,10 +220,16 @@ abstract class AbstractClient implements ServiceClientInterface
 
         $trans->state = 'prepared';
         $prep = new PreparedEvent($trans);
-        $command->getEmitter()->emit('prepared', $prep);
 
-        // Finish the command events now if the prepare event was intercepted.
-        if ($prep->isPropagationStopped()) {
+        try {
+            $command->getEmitter()->emit('prepared', $prep);
+        } catch (\Exception $e) {
+            $trans->exception = $e;
+        }
+
+        // If the command failed in the prepare event or was intercepted, then
+        // emit the process event now and skip hooking up the request.
+        if ($trans->exception || $prep->isPropagationStopped()) {
             $this->emitProcess($trans);
             return $trans;
         }
