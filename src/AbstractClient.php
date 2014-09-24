@@ -164,11 +164,11 @@ abstract class AbstractClient implements ServiceClientInterface
     /**
      * Prepares a request for the command.
      *
-     * @param CommandInterface $command Command to serialize.
+     * @param CommandTransaction $trans Command and context to serialize.
      *
      * @return RequestInterface
      */
-    abstract protected function serializeRequest(CommandInterface $command);
+    abstract protected function serializeRequest(CommandTransaction $trans);
 
     /**
      * Creates a future result for a given command transaction.
@@ -207,7 +207,7 @@ abstract class AbstractClient implements ServiceClientInterface
     {
         $trans = new CommandTransaction($this, $command);
         $command->getEmitter()->emit('init', new InitEvent($trans));
-        $request = $this->serializeRequest($command);
+        $request = $this->serializeRequest($trans);
         $trans->request = $request;
 
         if ($future = $command->getFuture()) {
