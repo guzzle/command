@@ -5,7 +5,6 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Command\Event\PreparedEvent;
-use GuzzleHttp\Command\Model;
 use GuzzleHttp\Command\Subscriber\ResultMock;
 use GuzzleHttp\Message\Request;
 
@@ -23,7 +22,7 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
     public function testIsCountable()
     {
         $plugin = (new ResultMock)->addMultiple([
-            new Model([]),
+            [],
             new \Exception('foo'),
         ]);
         $this->assertEquals(2, count($plugin));
@@ -50,14 +49,14 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
         $e2 = new \Exception('Bar');
 
         $plugin = (new ResultMock)
-            ->addResult(new Model(['foo' => 'bar']))
+            ->addResult(['foo' => 'bar'])
             ->addException($e1)
             ->addException($e2);
 
         // 1. The Model object
         $event = new PreparedEvent($trans);
         $plugin->onPrepared($event);
-        $this->assertInstanceOf('GuzzleHttp\Command\Model', $event->getResult());
+        $this->assertEquals(['foo' => 'bar'], $event->getResult());
 
         // 2. The Exception with "Foo"
         try {

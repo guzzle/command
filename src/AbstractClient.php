@@ -12,7 +12,9 @@ use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Message\FutureResponse;
 use GuzzleHttp\Pool;
 use GuzzleHttp\Ring\Core;
+use GuzzleHttp\Ring\Future;
 use GuzzleHttp\Ring\FutureInterface;
+use GuzzleHttp\Ring\FutureValue;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Message\RequestInterface;
 
@@ -173,7 +175,7 @@ abstract class AbstractClient implements ServiceClientInterface
     /**
      * Creates a future result for a given command transaction.
      *
-     * This method may be overridden in subclasses to implement custom
+     * This method really should beoverridden in subclasses to implement custom
      * future response results.
      *
      * @param CommandTransaction $transaction
@@ -183,7 +185,7 @@ abstract class AbstractClient implements ServiceClientInterface
     protected function createFutureResult(CommandTransaction $transaction)
     {
         $response = $transaction->response;
-        return new FutureModel(
+        return new FutureValue(
             // Deref function derefs the response which populates the result.
             function () use ($transaction, $response) {
                 $transaction->response = $response->deref();

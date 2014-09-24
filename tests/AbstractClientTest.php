@@ -189,9 +189,9 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
 
         $command = $g->getCommand('foo');
         $result = $g->execute($command);
-        $this->assertInstanceOf('GuzzleHttp\Command\FutureModel', $result);
+        $this->assertInstanceOf('GuzzleHttp\Ring\FutureValue', $result);
         $this->assertEquals(0, $called);
-        $this->assertEquals(['foo' => 'bar'], $result->toArray());
+        $this->assertEquals(['foo' => 'bar'], $result->deref());
         $this->assertEquals(1, $called);
     }
 
@@ -213,7 +213,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $trans = new CommandTransaction($g, new Command('foo'));
         $trans->response = $future;
         $m = $ref->invoke($g, $trans);
-        $this->assertInstanceOf('GuzzleHttp\Command\FutureModel', $m);
+        $this->assertInstanceOf('GuzzleHttp\Ring\FutureValue', $m);
         $this->assertFalse($future->realized());
         $this->assertTrue($m->cancel());
         $this->assertTrue($c);
