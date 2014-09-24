@@ -1,11 +1,8 @@
 <?php
 namespace GuzzleHttp\Command;
 
-use GuzzleHttp\Command\Event\CommandEndEvent;
 use GuzzleHttp\Event\RequestEvents;
-use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Event\ProcessEvent;
-use GuzzleHttp\Command\Event\CommandErrorEvent;
 use GuzzleHttp\BatchResults;
 
 /**
@@ -42,30 +39,18 @@ class CommandUtils
 
         $client->executeAll($commands, RequestEvents::convertEventArray(
             $options,
-            ['end'],
+            ['process'],
             [
                 'priority' => RequestEvents::LATE,
-                'fn'       => function (CommandEndEvent $e) use ($hash) {
-                    $hash[$e->getCommand()] = $e->getException()
-                        ? $e->getException()
-                        : $e->getResult();
+                'fn'       => function (ProcessEvent $e) use ($hash) {
+                    if ($ex = $e->getException()) {
+                        $hash[$e->getCommand()] = $ex;
+                    } else {
+                        $hash[$e->getCommand()] = $e->getResult();
+                    }
                 }
             ]
         ));
-
-        // Update the received value for any of the intercepted commands.
-        foreach ($hash as $request) {
-            if ($hash[$request] instanceof ProcessEvent) {
-                $hash[$request] = $hash[$request]->getResult();
-            } elseif ($hash[$request] instanceof CommandErrorEvent) {
-                $trans = $hash[$request]->getTransaction();
-                $hash[$request] = new CommandException(
-                    'Error executing command',
-                    $trans,
-                    $trans->exception
-                );
-            }
-        }
 
         return new BatchResults($hash);
     }

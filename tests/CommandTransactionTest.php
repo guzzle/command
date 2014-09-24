@@ -12,7 +12,8 @@ class CommandTransactionTest extends \PHPUnit_Framework_TestCase
         $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $command = new Command('foo', []);
         $req = new Request('GET', 'http://foo.com');
-        $trans = new CommandTransaction($client, $command, $req, ['foo' => 'bar']);
+        $trans = new CommandTransaction($client, $command, ['foo' => 'bar']);
+        $trans->request = $req;
         $this->assertSame($req, $trans->request);
         $this->assertSame($client, $trans->serviceClient);
         $this->assertSame($command, $trans->command);

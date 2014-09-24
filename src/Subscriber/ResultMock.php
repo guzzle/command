@@ -1,7 +1,7 @@
 <?php
 namespace GuzzleHttp\Command\Subscriber;
 
-use GuzzleHttp\Command\Event\PrepareEvent;
+use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Event\SubscriberInterface;
 
 /**
@@ -22,14 +22,14 @@ class ResultMock implements SubscriberInterface, \Countable
 
     public function getEvents()
     {
-        return ['prepare' => ['onPrepare', 'last']];
+        return ['prepare' => ['onPrepared', 'last']];
     }
 
     /**
      * @throws \Exception if one has been queued.
      * @throws \OutOfBoundsException if the queue is empty.
      */
-    public function onBefore(PrepareEvent $event)
+    public function onPrepared(PreparedEvent $event)
     {
         if (!$result = array_shift($this->queue)) {
             throw new \OutOfBoundsException('Result mock queue is empty');

@@ -4,7 +4,7 @@ namespace GuzzleHttp\Tests\Subscriber;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\CommandTransaction;
-use GuzzleHttp\Command\Event\PrepareEvent;
+use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Command\Model;
 use GuzzleHttp\Command\Subscriber\ResultMock;
 use GuzzleHttp\Message\Request;
@@ -44,7 +44,8 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
             ->getMockForAbstractClass();
 
         $request = new Request('GET', 'http://foo.com');
-        $trans = new CommandTransaction($client, new Command('foo'), $request);
+        $trans = new CommandTransaction($client, new Command('foo'));
+        $trans->request = $request;
         $e1 = new \Exception('Foo');
         $e2 = new \Exception('Bar');
 
@@ -54,20 +55,20 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
             ->addException($e2);
 
         // 1. The Model object
-        $event = new PrepareEvent($trans);
-        $plugin->onBefore($event);
+        $event = new PreparedEvent($trans);
+        $plugin->onPrepared($event);
         $this->assertInstanceOf('GuzzleHttp\Command\Model', $event->getResult());
 
         // 2. The Exception with "Foo"
         try {
-            $plugin->onBefore(new PrepareEvent($trans));
+            $plugin->onPrepared(new PreparedEvent($trans));
         } catch (\Exception $e) {
             $this->assertEquals('Foo', $e->getMessage());
         }
 
         // 2. The Exception with "Bar"
         try {
-            $plugin->onBefore(new PrepareEvent($trans));
+            $plugin->onPrepared(new PreparedEvent($trans));
         } catch (\Exception $e) {
             $this->assertEquals('Bar', $e->getMessage());
         }
@@ -82,9 +83,9 @@ class ResultMockTest extends \PHPUnit_Framework_TestCase
             ->setConstructorArgs([new Client])
             ->getMockForAbstractClass();
         $request = new Request('GET', 'http://foo.com');
-        $event = new PrepareEvent(
-            new CommandTransaction($client, new Command('foo'), $request)
-        );
-        (new ResultMock)->onBefore($event);
+        $trans = new CommandTransaction($client, new Command('foo'));
+        $trans->request = $request;
+        $event = new PreparedEvent($trans);
+        (new ResultMock)->onPrepared($event);
     }
 }

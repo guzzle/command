@@ -58,8 +58,10 @@ class DebugTest extends \PHPUnit_Framework_TestCase
         $out = stream_get_contents($res);
 
         $checks = [
-            'Starting the command:prepare event for ',
-            'Done with the command:prepare event for ',
+            'Starting the command:init event for ',
+            'Done with the command:init event for ',
+            'Starting the command:prepared event for ',
+            'Done with the command:prepared event for ',
             '(took ',
             'Starting the request:before event for ',
             'Done with the request:before event for ',
@@ -68,9 +70,7 @@ class DebugTest extends \PHPUnit_Framework_TestCase
             'Starting the request:end event for ',
             'Done with the request:end event for ',
             'Starting the command:process event for ',
-            'Done with the command:process event for ',
-            'Starting the command:end event for ',
-            'Done with the command:end event for ',
+            'Done with the command:process event for '
         ];
 
         foreach ($checks as $check) {

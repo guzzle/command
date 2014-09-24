@@ -2,10 +2,8 @@
 namespace GuzzleHttp\Command\Subscriber;
 
 use GuzzleHttp\Command\CommandInterface;
-use GuzzleHttp\Command\Event\CommandBeforeEvent;
-use GuzzleHttp\Command\Event\CommandEndEvent;
-use GuzzleHttp\Command\Event\CommandErrorEvent;
-use GuzzleHttp\Command\Event\PrepareEvent;
+use GuzzleHttp\Command\Event\InitEvent;
+use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\ServiceClientInterface;
 use GuzzleHttp\Event\EventInterface;
@@ -65,25 +63,17 @@ class Debug implements SubscriberInterface
     public function getEvents()
     {
         return [
-            'prepare' => [
-                ['beforePrepare', 'first'],
-                ['afterPrepare', 'last']
+            'init' => [
+                ['beforeInit', 'first'],
+                ['afterInit', 'last']
             ],
-            'before' => [
-                ['beforeBefore', 'first'],
-                ['afterBefore', 'last']
+            'prepared' => [
+                ['beforePrepared', 'first'],
+                ['afterPrepared', 'last']
             ],
             'process' => [
                 ['beforeProcess', 'first'],
                 ['afterProcess', 'last']
-            ],
-            'error' => [
-                ['beforeError', 'first'],
-                ['afterError', 'last']
-            ],
-            'end' => [
-                ['beforeEnd', 'first'],
-                ['afterEnd', 'last']
             ]
         ];
     }
@@ -147,14 +137,24 @@ class Debug implements SubscriberInterface
         ));
     }
 
-    public function beforePrepare(PrepareEvent $e)
+    public function beforeInit(InitEvent $e)
     {
-        $this->proxyEvent('command:prepare', $e);
+        $this->proxyEvent('command:init', $e);
     }
 
-    public function afterPrepare(PrepareEvent $e)
+    public function afterInit(InitEvent $e)
     {
-        $this->proxyEvent('command:prepare', $e);
+        $this->proxyEvent('command:init', $e);
+    }
+
+    public function beforePrepared(PreparedEvent $e)
+    {
+        $this->proxyEvent('command:prepared', $e);
+    }
+
+    public function afterPrepared(PreparedEvent $e)
+    {
+        $this->proxyEvent('command:prepared', $e);
         $request = $e->getRequest();
 
         if (!$this->http || !$request) {
@@ -180,16 +180,6 @@ class Debug implements SubscriberInterface
         }
     }
 
-    public function beforeBefore(CommandBeforeEvent $e)
-    {
-        $this->proxyEvent('command:before', $e);
-    }
-
-    public function afterBefore(CommandBeforeEvent $e)
-    {
-        $this->proxyEvent('command:before', $e);
-    }
-
     public function beforeProcess(ProcessEvent $e)
     {
         $this->proxyEvent('command:process', $e);
@@ -198,26 +188,6 @@ class Debug implements SubscriberInterface
     public function afterProcess(ProcessEvent $e)
     {
         $this->proxyEvent('command:process', $e);
-    }
-
-    public function beforeError(CommandErrorEvent $e)
-    {
-        $this->proxyEvent('command:error', $e);
-    }
-
-    public function afterError(CommandErrorEvent $e)
-    {
-        $this->proxyEvent('command:error', $e);
-    }
-
-    public function beforeEnd(CommandEndEvent $e)
-    {
-        $this->proxyEvent('command:end', $e);
-    }
-
-    public function afterEnd(CommandEndEvent $e)
-    {
-        $this->proxyEvent('command:end', $e);
     }
 
     /**
@@ -238,7 +208,7 @@ class Debug implements SubscriberInterface
                 $name,
                 $this->hashCommand($e->getClient(), $e->getCommand(), $e),
                 $e->getCommand(),
-                $e->getRequest(),
+                method_exists($e, 'getRequest') ? $e->getRequest() : null,
                 method_exists($e, 'getResponse') ? $e->getResponse() : null,
                 method_exists($e, 'getResult') ? $e->getResult() : null,
                 method_exists($e, 'getException') ? $e->getException() : null

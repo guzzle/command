@@ -15,7 +15,8 @@ class CommandExceptionTest extends \PHPUnit_Framework_TestCase
     {
         $client = $this->getMockForAbstractClass('GuzzleHttp\Command\ServiceClientInterface');
         $command = new Command('foo');
-        $trans = new CommandTransaction($client, $command, new Request('GET', 'http://www.foo.bar'));
+        $trans = new CommandTransaction($client, $command);
+        $trans->request = new Request('GET', 'http://www.foo.bar');
         $trans->context['foo'] = 'bar';
         $previous = new \Exception('bar');
         $e = new CommandException('foo', $trans, $previous);

@@ -1,13 +1,13 @@
 <?php
 namespace GuzzleHttp\Tests\Command;
 
+use GuzzleHttp\Command\Event\InitEvent;
+use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Ring\Client\MockAdapter;
 use GuzzleHttp\Ring\Future;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\CommandToRequestIterator;
 use GuzzleHttp\Command\Command;
-use GuzzleHttp\Command\Event\CommandErrorEvent;
-use GuzzleHttp\Command\Event\PrepareEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
@@ -22,25 +22,20 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
      */
     public function testValidatesSource()
     {
-        $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        new CommandToRequestIterator($client, 'foo', []);
+        new CommandToRequestIterator(function () {}, 'foo', []);
     }
 
     public function testCanUseArray()
     {
-        $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
+        $http = new Client();
+        $req = $http->createRequest('GET', 'http://foo.com');
         $cmd = new Command('foo');
-        $request = new Request('GET', 'http://httbin.org');
-        $cmd->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $event) use ($request) {
-                $event->setRequest($request);
-            }
-        );
         $commands = [$cmd];
-        $i = new CommandToRequestIterator($client, $commands, []);
+        $i = new CommandToRequestIterator(function () use ($req) {
+            return ['request' => $req];
+        }, $commands, []);
         $this->assertTrue($i->valid());
-        $this->assertSame($request, $i->current());
+        $this->assertSame($req, $i->current());
         $i->next();
         $this->assertFalse($i->valid());
         $this->assertNull($i->current());
@@ -48,26 +43,17 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
 
     public function testCanUseAnIterator()
     {
-        $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request1 = new Request('GET', 'http://httbin.org');
-        $request2 = new Request('GET', 'http://httbin.org');
-
+        $http = new Client();
+        $request1 = $http->createRequest('GET', 'http://httbin.org');
+        $request2 = $http->createRequest('GET', 'http://httbin.org');
         $cmd = new Command('foo');
-        $cmd->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $event) use ($request1) {
-                $event->setRequest($request1);
-            }
-        );
         $cmd2 = new Command('foo');
-        $cmd2->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $event) use ($request2) {
-                $event->setRequest($request2);
-            }
-        );
         $commands = new \ArrayIterator([$cmd, $cmd2]);
-        $i = new CommandToRequestIterator($client, $commands, []);
+        $i = new CommandToRequestIterator(function ($c) use ($request1, $request2, $cmd) {
+            return ($c === $cmd)
+                ? ['request' => $request1]
+                : ['request' => $request2];
+        }, $commands, []);
 
         $this->assertEquals(0, $i->key());
         $this->assertTrue($i->valid());
@@ -93,9 +79,8 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
      */
     public function testEnsuresEachValueIsCommand()
     {
-        $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
         $commands = ['foo'];
-        $i = new CommandToRequestIterator($client, $commands);
+        $i = new CommandToRequestIterator(function () {}, $commands);
         $i->valid();
     }
 
@@ -106,62 +91,90 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
                 return ['status' => 200, 'headers' => []];
             })
         )]);
+
         $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$http, []])
-            ->setMethods(['getCommand'])
+            ->setMethods(['getCommand', 'serializeRequest'])
             ->getMockForAbstractClass();
         $client->expects($this->once())
             ->method('getCommand')
             ->will($this->returnValue(new Command('foo')));
+        $client->expects($this->any())
+            ->method('serializeRequest')
+            ->will($this->returnValue(
+                $http->createRequest('GET', 'http://httbin.org')
+            ));
+
         $command = $client->getCommand('foo');
-        $request = $http->createRequest('GET', 'http://httbin.org');
-        $calledPrepare = $calledProcess = $calledError = $responseSet = false;
+        $calledPrepared = $calledProcess = $calledInit = $responseSet = false;
 
         $client->executeAll([$command], [
-            'prepare' => function (PrepareEvent $event) use (&$calledPrepare, $request) {
-                $calledPrepare = true;
-                $event->setRequest($request);
+            'init' => function (InitEvent $e) use (&$calledInit) {
+                $calledInit = true;
             },
-            'process' => function (ProcessEvent $event) use (&$calledProcess, &$responseSet) {
+            'prepared' => function (PreparedEvent $e) use (&$calledPrepared) {
+                $calledPrepared = true;
+            },
+            'process' => function (ProcessEvent $e) use (&$calledProcess, &$responseSet) {
                 $calledProcess = true;
-                $responseSet = $event->getResponse() instanceof Response;
-            },
-            'error' => function (CommandErrorEvent $event) use (&$calledError) {
-                $calledError = true;
+                $responseSet = $e->getResponse() instanceof Response;
             }
         ]);
 
         $this->assertCount(3, $command->getEmitter()->listeners());
-        $this->assertFalse($calledError);
+        $this->assertTrue($calledInit);
+        $this->assertTrue($calledPrepared);
         $this->assertTrue($calledProcess);
     }
 
     public function testSkipsInterceptedCommands()
     {
-        $client = $this->getMockForAbstractClass('GuzzleHttp\\Command\\ServiceClientInterface');
-        $request = new Request('GET', 'http://httbin.org');
-
+        $req = new Request('GET', 'http://foo.com');
         $command1 = new Command('foo');
-        $command1->getEmitter()->on(
-            'prepare',
-            function (PrepareEvent $e) use ($request) {
-                $e->setRequest($request);
-            }
-        );
         $command2 = new Command('bar');
         $command2->getEmitter()->on(
             'prepare',
-            function (PrepareEvent $e) {
-                $e->setResult('baz');
+            function (PreparedEvent $e) {
+                $e->intercept('foo');
             }
         );
 
         $commands = [$command1, $command2];
-        $i = new CommandToRequestIterator($client, $commands);
+        $i = new CommandToRequestIterator(function ($c) use ($command1, $req) {
+            return $c === $command1
+                ? ['request' => $req]
+                : ['result' => 'foo'];
+        }, $commands);
         $this->assertTrue($i->valid());
-        $this->assertSame($request, $i->current());
+        $this->assertSame($req, $i->current());
         $i->next();
         $this->assertFalse($i->valid());
         $this->assertNull($i->current());
+    }
+
+    public function testPreventsTransferExceptions()
+    {
+        $http = new Client(['adapter' => new MockAdapter(['status' => 404])]);
+        $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
+            ->setConstructorArgs([$http, []])
+            ->setMethods(['getCommand', 'serializeRequest'])
+            ->getMockForAbstractClass();
+        $client->expects($this->once())
+            ->method('getCommand')
+            ->will($this->returnValue(new Command('foo')));
+        $client->expects($this->any())
+            ->method('serializeRequest')
+            ->will($this->returnValue(
+                $http->createRequest('GET', 'http://httbin.org')
+            ));
+        $command = $client->getCommand('foo');
+        $called = false;
+        $client->executeAll([$command], [
+            'process' => function (ProcessEvent $e) use (&$called) {
+                $called = [$e->getResponse(), $e->getException()];
+            }
+        ]);
+
+        $this->assertNotFalse($called);
     }
 }

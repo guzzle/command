@@ -1,6 +1,8 @@
 <?php
 namespace GuzzleHttp\Command;
 
+use GuzzleHttp\Command\Event\ProcessEvent;
+use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Event\ListenerAttacherTrait;
 use GuzzleHttp\Ring\Core;
@@ -31,8 +33,8 @@ class CommandToRequestIterator implements \Iterator
     /**
      * @param callable $requestBuilder A function that accepts a command and
      *       returns a hash containing a request key mapping to a request that
-     *       has emitted it's prepare and before event, and a result key
-     *       mapping to the result if one was injected in the before event.
+     *       has emitted it's prepare event, and a result key mapping to the
+     *       result if one was injected in the prepare event.
      * @param array|\Iterator        $commands Collection of command objects
      * @param array                  $options  Hash of options:
      *     - prepare: Callable to invoke for the "prepare" event. This event is
@@ -56,7 +58,7 @@ class CommandToRequestIterator implements \Iterator
         $this->requestBuilder = $requestBuilder;
         $this->eventListeners = $this->prepareListeners(
             $options,
-            ['prepare', 'process', 'error', 'end']
+            ['init', 'prepared', 'process']
         );
 
         if ($commands instanceof \Iterator) {
@@ -107,13 +109,23 @@ class CommandToRequestIterator implements \Iterator
 
         $command->setFuture('lazy');
         $this->attachListeners($command, $this->eventListeners);
+
+        // Prevent transfer exceptions from throwing.
+        $command->getEmitter()->on(
+            'process',
+            function (ProcessEvent $e) {
+                if ($e->getException()) {
+                    $e->setResult(null);
+                }
+            },
+            RequestEvents::LATE
+        );
+
         $builder = $this->requestBuilder;
         $result = $builder($command);
 
-        // Handle the command being intercepted with a result or failing by
-        // not generating a request by going to the next command and returning
-        // it's validity
-        if (isset($result['result']) || !isset($result['request'])) {
+        // Skip commands that were intercepted with a result.
+        if (isset($result['result'])) {
             $this->commands->next();
             return $this->valid();
         }

@@ -113,12 +113,8 @@ interface ServiceClientInterface extends HasEmitterInterface
      * or return the provided exception as-is.
      *
      * @param CommandTransaction $transaction Command transaction context
-     * @param \Exception         $previous    Exception encountered
      *
      * @return \Exception
      */
-    public function createCommandException(
-        CommandTransaction $transaction,
-        \Exception $previous
-    );
+    public function createCommandException(CommandTransaction $transaction);
 }

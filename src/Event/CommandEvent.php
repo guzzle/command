@@ -2,13 +2,15 @@
 namespace GuzzleHttp\Command\Event;
 
 use GuzzleHttp\Event\AbstractEvent;
-use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\ServiceClientInterface;
 use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Collection;
 
-class AbstractCommandEvent extends AbstractEvent
+/**
+ * Base command event that is emitted.
+ */
+class CommandEvent extends AbstractEvent
 {
     /** @var CommandTransaction */
     protected $trans;
@@ -29,26 +31,6 @@ class AbstractCommandEvent extends AbstractEvent
     public function getCommand()
     {
         return $this->trans->command;
-    }
-
-    /**
-     * Gets the HTTP request that will be sent for the command (if one is set).
-     *
-     * @return RequestInterface|null
-     */
-    public function getRequest()
-    {
-        return $this->trans->request;
-    }
-
-    /**
-     * Returns the result of the command if it was intercepted.
-     *
-     * @return mixed|null
-     */
-    public function getResult()
-    {
-        return $this->trans->result;
     }
 
     /**

@@ -5,13 +5,14 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\CommandTransaction;
 use GuzzleHttp\Command\Event\ProcessEvent;
+use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Message\FutureResponse;
+use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
-use GuzzleHttp\Command\Event\PrepareEvent;
+use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Event\BeforeEvent;
 use GuzzleHttp\Ring\Client\MockAdapter;
 use GuzzleHttp\Ring\Future;
-use GuzzleHttp\Command\FutureModel;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Subscriber\Mock;
 
@@ -50,7 +51,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$client, []])
             ->setMethods(['getCommand', 'execute'])
-            ->getMock();
+            ->getMockForAbstractClass();
 
         $mock->expects($this->once())
             ->method('getCommand')
@@ -70,7 +71,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$client, []])
             ->setMethods(['getCommand', 'execute'])
-            ->getMock();
+            ->getMockForAbstractClass();
 
         $mock->expects($this->once())
             ->method('getCommand')
@@ -84,7 +85,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('foo', $mock->foo());
     }
 
-    public function testDoesNotWrapNonCommandExceptions()
+    public function testWrapsNonCommandExceptionsByDefault()
     {
         $client = new Client();
         $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
@@ -93,14 +94,13 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $command = new Command('foo');
         $emitter = $command->getEmitter();
         $e1 = new \Exception('foo');
-        $emitter->on('prepare', function() use ($e1) { throw $e1; });
+        $emitter->on('prepared', function() use ($e1) { throw $e1; });
 
         try {
             $mock->execute($command);
             $this->fail('Did not throw');
         } catch (\Exception $e) {
-            $this->assertSame($e, $e1);
-            $this->assertEquals(1, $this->getWrapCount($e));
+            $this->assertNotSame($e, $e1);
         }
     }
 
@@ -109,10 +109,14 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $client = new Client();
         $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$client, []])
+            ->setMethods(['serializeRequest'])
             ->getMockForAbstractClass();
+        $mock->expects($this->once())
+            ->method('serializeRequest')
+            ->will($this->returnValue(new Request('GET', 'http://foo.com')));
         $command = new Command('foo');
-        $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
-            $event->setResult('test');
+        $command->getEmitter()->on('prepared', function(PreparedEvent $event) {
+            $event->intercept('test');
         });
         $this->assertEquals('test', $mock->execute($command));
     }
@@ -125,13 +129,13 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         });
         $mock = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$client, []])
+            ->setMethods(['serializeRequest'])
             ->getMockForAbstractClass();
+        $req = $client->createRequest('GET', 'http://test.com');
+        $mock->expects($this->once())
+            ->method('serializeRequest')
+            ->will($this->returnValue($req));
         $command = new Command('foo');
-        $command->getEmitter()->on('prepare', function(PrepareEvent $e) {
-            $e->setRequest($e->getClient()->getHttpClient()->createRequest(
-                'GET', 'http://test.com')
-            );
-        });
         $command->getEmitter()->on('process', function(ProcessEvent $e) {
             $e->setResult('foo');
         });
@@ -164,15 +168,14 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $request = $client->createRequest('GET', 'http://www.foo.com');
         $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
             ->setConstructorArgs([$client])
-            ->setMethods(['getCommand'])
+            ->setMethods(['getCommand', 'serializeRequest'])
             ->getMockForAbstractClass();
-
-        $em = $g->getEmitter();
-        $em->on('prepare', function (PrepareEvent $e) use ($request) {
-            $e->setRequest($request);
-        });
+        $g->expects($this->once())
+            ->method('serializeRequest')
+            ->will($this->returnValue($request));
 
         $called = 0;
+        $em = $g->getEmitter();
         $em->on('process', function (ProcessEvent $e) use (&$called) {
             $called++;
             $this->assertInstanceOf('GuzzleHttp\Message\Response', $e->getResponse());
@@ -190,23 +193,6 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(0, $called);
         $this->assertEquals(['foo' => 'bar'], $result->toArray());
         $this->assertEquals(1, $called);
-    }
-
-    /**
-     * @expectedException \RuntimeException
-     * @expectedExceptionMessage Must be a FutureInterface. Found string
-     */
-    public function testEnsuresFutureResultIsFromFuture()
-    {
-        $client = new Client();
-        $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
-            ->setConstructorArgs([$client])
-            ->getMockForAbstractClass();
-        $ref = new \ReflectionMethod($g, 'createFutureResult');
-        $ref->setAccessible(true);
-        $trans = new CommandTransaction($g, new Command('foo'));
-        $trans->response = 'baz';
-        $ref->invoke($g, $trans);
     }
 
     public function testProxiesCancelCall()
@@ -239,28 +225,61 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $client->getEmitter()->attach(new Mock([new Response(200)]));
         $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
             ->setConstructorArgs([$client])
+            ->setMethods(['serializeRequest'])
             ->getMockForAbstractClass();
+        $g->expects($this->once())
+            ->method('serializeRequest')
+            ->will($this->returnValue($client->createRequest('GET', 'http://foo.com')));
         $command = new Command('foo');
-        $command->getEmitter()->on('prepare', function ($e) use (&$c, $client) {
-            $c[] = 'prepare';
-            $e->setRequest($client->createRequest('GET', 'http://foo.com'));
+        $command->getEmitter()->on('init', function () use (&$c) {
+            $c[] = 'init';
         });
-        $command->getEmitter()->on('process', function ($e) use (&$c, $client) {
+        $command->getEmitter()->on('prepared', function () use (&$c) {
+            $c[] = 'prepared';
+        });
+        $command->getEmitter()->on('process', function () use (&$c) {
             $c[] = 'process';
         });
         $commands = [$command];
         $g->executeAll($commands);
-        $this->assertEquals(['prepare', 'process'], $c);
+        $this->assertEquals(['init', 'prepared', 'process'], $c);
     }
 
-    private function getWrapCount(\Exception $e)
+    public function testDoesNotWrapExistingCommandExceptions()
     {
-        $c = 0;
-        while ($e) {
-            $e = $e->getPrevious();
-            $c++;
-        }
+        $http = new Client();
+        $client = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
+            ->setConstructorArgs([$http])
+            ->getMockForAbstractClass();
+        $command = new Command('foo');
+        $trans = new CommandTransaction($client, $command);
+        $ex = new CommandException('foo', $trans);
+        $trans->exception = $ex;
+        $this->assertSame($ex, $client->createCommandException($trans));
+    }
 
-        return $c;
+    public function testThrowsTransactionExceptionAfterProcess()
+    {
+        $client = new Client();
+        $client->getEmitter()->attach(new Mock([new Response(200)]));
+        $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
+            ->setConstructorArgs([$client])
+            ->setMethods(['serializeRequest'])
+            ->getMockForAbstractClass();
+        $g->expects($this->once())
+            ->method('serializeRequest')
+            ->will($this->returnValue($client->createRequest('GET', 'http://foo.com')));
+        $ex = new \Exception('foo');
+        $command = new Command('foo');
+        $command->getEmitter()->on('process', function () use ($ex) {
+            throw $ex;
+        });
+
+        try {
+            $g->execute($command);
+            $this->fail('did not throw');
+        } catch (\Exception $e) {
+            $this->assertInstanceOf('GuzzleHttp\Command\Exception\CommandException', $e);
+        }
     }
 }
