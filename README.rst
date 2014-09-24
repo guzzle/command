@@ -120,7 +120,9 @@ underyling response has completed (even if it is a future response).
 
 init
     Emitted before a request is prepared for a command. This event is useful
-    for validating input parameters, adding default parameters, etc.
+    for validating input parameters, adding default parameters, etc. Any
+    exceptions thrown in the init event are thrown immediately (with no
+    transition to the process event).
 
 prepared
     Emitted immediately after a request has been prepared for a command. This
@@ -135,8 +137,9 @@ prepared
             echo $event->getRequest();
         });
 
-    Any exceptions thrown while emitting the "prepared" event will fail
-    immediately. The command will not transition to the error state.
+    Any exceptions thrown while emitting the "prepared" event will be
+    associated with the command transaction and the "process" event will be
+    emitted.
 
 process
     The process event is emitted when processing an HTTP response or processing
