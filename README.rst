@@ -118,95 +118,44 @@ Event System
 Commands emit three events. These events are emitted immediately when an
 underyling response has completed (even if it is a future response).
 
-prepare
+init
+    Emitted before a request is prepared for a command. This event is useful
+    for validating input parameters, adding default parameters, etc.
+
+prepared
     Emitted immediately after a request has been prepared for a command. This
     event is fired only once per command execution. Use this event to hook into
     the request lifecycle events.
 
     .. code-block:: php
 
-        use GuzzleHttp\Command\Event\PrepareEvent;
+        use GuzzleHttp\Command\Event\PreparedEvent;
 
-        $command->getEmitter()->on('prepare', function(PrepareEvent $event) {
+        $command->getEmitter()->on('prepared', function(PreparedEvent $event) {
             echo $event->getRequest();
         });
 
-    Any exceptions thrown while emitting the "prepare" event will fail
+    Any exceptions thrown while emitting the "prepared" event will fail
     immediately. The command will not transition to the error state.
-
-before
-    Emitted before executing a prepared command. You can intercept this event
-    and set a result for a command to prevent the request from being sent at
-    the HTTP layer. This event MAY be emitted multiple times for a single
-    command execution.
-
-    .. code-block:: php
-
-        use GuzzleHttp\Command\Event\CommandBeforeEvent;
-
-        $command->getEmitter()->on(
-            'before',
-            function(CommandBeforeEvent $event) {
-                // Prevent the request from being sent.
-                $event->setResult(['foo' => 'bar']);
-            }
-        );
 
 process
     The process event is emitted when processing an HTTP response or processing
     a previously set command result. It is important to note that a previously
     executed listener may have already set a result. Take this into account
     when writing process event listeners. It is also important to understand
-    that an HTTP response may not be available in the process event.
+    that an HTTP response may not be available in the process event if a result
+    interecepted the "prepared" event or in the case of a networking error.
 
-    Event listeners MAY modify the result of the command using the
-    ``setResult()`` method of the emitted ``GuzzleHttp\Command\Event\ProcessEvent``.
-
-    This event MAY be called multiple times during the execution of a command.
-
-    .. code-block:: php
-
-        use GuzzleHttp\Command\Event\ProcessEvent;
-        use GuzzleHttp\Command\Model;
-
-        $command->getEmitter()->on('process', function(ProcessEvent $event) {
-            // Parse the response into something (e.g., a Model object).
-            $model = new Model([
-                'code' => $event->getResponse()->getStatusCode()
-            ]);
-            // Set the custom result on the event
-            $event->setResult($model);
-        });
-
-error
-    Emitted when an error occurs while executing a command.  You MAY inject a
-    result onto the ``GuzzleHttp\Command\Event\CommandErrorEvent``, which will
-    prevent an exception from being thrown. When a result is injected, the
-    "process" event is triggered. When the CommandErrorEvent is not intercepted
-    with a result, then a ``GuzzleHttp\Command\Exception\CommandException`` is
-    thrown.
-
-    Event listeners can add custom metadata to the CommandErrorEvent using the
-    `getContext()` method.
-
-    This event MAY be called multiple times during the execution of a command.
-
-    .. code-block:: php
-
-        $command->getEmitter()->on('error', function(CommandErrorEvent $e) {
-            $e->getContext()->set('custom', 'data');
-        });
-
-end
     Emitted when a command completes, whether for a success or failure. This
     event will be invoked once, and only once, for a command execution.
 
     .. code-block:: php
 
-        $command->getEmitter()->on('end', function(CommandEndEvent $e) {
+        $command->getEmitter()->on('process', function(ProcessEvent $e) {
             if ($e->getException()) {
                 echo 'Oh no!';
             } else {
+                $e->setResult('foo');
                 var_dump($e->getResult());
             }
         });

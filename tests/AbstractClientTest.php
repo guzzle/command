@@ -118,7 +118,12 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $command->getEmitter()->on('prepared', function(PreparedEvent $event) {
             $event->intercept('test');
         });
+        $called = [];
+        $command->getEmitter()->on('process', function(ProcessEvent $event) use (&$called) {
+            $called[] = 'process';
+        });
         $this->assertEquals('test', $mock->execute($command));
+        $this->assertEquals(['process'], $called);
     }
 
     public function testReturnsProcessedResponse()

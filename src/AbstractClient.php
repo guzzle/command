@@ -217,7 +217,15 @@ abstract class AbstractClient implements ServiceClientInterface
         }
 
         $trans->state = 'prepared';
-        $command->getEmitter()->emit('prepared', new PreparedEvent($trans));
+        $prep = new PreparedEvent($trans);
+        $command->getEmitter()->emit('prepared', $prep);
+
+        // Finish the command events now if the prepare event was intercepted.
+        if ($prep->isPropagationStopped()) {
+            $this->emitProcess($trans);
+            return $trans;
+        }
+
         $trans->state = 'executing';
 
         // When a request completes, process the request at the command
@@ -225,7 +233,6 @@ abstract class AbstractClient implements ServiceClientInterface
         $trans->request->getEmitter()->on(
             'end',
             function (EndEvent $e) use ($trans) {
-                $trans->state = 'process';
                 $trans->response = $e->getResponse();
                 $trans->exception = $e->getException();
 
@@ -236,22 +243,9 @@ abstract class AbstractClient implements ServiceClientInterface
                     $trans->exception = $this->createCommandException($trans);
                 }
 
-                try {
-                    // Emit the final "process" event for the command.
-                    $trans->command->getEmitter()->emit(
-                        'process', new ProcessEvent($trans)
-                    );
-                } catch (\Exception $ex) {
-                    // Override the request exception with the command exception
-                    $trans->exception = $ex;
-                }
+                $this->emitProcess($trans);
 
-                $trans->state = 'end';
-
-                // If the transaction still has the exception, then throw it.
-                if ($trans->exception) {
-                    throw $this->createCommandException($trans);
-                } elseif ($needsCleanup) {
+                if ($needsCleanup) {
                     // If no exception was thrown while finishing the command,
                     // then the command completed successfully. Cleanup the
                     // request FSM if the request had an exception.
@@ -262,5 +256,30 @@ abstract class AbstractClient implements ServiceClientInterface
         );
 
         return $trans;
+    }
+
+    /**
+     * Finishes the process event for the command.
+     */
+    private function emitProcess(CommandTransaction $trans)
+    {
+        $trans->state = 'process';
+
+        try {
+            // Emit the final "process" event for the command.
+            $trans->command->getEmitter()->emit(
+                'process', new ProcessEvent($trans)
+            );
+        } catch (\Exception $ex) {
+            // Override any previous exception with the most recent exception.
+            $trans->exception = $ex;
+        }
+
+        $trans->state = 'end';
+
+        // If the transaction still has the exception, then throw it.
+        if ($trans->exception) {
+            throw $this->createCommandException($trans);
+        }
     }
 }
