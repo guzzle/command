@@ -96,7 +96,12 @@ abstract class AbstractClient implements ServiceClientInterface
 
     public function executeAll($commands, array $options = [])
     {
-        $pool = new Pool(
+        $this->createPool($commands, $options)->deref();
+    }
+
+    public function createPool($commands, array $options = [])
+    {
+        return new Pool(
             $this->client,
             new CommandToRequestIterator(
                 function (CommandInterface $command) {
@@ -111,8 +116,6 @@ abstract class AbstractClient implements ServiceClientInterface
             ),
             isset($options['pool_size']) ? ['pool_size' => $options['pool_size']] : []
         );
-
-        $pool->deref();
     }
 
     public function getHttpClient()

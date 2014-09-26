@@ -3,6 +3,7 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Event\HasEmitterInterface;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Ring\FutureInterface;
 
 /**
  * Web service client interface.
@@ -64,17 +65,31 @@ interface ServiceClientInterface extends HasEmitterInterface
      * @param array|\Iterator $commands Array or iterator that contains
      *     CommandInterface objects to execute.
      * @param array $options Associative array of options to apply.
+     * @see GuzzleHttp\Command\ServiceClientInterface::createCommandPool for
+     *      a list of options.
+     */
+    public function executeAll($commands, array $options = []);
+
+    /**
+     * Creates a future object that, when dereferenced, sends commands in
+     * parallel using a fixed pool size.
+     *
+     * Exceptions encountered while executing the commands will not be thrown.
+     * Instead, callers are expected to handle errors using the event system.
+     *
+     * @param array|\Iterator $commands Array or iterator that contains
+     *     CommandInterface objects to execute with the client.
+     * @param array $options Associative array of options to apply.
      *     - pool_size: (int) Max number of commands to send concurrently.
      *       When this number of concurrent requests are created, the sendAll
      *       function blocks until all of the futures have completed.
-     *     - prepare: (callable) Receives a CommandPrepareEvent Concrete
-     *       implementations MAY choose to implement this setting.
-     *     - process: (callable) Receives a CommandProcessEvent. Concrete
-     *       implementations MAY choose to implement this setting.
-     *     - error: (callable) Receives a CommandErrorEvent. Concrete
-     *       implementations MAY choose to implement this setting.
+     *     - init: (callable) Receives an InitEvent from each command.
+     *     - prepare: (callable) Receives a PrepareEvent from each command.
+     *     - process: (callable) Receives a ProcessEvent from each command.
+     *
+     * @return FutureInterface
      */
-    public function executeAll($commands, array $options = []);
+    public function createPool($commands, array $options = []);
 
     /**
      * Get the HTTP client used to send requests for the web service client
