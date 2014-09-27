@@ -11,8 +11,6 @@ use GuzzleHttp\Event\EndEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
 use GuzzleHttp\Message\FutureResponse;
 use GuzzleHttp\Pool;
-use GuzzleHttp\Ring\Core;
-use GuzzleHttp\Ring\Future;
 use GuzzleHttp\Ring\FutureInterface;
 use GuzzleHttp\Ring\FutureValue;
 use GuzzleHttp\Event\RequestEvents;
@@ -228,6 +226,7 @@ abstract class AbstractClient implements ServiceClientInterface
             $command->getEmitter()->emit('prepared', $prep);
         } catch (\Exception $e) {
             $trans->exception = $e;
+            $trans->exception = $this->createCommandException($trans);
         }
 
         // If the command failed in the prepare event or was intercepted, then
@@ -284,13 +283,14 @@ abstract class AbstractClient implements ServiceClientInterface
         } catch (\Exception $ex) {
             // Override any previous exception with the most recent exception.
             $trans->exception = $ex;
+            $trans->exception = $this->createCommandException($trans);
         }
 
         $trans->state = 'end';
 
         // If the transaction still has the exception, then throw it.
         if ($trans->exception) {
-            throw $this->createCommandException($trans);
+            throw $trans->exception;
         }
     }
 }
