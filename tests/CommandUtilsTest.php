@@ -5,7 +5,7 @@ use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\CommandUtils;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Ring\Client\MockAdapter;
-use GuzzleHttp\Ring\Future;
+use GuzzleHttp\Ring\RingFuture;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
 
@@ -17,7 +17,7 @@ class CommandUtilsTest extends \PHPUnit_Framework_TestCase
             'adapter' => new MockAdapter(
                 function () use (&$responses) {
                     $res = array_shift($responses);
-                    return new Future(function () use ($res) { return $res; });
+                    return new RingFuture(function () use ($res) { return $res; });
                 }
             )
         ]);

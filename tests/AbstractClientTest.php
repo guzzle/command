@@ -12,7 +12,7 @@ use GuzzleHttp\Message\Response;
 use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Event\BeforeEvent;
 use GuzzleHttp\Ring\Client\MockAdapter;
-use GuzzleHttp\Ring\Future;
+use GuzzleHttp\Ring\RingFuture;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Subscriber\Mock;
 
@@ -192,7 +192,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSendsFutureCommandAsynchronously()
     {
-        $mockAdapter = new MockAdapter(new Future(function () {
+        $mockAdapter = new MockAdapter(new RingFuture(function () {
             return ['status' => 200, 'headers' => [], 'body' => 'foo'];
         }));
         $client = new Client(['adapter' => $mockAdapter]);
