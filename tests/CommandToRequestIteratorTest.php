@@ -4,7 +4,8 @@ namespace GuzzleHttp\Tests\Command;
 use GuzzleHttp\Command\Event\InitEvent;
 use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Ring\Client\MockAdapter;
-use GuzzleHttp\Ring\RingFuture;
+use GuzzleHttp\Ring\Future\CompletedFutureArray;
+use GuzzleHttp\Ring\Future\FutureArray;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\CommandToRequestIterator;
 use GuzzleHttp\Command\Command;
@@ -87,9 +88,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
     public function testHooksUpEvents()
     {
         $http = new Client(['adapter' => new MockAdapter(
-            new RingFuture(function () {
-                return ['status' => 200, 'headers' => []];
-            })
+            new CompletedFutureArray(['status' => 200, 'headers' => []])
         )]);
 
         $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')

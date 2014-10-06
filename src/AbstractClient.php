@@ -9,10 +9,11 @@ use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Event\EndEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
-use GuzzleHttp\Message\FutureResponse;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Message\CancelledFutureResponse;
 use GuzzleHttp\Pool;
-use GuzzleHttp\Ring\FutureInterface;
-use GuzzleHttp\Ring\FutureValue;
+use GuzzleHttp\Ring\Future\FutureInterface;
+use GuzzleHttp\Ring\Future\FutureValue;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Message\RequestInterface;
 
@@ -87,7 +88,7 @@ abstract class AbstractClient implements ServiceClientInterface
 
         $trans->response = $this->client->send($trans->request);
 
-        return $trans->response instanceof FutureResponse
+        return $trans->response instanceof FutureInterface
             ? $this->createFutureResult($trans)
             : $trans->result;
     }
@@ -185,17 +186,13 @@ abstract class AbstractClient implements ServiceClientInterface
      */
     protected function createFutureResult(CommandTransaction $transaction)
     {
-        $response = $transaction->response;
         return new FutureValue(
-            // Deref function derefs the response which populates the result.
-            function () use ($transaction, $response) {
-                $transaction->response = $response->deref();
+            $transaction->response->then(function () use ($transaction) {
                 return $transaction->result;
-            },
-            // Cancel function just proxies to the response's cancel function.
-            function () use ($transaction) {
-                return $transaction->response->cancel();
-            }
+            }),
+            // Deref function derefs the response which populates the result.
+            [$transaction->response, 'deref'],
+            [$transaction->response, 'cancel']
         );
     }
 
@@ -209,14 +206,12 @@ abstract class AbstractClient implements ServiceClientInterface
     protected function initTransaction(CommandInterface $command)
     {
         $trans = new CommandTransaction($this, $command);
-
         // Throwing in the init event WILL NOT emit an error event.
         $command->getEmitter()->emit('init', new InitEvent($trans));
-        $request = $this->serializeRequest($trans);
-        $trans->request = $request;
+        $trans->request = $this->serializeRequest($trans);
 
         if ($future = $command->getFuture()) {
-            $request->getConfig()->set('future', $future);
+            $trans->request->getConfig()->set('future', $future);
         }
 
         $trans->state = 'prepared';
@@ -259,7 +254,9 @@ abstract class AbstractClient implements ServiceClientInterface
                     // If no exception was thrown while finishing the command,
                     // then the command completed successfully. Cleanup the
                     // request FSM if the request had an exception.
-                    RequestEvents::stopException($e);
+                    $e->intercept(CancelledFutureResponse::fromException(
+                        RequestException::wrapException($e->getRequest(), $e->getException())
+                    ));
                 }
 
             }, RequestEvents::LATE
@@ -277,9 +274,7 @@ abstract class AbstractClient implements ServiceClientInterface
 
         try {
             // Emit the final "process" event for the command.
-            $trans->command->getEmitter()->emit(
-                'process', new ProcessEvent($trans)
-            );
+            $trans->command->getEmitter()->emit('process', new ProcessEvent($trans));
         } catch (\Exception $ex) {
             // Override any previous exception with the most recent exception.
             $trans->exception = $ex;

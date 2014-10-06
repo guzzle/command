@@ -5,19 +5,27 @@ use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\CommandUtils;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Ring\Client\MockAdapter;
-use GuzzleHttp\Ring\RingFuture;
+use GuzzleHttp\Ring\Future\FutureArray;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
+use React\Promise\Deferred;
 
 class CommandUtilsTest extends \PHPUnit_Framework_TestCase
 {
     private function getClient(RequestInterface $request, array $responses)
     {
+        $deferred = new Deferred();
+
         $http = new Client([
             'adapter' => new MockAdapter(
-                function () use (&$responses) {
+                function () use (&$responses, $deferred) {
                     $res = array_shift($responses);
-                    return new RingFuture(function () use ($res) { return $res; });
+                    return new FutureArray(
+                        $deferred->promise(),
+                        function () use ($res, $deferred) {
+                            $deferred->resolve($res);
+                        }
+                    );
                 }
             )
         ]);
@@ -71,6 +79,8 @@ class CommandUtilsTest extends \PHPUnit_Framework_TestCase
                 $calledProcess = true;
                 if (!$e->getException()) {
                     $e->setResult($e->getResponse()->getStatusCode());
+                } else {
+                    $e->setResult($e->getException());
                 }
             }
         ]);
@@ -82,7 +92,7 @@ class CommandUtilsTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(200, $results[0]);
         $this->assertInstanceOf(
             'GuzzleHttp\Command\Exception\CommandException',
-            $results[1]
+            $results[0]
         );
     }
 }

@@ -12,9 +12,10 @@ use GuzzleHttp\Message\Response;
 use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Event\BeforeEvent;
 use GuzzleHttp\Ring\Client\MockAdapter;
-use GuzzleHttp\Ring\RingFuture;
 use GuzzleHttp\Event\RequestEvents;
+use GuzzleHttp\Ring\Future\FutureArray;
 use GuzzleHttp\Subscriber\Mock;
+use React\Promise\Deferred;
 
 /**
  * @covers \GuzzleHttp\Command\AbstractClient
@@ -192,9 +193,14 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
 
     public function testSendsFutureCommandAsynchronously()
     {
-        $mockAdapter = new MockAdapter(new RingFuture(function () {
-            return ['status' => 200, 'headers' => [], 'body' => 'foo'];
-        }));
+        $deferred = new Deferred();
+        $future = new FutureArray(
+            $deferred->promise(),
+            function () use ($deferred) {
+                $deferred->resolve(['status' => 200, 'headers' => [], 'body' => 'foo']);
+            }
+        );
+        $mockAdapter = new MockAdapter($future);
         $client = new Client(['adapter' => $mockAdapter]);
         $request = $client->createRequest('GET', 'http://www.foo.com');
         $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
@@ -220,7 +226,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
 
         $command = $g->getCommand('foo');
         $result = $g->execute($command);
-        $this->assertInstanceOf('GuzzleHttp\Ring\FutureValue', $result);
+        $this->assertInstanceOf('GuzzleHttp\Ring\Future\FutureValue', $result);
         $this->assertEquals(0, $called);
         $this->assertEquals(['foo' => 'bar'], $result->deref());
         $this->assertEquals(1, $called);
@@ -234,17 +240,21 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
             ->getMockForAbstractClass();
         $c = false;
         $response = new Response(200);
-        $future = new FutureResponse(function () use ($response) {
-            return $response;
-        }, function () use (&$c) {
-            return $c = true;
-        });
+        $deferred = new Deferred();
+        $future = new FutureResponse(
+            $deferred->promise(),
+            function () use ($response, $deferred) {
+                $deferred->resolve($response);
+            }, function () use (&$c) {
+                return $c = true;
+            }
+        );
         $ref = new \ReflectionMethod($g, 'createFutureResult');
         $ref->setAccessible(true);
         $trans = new CommandTransaction($g, new Command('foo'));
         $trans->response = $future;
         $m = $ref->invoke($g, $trans);
-        $this->assertInstanceOf('GuzzleHttp\Ring\FutureValue', $m);
+        $this->assertInstanceOf('GuzzleHttp\Ring\Future\FutureValue', $m);
         $this->assertFalse($future->realized());
         $this->assertTrue($m->cancel());
         $this->assertTrue($c);
