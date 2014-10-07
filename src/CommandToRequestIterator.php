@@ -1,6 +1,8 @@
 <?php
 namespace GuzzleHttp\Command;
 
+use GuzzleHttp\Command\Event\ProcessEvent;
+use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Event\ListenerAttacherTrait;
 use GuzzleHttp\Ring\Core;
@@ -107,6 +109,18 @@ class CommandToRequestIterator implements \Iterator
 
         $command->setFuture('lazy');
         $this->attachListeners($command, $this->eventListeners);
+
+        // Prevent transfer exceptions from throwing.
+        $command->getEmitter()->on(
+            'process',
+            function (ProcessEvent $e) {
+                if ($e->getException()) {
+                    $e->setResult($e->getException());
+                }
+            },
+            RequestEvents::LATE
+        );
+
         $builder = $this->requestBuilder;
         $result = $builder($command);
 
