@@ -98,7 +98,8 @@ abstract class AbstractClient implements ServiceClientInterface
             if ($trans->result !== null) {
                 return $trans->result;
             }
-            throw $e;
+            $trans->exception = $e;
+            throw $this->createCommandException($trans);
         }
     }
 

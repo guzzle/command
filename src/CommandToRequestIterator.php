@@ -115,7 +115,7 @@ class CommandToRequestIterator implements \Iterator
             'process',
             function (ProcessEvent $e) {
                 if ($e->getException()) {
-                    $e->setResult($e->getException());
+                    $e->setResult(null);
                 }
             },
             RequestEvents::LATE
