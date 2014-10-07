@@ -9,8 +9,6 @@ use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Event\EndEvent;
 use GuzzleHttp\Event\HasEmitterTrait;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Message\CancelledFutureResponse;
 use GuzzleHttp\Pool;
 use GuzzleHttp\Ring\Future\FutureInterface;
 use GuzzleHttp\Ring\Future\FutureValue;
@@ -86,11 +84,19 @@ abstract class AbstractClient implements ServiceClientInterface
             return $trans->result;
         }
 
-        $trans->response = $this->client->send($trans->request);
-
-        return $trans->response instanceof FutureInterface
-            ? $this->createFutureResult($trans)
-            : $trans->result;
+        try {
+            $trans->response = $this->client->send($trans->request);
+            return $trans->response instanceof FutureInterface
+                ? $this->createFutureResult($trans)
+                : $trans->result;
+        } catch (\Exception $e) {
+            // Handle when a command result is set after a terminal request
+            // error was encountered.
+            if ($trans->result !== null) {
+                return $trans->result;
+            }
+            throw $e;
+        }
     }
 
     public function executeAll($commands, array $options = [])
@@ -239,26 +245,10 @@ abstract class AbstractClient implements ServiceClientInterface
             'end',
             function (EndEvent $e) use ($trans) {
                 $trans->response = $e->getResponse();
-                $trans->exception = $e->getException();
-
-                if (!$trans->exception) {
-                    $needsCleanup = false;
-                } else {
-                    $needsCleanup = true;
+                if ($trans->exception = $e->getException()) {
                     $trans->exception = $this->createCommandException($trans);
                 }
-
                 $this->emitProcess($trans);
-
-                if ($needsCleanup) {
-                    // If no exception was thrown while finishing the command,
-                    // then the command completed successfully. Cleanup the
-                    // request FSM if the request had an exception.
-                    $e->intercept(CancelledFutureResponse::fromException(
-                        RequestException::wrapException($e->getRequest(), $e->getException())
-                    ));
-                }
-
             }, RequestEvents::LATE
         );
 

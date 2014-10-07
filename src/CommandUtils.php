@@ -43,8 +43,8 @@ class CommandUtils
             [
                 'priority' => RequestEvents::LATE,
                 'fn'       => function (ProcessEvent $e) use ($hash) {
-                    if ($ex = $e->getException()) {
-                        $hash[$e->getCommand()] = $ex;
+                    if ($e->getException()) {
+                        $hash[$e->getCommand()] = $e->getException();
                     } else {
                         $hash[$e->getCommand()] = $e->getResult();
                     }

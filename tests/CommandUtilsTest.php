@@ -3,7 +3,6 @@ namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\CommandUtils;
-use GuzzleHttp\Message\RequestInterface;
 use GuzzleHttp\Ring\Client\MockAdapter;
 use GuzzleHttp\Ring\Future\FutureArray;
 use GuzzleHttp\Client;
@@ -12,13 +11,20 @@ use React\Promise\Deferred;
 
 class CommandUtilsTest extends \PHPUnit_Framework_TestCase
 {
-    private function getClient(RequestInterface $request, array $responses)
+    public function testSendsBatch()
     {
-        $deferred = new Deferred();
+        $http = new Client();
+        $requests = [
+            $http->createRequest('GET', 'http://foo.com/baz'),
+            $http->createRequest('GET', 'http://foo.com/bar')
+        ];
+        $this->assertNotSame($requests[0], $requests[1]);
+        $responses = [['status' => 200], ['status' => 404]];
 
         $http = new Client([
             'adapter' => new MockAdapter(
-                function () use (&$responses, $deferred) {
+                function () use (&$responses) {
+                    $deferred = new Deferred();
                     $res = array_shift($responses);
                     return new FutureArray(
                         $deferred->promise(),
@@ -37,62 +43,43 @@ class CommandUtilsTest extends \PHPUnit_Framework_TestCase
 
         $client->expects($this->any())
             ->method('getCommand')
-            ->will($this->returnCallback(function () use ($client) {
-                return new Command('foo', [], [
-                    'emitter' => clone $client->getEmitter()
-                ]);
+            ->will($this->returnCallback(function ($name) use ($client) {
+                return new Command($name);
             }));
 
         $client->expects($this->any())
             ->method('serializeRequest')
-            ->will($this->returnCallback(function () use ($request) {
-                return clone $request;
+            ->will($this->returnCallback(function () use (&$requests) {
+                return array_shift($requests);
             }));
 
-        return $client;
-    }
-
-    public function testSendsBatch()
-    {
-        $http = new Client();
-        $client = $this->getClient(
-            $http->createRequest('GET', 'http://foo.com'),
-            [
-                ['status' => 200],
-                ['status' => 404],
-            ]
-        );
-
-        $commands = [
-            $client->getCommand('foo'),
-            $client->getCommand('bar')
-        ];
+        $commands = [$client->getCommand('foo'), $client->getCommand('bar')];
+        $this->assertNotSame($commands[0], $commands[1]);
 
         $results = CommandUtils::batch($client, $commands, [
             'init' => function () use (&$calledInit) {
-                $calledInit = true;
+                $calledInit++;
             },
             'prepared' => function () use (&$calledPrepared) {
-                $calledPrepared = true;
+                $calledPrepared++;
             },
             'process' => function (ProcessEvent $e) use (&$calledProcess) {
-                $calledProcess = true;
+                $calledProcess++;
                 if (!$e->getException()) {
                     $e->setResult($e->getResponse()->getStatusCode());
-                } else {
-                    $e->setResult($e->getException());
                 }
             }
         ]);
 
-        $this->assertTrue($calledInit);
-        $this->assertTrue($calledProcess);
-        $this->assertTrue($calledPrepared);
+        $this->assertEquals(2, $calledInit);
+        $this->assertEquals(2, $calledProcess);
+        $this->assertEquals(2, $calledPrepared);
 
         $this->assertEquals(200, $results[0]);
+        // The second command result is set to the exception.
         $this->assertInstanceOf(
             'GuzzleHttp\Command\Exception\CommandException',
-            $results[0]
+            $results[1]
         );
     }
 }

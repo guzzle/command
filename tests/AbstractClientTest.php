@@ -226,10 +226,17 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
 
         $command = $g->getCommand('foo');
         $result = $g->execute($command);
+        $calledValue = null;
+        $result->then(function ($result) use (&$calledValue) {
+            $calledValue = $result;
+            return $result;
+        });
+        $this->assertNull($calledValue);
         $this->assertInstanceOf('GuzzleHttp\Ring\Future\FutureValue', $result);
         $this->assertEquals(0, $called);
         $this->assertEquals(['foo' => 'bar'], $result->deref());
         $this->assertEquals(1, $called);
+        $this->assertEquals(['foo' => 'bar'], $calledValue);
     }
 
     public function testProxiesCancelCall()
@@ -286,6 +293,28 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(['init', 'prepared', 'process'], $c);
     }
 
+    public function testExecuteAllCatchesExceptions()
+    {
+        $client = new Client();
+        $client->getEmitter()->attach(new Mock([new Response(404)]));
+        $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
+            ->setConstructorArgs([$client])
+            ->setMethods(['serializeRequest'])
+            ->getMockForAbstractClass();
+        $g->expects($this->once())
+            ->method('serializeRequest')
+            ->will($this->returnValue($client->createRequest('GET', 'http://foo.com')));
+        $command = new Command('foo');
+        $e = null;
+        $command->getEmitter()->on('process', function (ProcessEvent $ev) use (&$e) {
+            $e = $ev->getException();
+        });
+        $commands = [$command];
+        $g->executeAll($commands);
+        $this->assertInstanceOf('GuzzleHttp\Exception\RequestException', $e);
+        $this->assertInstanceOf('GuzzleHttp\Command\Exception\CommandException', $e);
+    }
+
     public function testDoesNotWrapExistingCommandExceptions()
     {
         $http = new Client();
@@ -322,5 +351,27 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         } catch (\Exception $e) {
             $this->assertInstanceOf('GuzzleHttp\Command\Exception\CommandException', $e);
         }
+    }
+
+    public function testThrowingInRequestLayerDoesNotAffectInterceptedCommand()
+    {
+        $client = new Client();
+        $client->getEmitter()->attach(new Mock([new Response(404)]));
+        $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
+            ->setConstructorArgs([$client])
+            ->setMethods(['serializeRequest'])
+            ->getMockForAbstractClass();
+        $g->expects($this->once())
+            ->method('serializeRequest')
+            ->will($this->returnValue($client->createRequest('GET', 'http://foo.com')));
+        $command = new Command('foo');
+        $e = null;
+        $command->getEmitter()->on('process', function (ProcessEvent $ev) use (&$e) {
+            $e = $ev->getException();
+            $ev->setResult('foo!');
+        });
+        $this->assertSame('foo!', $g->execute($command));
+        $this->assertInstanceOf('GuzzleHttp\Exception\RequestException', $e);
+        $this->assertInstanceOf('GuzzleHttp\Command\Exception\CommandException', $e);
     }
 }
