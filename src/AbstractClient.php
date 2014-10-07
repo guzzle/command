@@ -101,7 +101,7 @@ abstract class AbstractClient implements ServiceClientInterface
 
     public function executeAll($commands, array $options = [])
     {
-        $this->createPool($commands, $options)->deref();
+        $this->createPool($commands, $options)->wait();
     }
 
     public function createPool($commands, array $options = [])
@@ -196,8 +196,8 @@ abstract class AbstractClient implements ServiceClientInterface
             $transaction->response->then(function () use ($transaction) {
                 return $transaction->result;
             }),
-            // Deref function derefs the response which populates the result.
-            [$transaction->response, 'deref'],
+            // Wait function derefs the response which populates the result.
+            [$transaction->response, 'wait'],
             [$transaction->response, 'cancel']
         );
     }

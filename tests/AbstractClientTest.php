@@ -234,7 +234,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertNull($calledValue);
         $this->assertInstanceOf('GuzzleHttp\Ring\Future\FutureValue', $result);
         $this->assertEquals(0, $called);
-        $this->assertEquals(['foo' => 'bar'], $result->deref());
+        $this->assertEquals(['foo' => 'bar'], $result->wait());
         $this->assertEquals(1, $called);
         $this->assertEquals(['foo' => 'bar'], $calledValue);
     }
@@ -262,7 +262,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $trans->response = $future;
         $m = $ref->invoke($g, $trans);
         $this->assertInstanceOf('GuzzleHttp\Ring\Future\FutureValue', $m);
-        $this->assertFalse($future->realized());
+        $this->assertFalse($this->readAttribute($future, 'isRealized'));
         $this->assertTrue($m->cancel());
         $this->assertTrue($c);
     }
