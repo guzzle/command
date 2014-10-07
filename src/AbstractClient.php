@@ -89,6 +89,9 @@ abstract class AbstractClient implements ServiceClientInterface
             return $trans->response instanceof FutureInterface
                 ? $this->createFutureResult($trans)
                 : $trans->result;
+        } catch (CommandException $e) {
+            // Command exceptions are thrown in the command layer, so throw 'em.
+            throw $e;
         } catch (\Exception $e) {
             // Handle when a command result is set after a terminal request
             // error was encountered.
