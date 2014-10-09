@@ -263,7 +263,7 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $m = $ref->invoke($g, $trans);
         $this->assertInstanceOf('GuzzleHttp\Ring\Future\FutureValue', $m);
         $this->assertFalse($this->readAttribute($future, 'isRealized'));
-        $this->assertTrue($m->cancel());
+        $m->cancel();
         $this->assertTrue($c);
     }
 
