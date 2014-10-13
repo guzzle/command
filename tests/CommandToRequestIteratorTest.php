@@ -3,9 +3,8 @@ namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Command\Event\InitEvent;
 use GuzzleHttp\Command\Event\PreparedEvent;
-use GuzzleHttp\Ring\Client\MockAdapter;
+use GuzzleHttp\Ring\Client\MockHandler;
 use GuzzleHttp\Ring\Future\CompletedFutureArray;
-use GuzzleHttp\Ring\Future\FutureArray;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\CommandToRequestIterator;
 use GuzzleHttp\Command\Command;
@@ -87,7 +86,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
 
     public function testHooksUpEvents()
     {
-        $http = new Client(['adapter' => new MockAdapter(
+        $http = new Client(['handler' => new MockHandler(
             new CompletedFutureArray(['status' => 200, 'headers' => []])
         )]);
 
@@ -153,7 +152,7 @@ class CommandToRequestIteratorTest extends \PHPUnit_Framework_TestCase
 
     public function testPreventsTransferExceptions()
     {
-        $http = new Client(['adapter' => new MockAdapter(['status' => 404])]);
+        $http = new Client(['handler' => new MockHandler(['status' => 404])]);
         $client = $this->getMockBuilder('GuzzleHttp\\Command\\AbstractClient')
             ->setConstructorArgs([$http, []])
             ->setMethods(['getCommand', 'serializeRequest'])

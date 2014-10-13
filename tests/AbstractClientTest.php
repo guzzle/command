@@ -11,7 +11,7 @@ use GuzzleHttp\Message\Request;
 use GuzzleHttp\Message\Response;
 use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Event\BeforeEvent;
-use GuzzleHttp\Ring\Client\MockAdapter;
+use GuzzleHttp\Ring\Client\MockHandler;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Ring\Future\FutureArray;
 use GuzzleHttp\Subscriber\Mock;
@@ -200,8 +200,8 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
                 $deferred->resolve(['status' => 200, 'headers' => [], 'body' => 'foo']);
             }
         );
-        $mockAdapter = new MockAdapter($future);
-        $client = new Client(['adapter' => $mockAdapter]);
+        $mockAdapter = new MockHandler($future);
+        $client = new Client(['handler' => $mockAdapter]);
         $request = $client->createRequest('GET', 'http://www.foo.com');
         $g = $this->getMockBuilder('GuzzleHttp\Command\AbstractClient')
             ->setConstructorArgs([$client])

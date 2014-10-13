@@ -3,7 +3,7 @@ namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Command\Event\ProcessEvent;
 use GuzzleHttp\Command\CommandUtils;
-use GuzzleHttp\Ring\Client\MockAdapter;
+use GuzzleHttp\Ring\Client\MockHandler;
 use GuzzleHttp\Ring\Future\FutureArray;
 use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
@@ -22,7 +22,7 @@ class CommandUtilsTest extends \PHPUnit_Framework_TestCase
         $responses = [['status' => 200], ['status' => 404]];
 
         $http = new Client([
-            'adapter' => new MockAdapter(
+            'handler' => new MockHandler(
                 function () use (&$responses) {
                     $deferred = new Deferred();
                     $res = array_shift($responses);

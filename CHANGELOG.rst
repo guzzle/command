@@ -2,10 +2,12 @@
 Changelog
 =========
 
-0.7.0 (TBD)
------------
+0.7.0 (2014-10-12)
+------------------
 
-* Basically a rewrite to use Guzzle 5.
+* Updated to use Guzzle 5, and added support for asynchronous results.
+* Renamed ``prepare`` event to ``prepared``.
+* Added ``init`` event.
 
 0.6.0 (2014-08-08)
 ------------------
