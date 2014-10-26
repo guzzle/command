@@ -25,7 +25,7 @@ composer.json:
 
     {
         "require": {
-            "guzzlehttp/command": "~0.7"
+            "guzzlehttp/command": "0.7.*"
         }
     }
 
