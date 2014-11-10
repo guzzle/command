@@ -35,9 +35,8 @@ Service Clients
 Guzzle Service Clients are HTTP web service clients that use
 ``GuzzleHttp\Client`` objects, commands, and the command event system. Event
 listeners are attached to the client to handle creating HTTP requests for a
-command, processing HTTP responses into a result (typically a
-``GuzzleHttp\Command\ModelInterface``), and extends
-``GuzzleHttp\Exception\RequestException`` objects with a higher-level
+command, processing HTTP responses into a result (typically an array), and
+extends ``GuzzleHttp\Exception\RequestException`` objects with a higher-level
 ``GuzzleHttp\Command\Exception\CommandException``.
 
 Service clients create commands using the ``getCommand()`` method.
@@ -56,9 +55,8 @@ method of the client.
     $result = $client->execute($command);
 
 The result of executing a command can be anything. However, implementations
-should clearly specify what the result of a command will be. A good result to
-return for executing commands is an object that implements
-``GuzzleHttp\Command\ModelInterface``.
+should clearly specify what the result of a command will be. A typical result
+to return is a PHP associative array or ``GuzzleHttp\Ring\Future\FutureArray``.
 
 Service clients have a magic method for calling commands by name without having
 to create the command then execute it.
