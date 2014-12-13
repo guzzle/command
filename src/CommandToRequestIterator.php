@@ -37,16 +37,12 @@ class CommandToRequestIterator implements \Iterator
      *       result if one was injected in the prepare event.
      * @param array|\Iterator        $commands Collection of command objects
      * @param array                  $options  Hash of options:
-     *     - prepare: Callable to invoke for the "prepare" event. This event is
-     *       called only once per execution.
-     *     - before: Callable to invoke when the "process" event is fired. This
+     *     - init: Callable to invoke when the "init" event is fired. This
      *       event is fired one or more times.
+     *     - prepared: Callable to invoke when the "prepared" event is fired.
+     *       This event is fired one or more times.
      *     - process: Callable to invoke when the "process" event is fired. This
      *       event can be fired one or more times.
-     *     - error: Callable to invoke when the "error" event of a command is
-     *       emitted. This event can be fired one or more times.
-     *     - end: Callable to invoke when the terminal "end" event of a command
-     *       is emitted. This event is fired once per command execution.
      *
      * @throws \InvalidArgumentException If the source is invalid
      */
