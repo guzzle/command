@@ -89,6 +89,8 @@ class CommandToRequestIterator implements \Iterator
 
     public function valid()
     {
+        get_next:
+
         // Return true if this function has already been called for iteration.
         if ($this->currentRequest) {
             return true;
@@ -127,7 +129,7 @@ class CommandToRequestIterator implements \Iterator
         // Skip commands that were intercepted with a result.
         if (isset($result['result'])) {
             $this->commands->next();
-            return $this->valid();
+            goto get_next;
         }
 
         $this->currentRequest = $result['request'];
