@@ -121,4 +121,27 @@ interface ServiceClientInterface extends HasEmitterInterface
      * @return \Exception
      */
     public function createCommandException(CommandTransaction $transaction);
+
+    /**
+     * Creates, initializes, and returns a CommandTransaction for a command.
+     *
+     * This method creates a CommandTransaction for a command, first emitting
+     * the "init" event (which typically validates the command parameters and
+     * potentially throws an exception). Next, it serializes the request and
+     * emits the "prepared" event, allowing listeners to modify the prepared
+     * request. A response or exception MAY be associated with the transaction
+     * during the prepared event, in which case they will be associated with
+     * the transaction. If an exception or response is associated with the
+     * transaction during the prepare event, then the "process" event will be
+     * emitted. Finally, a listener is added to the request to ensure that the
+     * command lifecycle is completed when the response completes.
+     *
+     * This method is used to execute commands, but can also be used to
+     * serialize a request for a command but not send the request.
+     *
+     * @param CommandInterface $command Command to initialize.
+     *
+     * @return CommandTransaction
+     */
+    public function initTransaction(CommandInterface $command);
 }

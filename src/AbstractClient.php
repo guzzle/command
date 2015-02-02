@@ -170,45 +170,7 @@ abstract class AbstractClient implements ServiceClientInterface
         );
     }
 
-    /**
-     * Prepares a request for the command.
-     *
-     * @param CommandTransaction $trans Command and context to serialize.
-     *
-     * @return RequestInterface
-     */
-    abstract protected function serializeRequest(CommandTransaction $trans);
-
-    /**
-     * Creates a future result for a given command transaction.
-     *
-     * This method really should beoverridden in subclasses to implement custom
-     * future response results.
-     *
-     * @param CommandTransaction $transaction
-     *
-     * @return FutureInterface
-     */
-    protected function createFutureResult(CommandTransaction $transaction)
-    {
-        return new FutureValue(
-            $transaction->response->then(function () use ($transaction) {
-                return $transaction->result;
-            }),
-            // Wait function derefs the response which populates the result.
-            [$transaction->response, 'wait'],
-            [$transaction->response, 'cancel']
-        );
-    }
-
-    /**
-     * Initialize a transaction for a command and send the prepare event.
-     *
-     * @param CommandInterface $command Command to associate with the trans.
-     *
-     * @return CommandTransaction
-     */
-    protected function initTransaction(CommandInterface $command)
+    public function initTransaction(CommandInterface $command)
     {
         $trans = new CommandTransaction($this, $command);
         // Throwing in the init event WILL NOT emit an error event.
@@ -252,6 +214,37 @@ abstract class AbstractClient implements ServiceClientInterface
         );
 
         return $trans;
+    }
+
+    /**
+     * Prepares a request for the command.
+     *
+     * @param CommandTransaction $trans Command and context to serialize.
+     *
+     * @return RequestInterface
+     */
+    abstract protected function serializeRequest(CommandTransaction $trans);
+
+    /**
+     * Creates a future result for a given command transaction.
+     *
+     * This method really should beoverridden in subclasses to implement custom
+     * future response results.
+     *
+     * @param CommandTransaction $transaction
+     *
+     * @return FutureInterface
+     */
+    protected function createFutureResult(CommandTransaction $transaction)
+    {
+        return new FutureValue(
+            $transaction->response->then(function () use ($transaction) {
+                return $transaction->result;
+            }),
+            // Wait function derefs the response which populates the result.
+            [$transaction->response, 'wait'],
+            [$transaction->response, 'cancel']
+        );
     }
 
     /**

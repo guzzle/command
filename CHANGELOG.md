@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.8.0 - 2015-02-02
+
+* Removed `setConfig` from `ServiceClientInterface`.
+* Added `initTransaction` to `ServiceClientInterface`.
+
 ## 0.7.1 - 2015-01-14
 
 * Fixed and issue where intercepting commands encapsulated by a
