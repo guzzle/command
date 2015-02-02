@@ -145,11 +145,6 @@ abstract class AbstractClient implements ServiceClientInterface
         return $this->config->getPath($keyOrPath);
     }
 
-    public function setConfig($keyOrPath, $value)
-    {
-        $this->config->setPath($keyOrPath, $value);
-    }
-
     public function createCommandException(CommandTransaction $transaction)
     {
         $cn = 'GuzzleHttp\\Command\\Exception\\CommandException';

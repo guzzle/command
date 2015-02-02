@@ -36,13 +36,10 @@ class AbstractClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('bar', $sc->getConfig('foo'));
         $this->assertEquals('boo', $sc->getConfig('baz/bam'));
         $this->assertEquals([], $sc->getConfig('defaults'));
-        $sc->setConfig('abc/123', 'listen');
-        $this->assertEquals('listen', $sc->getConfig('abc/123'));
         $this->assertEquals([
             'foo'      => 'bar',
             'baz'      => ['bam' => 'boo'],
-            'defaults' => [],
-            'abc'      => ['123' => 'listen']
+            'defaults' => []
         ], $sc->getConfig());
     }
 

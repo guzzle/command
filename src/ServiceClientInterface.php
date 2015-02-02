@@ -3,7 +3,7 @@ namespace GuzzleHttp\Command;
 
 use GuzzleHttp\Event\HasEmitterInterface;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Ring\FutureInterface;
+use GuzzleHttp\Ring\Future\FutureInterface;
 
 /**
  * Web service client interface.
@@ -108,17 +108,6 @@ interface ServiceClientInterface extends HasEmitterInterface
      * @return mixed
      */
     public function getConfig($keyOrPath = null);
-
-    /**
-     * Set a client configuration value at the specified configuration path.
-     *
-     * @param string|int $keyOrPath Path at which to change a configuration
-     *     value. This path syntax follows the same path syntax specified in
-     *     {@see getConfig}.
-     *
-     * @param mixed $value Value to set
-     */
-    public function setConfig($keyOrPath, $value);
 
     /**
      * Create an exception for a command based on a previous exception.
