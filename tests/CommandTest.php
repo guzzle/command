@@ -1,11 +1,8 @@
 <?php
 namespace GuzzleHttp\Tests\Command;
 
-use GuzzleHttp\Client;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Event\Emitter;
-use GuzzleHttp\Command\Event\PrepareEvent;
-use GuzzleHttp\Message\Request;
 
 /**
  * @covers \GuzzleHttp\Command\Command
