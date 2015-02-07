@@ -2,7 +2,6 @@
 namespace GuzzleHttp\Command;
 
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Collection;
 use GuzzleHttp\Command\Event\InitEvent;
 use GuzzleHttp\Command\Event\PreparedEvent;
 use GuzzleHttp\Command\Event\ProcessEvent;
@@ -14,6 +13,7 @@ use GuzzleHttp\Ring\Future\FutureInterface;
 use GuzzleHttp\Ring\Future\FutureValue;
 use GuzzleHttp\Event\RequestEvents;
 use GuzzleHttp\Message\RequestInterface;
+use GuzzleHttp\Utils;
 
 /**
  * Abstract client implementation that provides a basic implementation of
@@ -27,7 +27,7 @@ abstract class AbstractClient implements ServiceClientInterface
     /** @var ClientInterface HTTP client used to send requests */
     private $client;
 
-    /** @var Collection Service client configuration data */
+    /** @var array Service client configuration data */
     private $config;
 
     /**
@@ -63,7 +63,7 @@ abstract class AbstractClient implements ServiceClientInterface
             unset($config['emitter']);
         }
 
-        $this->config = new Collection($config);
+        $this->config = $config;
     }
 
     public function __call($name, array $arguments)
@@ -135,14 +135,16 @@ abstract class AbstractClient implements ServiceClientInterface
     public function getConfig($keyOrPath = null)
     {
         if ($keyOrPath === null) {
-            return $this->config->toArray();
+            return $this->config;
         }
 
         if (strpos($keyOrPath, '/') === false) {
-            return $this->config[$keyOrPath];
+            return isset($this->config[$keyOrPath])
+                ? $this->config[$keyOrPath]
+                : null;
         }
 
-        return $this->config->getPath($keyOrPath);
+        return Utils::getPath($this->config, $keyOrPath);
     }
 
     public function createCommandException(CommandTransaction $transaction)
