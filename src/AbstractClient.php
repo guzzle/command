@@ -35,8 +35,6 @@ abstract class AbstractClient implements ServiceClientInterface
      * properties on the client and accepts an associative array of
      * configuration parameters:
      *
-     * - defaults: Associative array of default command parameters to add to
-     *   each command created by the client.
      * - emitter: (internal only) A custom event emitter to use with the client.
      *
      * Concrete implementations may choose to support additional configuration
@@ -52,11 +50,6 @@ abstract class AbstractClient implements ServiceClientInterface
         array $config = []
     ) {
         $this->client = $client;
-
-        // Ensure the defaults key is an array so we can easily merge later.
-        if (!isset($config['defaults'])) {
-            $config['defaults'] = [];
-        }
 
         if (isset($config['emitter'])) {
             $this->emitter = $config['emitter'];
