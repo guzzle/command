@@ -134,7 +134,7 @@ abstract class AbstractClient implements ServiceClientInterface
         if (strpos($keyOrPath, '/') === false) {
             return isset($this->config[$keyOrPath])
                 ? $this->config[$keyOrPath]
-                : null;
+                : [];
         }
 
         return Utils::getPath($this->config, $keyOrPath);
