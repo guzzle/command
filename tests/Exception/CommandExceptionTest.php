@@ -1,39 +1,61 @@
 <?php
 namespace GuzzleHttp\Tests\Command\CommandException;
 
-use GuzzleHttp\Command\Command;
-use GuzzleHttp\Command\CommandTransaction;
+use GuzzleHttp\Command\CommandInterface;
+use GuzzleHttp\Command\Exception\CommandClientException;
 use GuzzleHttp\Command\Exception\CommandException;
-use GuzzleHttp\Message\Request;
+use GuzzleHttp\Command\Exception\CommandServerException;
+use GuzzleHttp\Exception\RequestException;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * @covers \GuzzleHttp\Command\Exception\CommandException
  */
 class CommandExceptionTest extends \PHPUnit_Framework_TestCase
 {
-    public function testHasTransaction()
+    public function testCanGetDataFromException()
     {
-        $client = $this->getMockForAbstractClass('GuzzleHttp\Command\ServiceClientInterface');
-        $command = new Command('foo');
-        $trans = new CommandTransaction($client, $command);
-        $trans->request = new Request('GET', 'http://www.foo.bar');
-        $trans->context['foo'] = 'bar';
-        $previous = new \Exception('bar');
-        $e = new CommandException('foo', $trans, $previous);
-        $this->assertSame($trans, $e->getTransaction());
-        $this->assertSame($client, $e->getClient());
-        $this->assertSame($command, $e->getCommand());
-        $this->assertSame($trans->request, $e->getRequest());
-        $this->assertEquals('bar', $e->getContext()->get('foo'));
-        $this->assertSame($previous, $e->getPrevious());
+        $command = $this->getMockForAbstractClass(CommandInterface::class);
+        $request = $this->getMockForAbstractClass(RequestInterface::class);
+        $response = $this->getMockForAbstractClass(ResponseInterface::class);
 
-        $this->assertNull($e->getResult());
-        $trans->result = 'foo';
-        $this->assertSame('foo', $e->getResult());
+        $exception = new CommandException('error', $command, null, $request, $response);
+        $this->assertSame($command, $exception->getCommand());
+        $this->assertSame($request, $exception->getRequest());
+        $this->assertSame($response, $exception->getResponse());
+    }
 
-        // Ensure the request and response are the original values that
-        // caused the exception.
-        $trans->request = clone $trans->request;
-        $this->assertNotSame($trans->request, $e->getRequest());
+    public function testFactoryReturnsExceptionIfAlreadyCommandException()
+    {
+        $command = $this->getMockForAbstractClass(CommandInterface::class);
+        $previous = CommandException::fromPrevious($command, new \Exception);
+
+        $exception = CommandException::fromPrevious($command, $previous);
+        $this->assertSame($previous, $exception);
+    }
+
+    public function testFactoryReturnsClientExceptionFor400LevelStatusCode()
+    {
+        $command = $this->getMockForAbstractClass(CommandInterface::class);
+        $request = $this->getMockForAbstractClass(RequestInterface::class);
+        $response = $this->getMockForAbstractClass(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(404);
+        $previous = new RequestException('error', $request, $response);
+
+        $exception = CommandException::fromPrevious($command, $previous);
+        $this->assertInstanceOf(CommandClientException::class, $exception);
+    }
+
+    public function testFactoryReturnsServerExceptionFor500LevelStatusCode()
+    {
+        $command = $this->getMockForAbstractClass(CommandInterface::class);
+        $request = $this->getMockForAbstractClass(RequestInterface::class);
+        $response = $this->getMockForAbstractClass(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(500);
+        $previous = new RequestException('error', $request, $response);
+
+        $exception = CommandException::fromPrevious($command, $previous);
+        $this->assertInstanceOf(CommandServerException::class, $exception);
     }
 }

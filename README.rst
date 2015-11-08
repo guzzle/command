@@ -2,18 +2,18 @@
 Guzzle Commands
 ===============
 
-This library provides an event-based abstraction over Guzzle HTTP requests and
-responses using **commands** and **models**. Events are emitted for preparing
-commands, processing commands, and handling errors encountered while executing
-a command.
+This library provides the foundations to create web service clients by
+abstracting Guzzle HTTP requests and responses into **commands** and
+**results**. A middleware system, analogous to — but separate from — the one in
+the HTTP layer may be used to help prepare commands and process results.
 
 Commands
-    Key value pair objects representing an action to take on a web service.
+    Key-value pair objects representing an action to take on a web service.
     Commands have a name and a set of parameters.
 
-Models
-    Models are key value pair objects representing the result of an API
-    operation.
+Results
+    key-value pair objects representing the result of executing an operation of
+    a web service.
 
 Installing
 ==========
@@ -25,9 +25,12 @@ composer.json:
 
     {
         "require": {
-            "guzzlehttp/command": "0.7.*"
+            "guzzlehttp/command": "0.9.*"
         }
     }
+
+
+**Still updating the rest of the README.**
 
 Service Clients
 ===============

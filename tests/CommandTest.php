@@ -2,7 +2,7 @@
 namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Command\Command;
-use GuzzleHttp\Event\Emitter;
+use GuzzleHttp\HandlerStack;
 
 /**
  * @covers \GuzzleHttp\Command\Command
@@ -15,35 +15,25 @@ class CommandTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('bar', $c['baz']);
         $this->assertTrue($c->hasParam('baz'));
         $this->assertFalse($c->hasParam('boo'));
+        $this->assertSame(['baz' => 'bar'], $c->toArray());
         $this->assertEquals('foo', $c->getName());
+        $this->assertCount(1, $c);
+        $this->assertInstanceOf('Traversable', $c->getIterator());
     }
 
-    public function testCanUseCustomEmitter()
+    public function testCanInjectHandlerStack()
     {
-        $emitter = new Emitter();
-        $c = new Command('foo', [], ['emitter' => $emitter]);
-        $this->assertSame($emitter, $c->getEmitter());
+        $handlerStack = new HandlerStack();
+        $c = new Command('foo', [], $handlerStack);
+        $this->assertSame($handlerStack, $c->getHandlerStack());
     }
 
-    public function testCanProvideFutureSettingInConstructor()
+    public function testCloneUsesDifferentHandlerStack()
     {
-        $c = new Command('foo', [], ['future' => true]);
-        $this->assertTrue($c->getFuture());
-    }
-
-    public function testCloneUsesDifferentEmitter()
-    {
-        $command = new Command('foo');
-        $e1 = $command->getEmitter();
+        $originalStack = new HandlerStack();
+        $command = new Command('foo', [], $originalStack);
+        $this->assertSame($originalStack, $command->getHandlerStack());
         $command2 = clone $command;
-        $this->assertNotSame($e1, $command2->getEmitter());
-    }
-
-    public function testCanControlFuture()
-    {
-        $command = new Command('foo');
-        $this->assertFalse($command->getFuture());
-        $command->setFuture(true);
-        $this->assertTrue($command->getFuture());
+        $this->assertNotSame($originalStack, $command2->getHandlerStack());
     }
 }
