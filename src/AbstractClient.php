@@ -78,8 +78,8 @@ abstract class AbstractClient implements ServiceClientInterface
         }
 
         try {
-            $trans->response = $this->client->send($trans->request);
-            return $trans->response instanceof FutureInterface
+            $trans->result = $this->client->send($trans->request);
+            return $trans->result instanceof FutureInterface
                 ? $this->createFutureResult($trans)
                 : $trans->result;
         } catch (CommandException $e) {
