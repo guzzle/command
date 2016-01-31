@@ -2,12 +2,12 @@
 Guzzle Commands
 ===============
 
-This library uses ``guzzlehttp/guzzle`` and provides the foundations to create
-full-featured web service clients by abstracting Guzzle HTTP **requests** and
-**responses** into higher-level **commands** and **results**. A **middleware**
-system, analogous to — but separate from — the one in the HTTP layer may be used
-to implement extra behavior when preparing commands into requests and processing
-responses into results.
+This library uses Guzzle (``guzzlehttp/guzzle``, version 6.x) and provides the
+foundations to create fully-featured web service clients by abstracting Guzzle
+HTTP **requests** and **responses** into higher-level **commands** and
+**results**. A **middleware** system, analogous to — but separate from — the one
+in the HTTP layer may be used to customize client behavior when preparing
+commands into requests and processing responses into results.
 
 Commands
     Key-value pair objects representing an operation of a web service. Commands
@@ -23,16 +23,16 @@ Installing
 This project can be installed using Composer. You will need to add the
 ``guzzlehttp/command`` package to your ``composer.json``.
 
-For Guzzle 6, use ``composer require guzzlehttp/command:0.9.*``.
+For **Guzzle 6**, use ``composer require guzzlehttp/command:0.9.*``.
 
-For Guzzle 5, use ``composer require guzzlehttp/command:0.8.*``. The source
+For **Guzzle 5**, use ``composer require guzzlehttp/command:0.8.*``. The source
 code for the Guzzle 5 version is available on the
 `0.8 branch <https://github.com/guzzle/command/tree/0.8>`_.
 
 Since there is currently no stable release for this package, you may need to use
 the ``@dev`` flag, the ``minimum-stability`` setting, or branch aliasing to be
 able to including this package into your project. Please read
-``Composer's documentation <https://getcomposer.org/doc/>`_ if you need help
+`Composer's documentation <https://getcomposer.org/doc/>`_ if you need help
 using those features.
 
 **Note:** If Composer is not
