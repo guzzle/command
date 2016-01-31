@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 0.9.0 - 2016-01-30
+
+* Updated to use Guzzle 6 and PSR-7.
+* Event system has been replaced with a middleware system
+    * Middleware at the command layer work the same as middleware from the
+      HTTP layer, but work with `Command` and `Result` objects instead of
+      `Request` and `Response` objects
+    * The command middleware is in a separate `HandlerStack` instance than the
+      HTTP middleware.
+* `Result` objects are the result of executing a `Command` and are used to hold
+  the parsed response data.
+* Asynchronous code now uses the `guzzlehttp/promises` package instead of 
+  `guzzlehttp/ringphp`, which means that asynchronous results are implemented
+  as Promises/A+ compliant `Promise` objects, instead of futures.
+* The existing `Subscriber`s were removed.
+* The `ServiceClientInterface` and `ServiceClient` class now provide the basic
+  foundation of a web service client.
+
 ## 0.8.0 - 2015-02-02
 
 * Removed `setConfig` from `ServiceClientInterface`.
