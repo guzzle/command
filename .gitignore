@@ -1,6 +1,6 @@
 .idea
 .DS_STORE
-coverage
+build/
 phpunit.xml
 composer.lock
 vendor/

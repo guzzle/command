@@ -1,45 +1,80 @@
 <?php
 namespace GuzzleHttp\Command\Exception;
 
-use GuzzleHttp\Command\CommandTransaction;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Command\ServiceClientInterface;
 use GuzzleHttp\Command\CommandInterface;
-use GuzzleHttp\Collection;
-use GuzzleHttp\Message\Request;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
- * Exception encountered while transferring a command.
+ * Exception encountered while executing a command.
  */
-class CommandException extends RequestException
+class CommandException extends \RuntimeException implements GuzzleException
 {
-    /** @var CommandTransaction */
-    private $trans;
+    /** @var CommandInterface */
+    private $command;
+
+    /** @var RequestInterface */
+    private $request;
+
+    /** @var ResponseInterface */
+    private $response;
 
     /**
-     * @param string             $message  Exception message
-     * @param CommandTransaction $trans    Contextual transfer information
-     * @param \Exception         $previous Previous exception (if any)
+     * @param CommandInterface $command
+     * @param \Exception $prev
+     * @return CommandException
      */
-    public function __construct(
-        $message,
-        CommandTransaction $trans,
-        \Exception $previous = null
-    ) {
-        $this->trans = $trans;
-        $request = $trans->request ?: new Request(null, null);
-        $response = $trans->response;
-        parent::__construct($message, $request, $response, $previous);
+    public static function fromPrevious(CommandInterface $command, \Exception $prev)
+    {
+        // If the exception is already a command exception, return it.
+        if ($prev instanceof self && $command === $prev->getCommand()) {
+            return $prev;
+        }
+
+        // If the exception is a RequestException, get the Request and Response.
+        $request = $response = null;
+        if ($prev instanceof RequestException) {
+            $request = $prev->getRequest();
+            $response = $prev->getResponse();
+        }
+
+        // Throw a more specific exception for 4XX or 5XX responses.
+        $class = self::class;
+        $statusCode = $response ? $response->getStatusCode() : 0;
+        if ($statusCode >= 400 && $statusCode < 500) {
+            $class = CommandClientException::class;
+        } elseif ($statusCode >= 500 && $statusCode < 600) {
+            $class = CommandServerException::class;
+        }
+
+        // Prepare the message.
+        $message = 'There was an error executing the ' . $command->getName()
+            . ' command: ' . $prev->getMessage();
+
+        // Create the exception.
+        return new $class($message, $command, $prev, $request, $response);
     }
 
     /**
-     * Gets the service client associated with the failed command.
-     *
-     * @return ServiceClientInterface
+     * @param string $message Exception message
+     * @param CommandInterface $command
+     * @param \Exception $previous Previous exception (if any)
+     * @param RequestInterface $request
+     * @param ResponseInterface $response
      */
-    public function getClient()
-    {
-        return $this->trans->serviceClient;
+    public function __construct(
+        $message,
+        CommandInterface $command,
+        \Exception $previous = null,
+        RequestInterface $request = null,
+        ResponseInterface $response = null
+    ) {
+        $this->command = $command;
+        $this->request = $request;
+        $this->response = $response;
+        parent::__construct($message, 0, $previous);
     }
 
     /**
@@ -49,36 +84,26 @@ class CommandException extends RequestException
      */
     public function getCommand()
     {
-        return $this->trans->command;
+        return $this->command;
     }
 
     /**
-     * Gets the result of the command if a result was set.
+     * Gets the request that caused the exception
      *
-     * @return mixed
+     * @return RequestInterface|null
      */
-    public function getResult()
+    public function getRequest()
     {
-        return $this->trans->result;
+        return $this->request;
     }
 
     /**
-     * Gets the context of the command as a collection.
+     * Gets the associated response
      *
-     * @return Collection
+     * @return ResponseInterface|null
      */
-    public function getContext()
+    public function getResponse()
     {
-        return $this->trans->context;
-    }
-
-    /**
-     * Gets the transaction associated with the exception.
-     *
-     * @return CommandTransaction
-     */
-    public function getTransaction()
-    {
-        return $this->trans;
+        return $this->response;
     }
 }
