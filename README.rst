@@ -31,14 +31,15 @@ code for the Guzzle 5 version is available on the
 
 Since there is currently no stable release for this package, you may need to use
 the ``@dev`` flag, the ``minimum-stability`` setting, or branch aliasing to be
-able to including this package into your project. Please read Composer's
-documentation if you need help using those features.
+able to including this package into your project. Please read
+``Composer's documentation <https://getcomposer.org/doc/>`_ if you need help
+using those features.
 
-> Note: If Composer is not
-  `installed globally <https://getcomposer.org/doc/00-intro.md#globally>`_,
-  then you may need to run the preceding Composer commands using
-  ``php composer.phar`` (where ``composer.phar`` is the path to your copy of
-  Composer), instead of just ``composer``.
+**Note:** If Composer is not
+`installed globally <https://getcomposer.org/doc/00-intro.md#globally>`_,
+then you may need to run the preceding Composer commands using
+``php composer.phar`` (where ``composer.phar`` is the path to your copy of
+Composer), instead of just ``composer``.
 
 Service Clients
 ===============
@@ -57,7 +58,7 @@ Instantiating a Service Client
 @TODO Add documentation
     * ``ServiceClient``'s constructor
     * Transformer functions (``$commandToRequestTransformer`` and ``$responseToResultTransformer``)
-    * ``HandlerStack``s
+    * The ``HandlerStack``
 
 Executing Commands
 ------------------
@@ -94,7 +95,7 @@ Asynchronous Commands
 
 @TODO Add documentation
     * ``-Async`` suffix for client methods
-    * ``Promise``s
+    * Promises
 
 .. code-block:: php
 
@@ -131,4 +132,4 @@ implement additional behavior and customize the ``Command``-to-``Result`` and
 
 @TODO Add documentation
     * Middleware system and command vs request layers
-    * ``HandlerStack``s
+    * The ``HandlerStack``
