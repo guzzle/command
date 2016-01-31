@@ -2,47 +2,67 @@
 Guzzle Commands
 ===============
 
-This library provides the foundations to create web service clients by
-abstracting Guzzle HTTP requests and responses into **commands** and
-**results**. A middleware system, analogous to — but separate from — the one in
-the HTTP layer may be used to help prepare commands and process results.
+This library uses ``guzzlehttp/guzzle`` and provides the foundations to create
+full-featured web service clients by abstracting Guzzle HTTP **requests** and
+**responses** into higher-level **commands** and **results**. A **middleware**
+system, analogous to — but separate from — the one in the HTTP layer may be used
+to implement extra behavior when preparing commands into requests and processing
+responses into results.
 
 Commands
-    Key-value pair objects representing an action to take on a web service.
-    Commands have a name and a set of parameters.
+    Key-value pair objects representing an operation of a web service. Commands
+    have a name and a set of parameters.
 
 Results
-    key-value pair objects representing the result of executing an operation of
-    a web service.
+    Key-value pair objects representing the processed result of executing an
+    operation of a web service.
 
 Installing
 ==========
 
-This project can be installed using Composer. Add the following to your
-composer.json:
+This project can be installed using Composer. You will need to add the
+``guzzlehttp/command`` package to your ``composer.json``.
 
-.. code-block:: javascript
+For Guzzle 6, use ``composer require guzzlehttp/command:0.9.*``.
 
-    {
-        "require": {
-            "guzzlehttp/command": "0.9.*"
-        }
-    }
+For Guzzle 5, use ``composer require guzzlehttp/command:0.8.*``. The source
+code for the Guzzle 5 version is available on the
+`0.8 branch <https://github.com/guzzle/command/tree/0.8>`_.
 
+Since there is currently no stable release for this package, you may need to use
+the ``@dev`` flag, the ``minimum-stability`` setting, or branch aliasing to be
+able to including this package into your project. Please read Composer's
+documentation if you need help using those features.
 
-**Still updating the rest of the README.**
+> Note: If Composer is not
+  `installed globally <https://getcomposer.org/doc/00-intro.md#globally>`_,
+  then you may need to run the preceding Composer commands using
+  ``php composer.phar`` (where ``composer.phar`` is the path to your copy of
+  Composer), instead of just ``composer``.
 
 Service Clients
 ===============
 
-Guzzle Service Clients are HTTP web service clients that use
-``GuzzleHttp\Client`` objects, commands, and the command event system. Event
-listeners are attached to the client to handle creating HTTP requests for a
-command, processing HTTP responses into a result (typically an array), and
-extends ``GuzzleHttp\Exception\RequestException`` objects with a higher-level
-``GuzzleHttp\Command\Exception\CommandException``.
+Service Clients are web service clients that implement the
+``GuzzleHttp\Command\ServiceClientInterface`` and use an underlying Guzzle HTTP
+client (``GuzzleHttp\Client``) to communicate with the service. Service clients
+create and execute **commands** (``GuzzleHttp\Command\CommandInterface``),
+which encapsulate operations within the web service, including the operation
+name and parameters. This library provides a generic implementation of a service
+client: the ``GuzzleHttp\Command\ServiceClient`` class.
 
-Service clients create commands using the ``getCommand()`` method.
+Instantiating a Service Client
+------------------------------
+
+@TODO Add documentation
+    * ``ServiceClient``'s constructor
+    * Transformer functions (``$commandToRequestTransformer`` and ``$responseToResultTransformer``)
+    * ``HandlerStack``s
+
+Executing Commands
+------------------
+
+Service clients create command objects using the ``getCommand()`` method.
 
 .. code-block:: php
 
@@ -50,116 +70,65 @@ Service clients create commands using the ``getCommand()`` method.
     $arguments = ['baz' => 'bar'];
     $command = $client->getCommand($commandName, $arguments);
 
-After creating a command, you execute the command using the ``execute()``
+After creating a command, you may execute the command using the ``execute()``
 method of the client.
 
 .. code-block:: php
 
     $result = $client->execute($command);
 
-The result of executing a command can be anything. However, implementations
-should clearly specify what the result of a command will be. A typical result
-to return is a PHP associative array or ``GuzzleHttp\Ring\Future\FutureArray``.
+The result of executing a command will be a ``GuzzleHttp\Command\ResultInterface``
+object. Result objects are ``ArrayAccess``-ible and contain the data parsed from
+HTTP response.
 
-Service clients have a magic method for calling commands by name without having
-to create the command then execute it.
+Service clients have magic methods that act as shortcuts to executing commands
+by name without having to create the ``Command`` object in a separate step
+before executing it.
 
 .. code-block:: php
 
     $result = $client->foo(['baz' => 'bar']);
 
-Service clients have configuration options that can be accessed in event
-listeners.
+Asynchronous Commands
+---------------------
+
+@TODO Add documentation
+    * ``-Async`` suffix for client methods
+    * ``Promise``s
 
 .. code-block:: php
 
-    $value = $client->getConfig('name');
+    // Create and execute an asynchronous command.
+    $command = $command = $client->getCommand('foo', ['baz' => 'bar']);
+    $promise = $client->executeAsync($command);
 
-    // You can also use a path notation where sub-array keys are separated
-    // using a "/".
-    $value = $client->getConfig('foo/baz/bar');
+    // Use asynchronous commands with magic methods.
+    $promise = $client->fooAsync(['baz' => 'bar']);
 
-Values can be set using a similar notation.
-
-.. code-block:: php
-
-    $client->setConfig('name', 'value');
-    // Set by nested path, creating sub-arrays as needed
-    $value = $client->setConfig('foo/baz/bar', 'value');
-
-Future Results
---------------
-
-Service clients can create future results that return immediately and block
-when they are used (or dereferenced). When creating a command, you can provide
-the ``@future`` command parameter to control whether or not a future result is
-created. Implementations should take this special setting into account when
-creating commands.
+@TODO Add documentation
+    * ``wait()``-ing on promises.
 
 .. code-block:: php
 
-    // Create a command that's configured to get a future
-    $command = $client->getCommand('name', ['@future' => true]);
-    assert($command->getFuture() == true);
+    $result = $promise->wait();
 
-    // Create and execute a future command
-    $result = $client->name(['@future' => true]);
+    echo $result['fizz']; //> 'buzz'
 
-    // Using a future result will block if necessary until the future has
-    // completed (or been "realized").
-    echo $result['foo'];
-    assert($result->realized() == true);
+Concurrent Requests
+-------------------
 
-    // You can also explicitly block until the command has finished using deref
-    $result->deref();
+@TODO Add documentation
+    * ``executeAll()``
+    * ``executeAllAsync()``.
+    * Options (``fulfilled``, ``rejected``, ``concurrency``)
 
-Event System
-============
+Middleware: Extending the Client
+================================
 
-Commands emit three events. These events are emitted immediately when an
-underyling response has completed (even if it is a future response).
+Middleware can be added to the service client or underlying HTTP client to
+implement additional behavior and customize the ``Command``-to-``Result`` and
+``Request``-to-``Response`` lifecycles, respectively.
 
-init
-    Emitted before a request is prepared for a command. This event is useful
-    for validating input parameters, adding default parameters, etc. Any
-    exceptions thrown in the init event are thrown immediately (with no
-    transition to the process event).
-
-prepared
-    Emitted immediately after a request has been prepared for a command. This
-    event is fired only once per command execution. Use this event to hook into
-    the request lifecycle events.
-
-    .. code-block:: php
-
-        use GuzzleHttp\Command\Event\PreparedEvent;
-
-        $command->getEmitter()->on('prepared', function(PreparedEvent $event) {
-            echo $event->getRequest();
-        });
-
-    Any exceptions thrown while emitting the "prepared" event will be
-    associated with the command transaction and the "process" event will be
-    emitted.
-
-process
-    The process event is emitted when processing an HTTP response or processing
-    a previously set command result. It is important to note that a previously
-    executed listener may have already set a result. Take this into account
-    when writing process event listeners. It is also important to understand
-    that an HTTP response may not be available in the process event if a result
-    interecepted the "prepared" event or in the case of a networking error.
-
-    Emitted when a command completes, whether for a success or failure. This
-    event will be invoked once, and only once, for a command execution.
-
-    .. code-block:: php
-
-        $command->getEmitter()->on('process', function(ProcessEvent $e) {
-            if ($e->getException()) {
-                echo 'Oh no!';
-            } else {
-                $e->setResult('foo');
-                var_dump($e->getResult());
-            }
-        });
+@TODO Add documentation
+    * Middleware system and command vs request layers
+    * ``HandlerStack``s
