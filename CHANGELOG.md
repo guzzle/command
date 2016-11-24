@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.1.0 - 2016-11-24
+## 1.0.0 - 2016-11-24
 
 * Add badges to README.md
 * Switch README from .rst to .md format 
