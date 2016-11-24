@@ -174,7 +174,7 @@ class ServiceClient implements ServiceClientInterface
 
                     // Create a result from the response.
                     $response = (yield $promise);
-                    yield $this->transformResponseToResult($response, $request);
+                    yield $this->transformResponseToResult($response, $request, $command);
                 } catch (\Exception $e) {
                     throw CommandException::fromPrevious($command, $e);
                 }
@@ -195,20 +195,23 @@ class ServiceClient implements ServiceClientInterface
         return $transform($command);
     }
 
+
     /**
      * Transforms a Response object, also using data from the Request object,
      * into a Result object.
      *
      * @param ResponseInterface $response
      * @param RequestInterface $request
+     * @param CommandInterface $command
      * @return ResultInterface
      */
     private function transformResponseToResult(
         ResponseInterface $response,
-        RequestInterface $request
+        RequestInterface $request,
+        CommandInterface $command
     ) {
         $transform = $this->responseToResultTransformer;
 
-        return $transform($response, $request);
+        return $transform($response, $request, $command);
     }
 }

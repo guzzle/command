@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.1.0 - 2016-11-24
+
+* Add badges to README.md
+* Switch README from .rst to .md format 
+* Update dependencies
+* Add command to handler call to provide support for GuzzleServices
+
 ## 0.9.0 - 2016-01-30
 
 * Updated to use Guzzle 6 and PSR-7.

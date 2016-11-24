@@ -1,5 +1,3 @@
-.idea
-.DS_STORE
 build/
 phpunit.xml
 composer.lock
