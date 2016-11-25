@@ -34,11 +34,7 @@ For **Guzzle 5**, use ``composer require guzzlehttp/command:0.8.*``. The source
 code for the Guzzle 5 version is available on the
 `0.8 branch <https://github.com/guzzle/command/tree/0.8>`_.
 
-**Note:** If Composer is not
-`installed globally <https://getcomposer.org/doc/00-intro.md#globally>`_,
-then you may need to run the preceding Composer commands using
-``php composer.phar`` (where ``composer.phar`` is the path to your copy of
-Composer), instead of just ``composer``.
+**Note:** If Composer is not installed [globally](https://getcomposer.org/doc/00-intro.md#globally) then you may need to run the preceding Composer commands using ``php composer.phar`` (where ``composer.phar`` is the path to your copy of Composer), instead of just ``composer``.
 
 ## Service Clients
 
