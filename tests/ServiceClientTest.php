@@ -1,6 +1,7 @@
 <?php
 namespace GuzzleHttp\Tests\Command\Guzzle;
 
+use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\CommandInterface;
@@ -18,7 +19,7 @@ use GuzzleHttp\Psr7\Request;
 /**
  * @covers \GuzzleHttp\Command\ServiceClient
  */
-class ServiceClientTest extends \PHPUnit_Framework_TestCase
+class ServiceClientTest extends TestCase
 {
     private function getServiceClient(array $responses)
     {
@@ -78,7 +79,7 @@ class ServiceClientTest extends \PHPUnit_Framework_TestCase
             ),
         ]);
 
-        $this->setExpectedException(CommandException::class);
+        $this->expectException(CommandException::class);
         $client->execute($client->getCommand('foo'));
     }
 
@@ -127,7 +128,7 @@ class ServiceClientTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf(Result::class, $results[0]);
         $this->assertEquals('A', $results[0]['letter']);
         $this->assertInstanceOf(CommandException::class, $results[1]);
-        $this->assertContains(
+        $this->assertStringContainsString(
             'Not a letter',
             (string) $results[1]->getResponse()->getBody()
         );
@@ -141,7 +142,7 @@ class ServiceClientTest extends \PHPUnit_Framework_TestCase
             yield 'foo';
         };
 
-        $this->setExpectedException(\InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         $client = $this->getServiceClient([]);
         $client->executeAll($generateCommands());

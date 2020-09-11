@@ -1,13 +1,14 @@
 <?php
 namespace GuzzleHttp\Tests\Command;
 
+use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\HandlerStack;
 
 /**
  * @covers \GuzzleHttp\Command\Command
  */
-class CommandTest extends \PHPUnit_Framework_TestCase
+class CommandTest extends TestCase
 {
     public function testHasData()
     {
