@@ -1,6 +1,7 @@
 <?php
 namespace GuzzleHttp\Tests\Command\CommandException;
 
+use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\Exception\CommandClientException;
 use GuzzleHttp\Command\Exception\CommandException;
@@ -12,7 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * @covers \GuzzleHttp\Command\Exception\CommandException
  */
-class CommandExceptionTest extends \PHPUnit_Framework_TestCase
+class CommandExceptionTest extends TestCase
 {
     public function testCanGetDataFromException()
     {
