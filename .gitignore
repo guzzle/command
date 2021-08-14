@@ -1,7 +1,3 @@
-build/
-phpunit.xml
+.phpunit.result.cache
 composer.lock
 vendor/
-
-# testing
-.phpunit.result.cache

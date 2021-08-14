@@ -1,14 +1,5 @@
 # Guzzle Commands
 
-[![License](https://poser.pugx.org/guzzlehttp/command/license)](https://packagist.org/packages/guzzlehttp/command)
-[![Build Status](https://travis-ci.org/guzzle/command.svg?branch=master)](https://travis-ci.org/guzzle/command)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/guzzle/command/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/guzzle/command/?branch=master)
-[![Code Coverage](https://scrutinizer-ci.com/g/guzzle/command/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/guzzle/command/?branch=master)
-[![SensioLabsInsight](https://insight.sensiolabs.com/projects/7a93338e-50cd-42f7-9299-17c44d92148f/mini.png)](https://insight.sensiolabs.com/projects/7a93338e-50cd-42f7-9299-17c44d92148f)
-[![Latest Stable Version](https://poser.pugx.org/guzzlehttp/command/v/stable)](https://packagist.org/packages/guzzlehttp/command)
-[![Latest Unstable Version](https://poser.pugx.org/guzzlehttp/command/v/unstable)](https://packagist.org/packages/guzzlehttp/command)
-[![Total Downloads](https://poser.pugx.org/guzzlehttp/command/downloads)](https://packagist.org/packages/guzzlehttp/command)
-
 This library uses Guzzle (``guzzlehttp/guzzle``, version 7.x) and provides the
 foundations to create fully-featured web service clients by abstracting Guzzle
 HTTP **requests** and **responses** into higher-level **commands** and

@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="./vendor/autoload.php"
-         colors="true">
+<phpunit
+    backupGlobals="true"
+    colors="true"
+    beStrictAboutOutputDuringTests="true"
+    beStrictAboutTestsThatDoNotTestAnything="true"
+    bootstrap="vendor/autoload.php"
+>
     <testsuites>
         <testsuite name="unit">
             <directory>tests</directory>
@@ -8,7 +13,7 @@
     </testsuites>
     <filter>
         <whitelist>
-            <directory suffix=".php">src</directory>
+            <directory>src</directory>
         </whitelist>
     </filter>
 </phpunit>
