@@ -114,7 +114,16 @@ Middleware can be added to the service client or underlying HTTP client to
 implement additional behavior and customize the ``Command``-to-``Result`` and
 ``Request``-to-``Response`` lifecycles, respectively.
 
-## Todo
+## Security
 
-* Middleware system and command vs request layers
-* The ``HandlerStack``
+If you discover a security vulnerability within this package, please send an email to security@tidelift.com. All security vulnerabilities will be promptly addressed. Please do not disclose security-related issues publicly until a fix has been announced. Please see [Security Policy](https://github.com/guzzle/command/security/policy) for more information.
+
+## License
+
+Guzzle is made available under the MIT License (MIT). Please see [License File](LICENSE) for more information.
+
+## For Enterprise
+
+Available as part of the Tidelift Subscription
+
+The maintainers of Guzzle and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. [Learn more.](https://tidelift.com/subscription/pkg/packagist-guzzlehttp-command?utm_source=packagist-guzzlehttp-command&utm_medium=referral&utm_campaign=enterprise&utm_term=repo)
