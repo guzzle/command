@@ -20,7 +20,7 @@ class ServiceClient implements ServiceClientInterface
 
     /** @var HandlerStack */
     private $handlerStack;
-    
+
     /** @var callable */
     private $commandToRequestTransformer;
 
@@ -168,13 +168,18 @@ class ServiceClient implements ServiceClientInterface
                 unset($command['@http']);
 
                 try {
-                    // Prepare the request from the command and send it.
-                    $request = $this->transformCommandToRequest($command);
-                    $promise = $this->httpClient->sendAsync($request, $opts);
+                    try {
+                        // Prepare the request from the command and send it.
+                        $request = $this->transformCommandToRequest($command);
+                        $promise = $this->httpClient->sendAsync($request, $opts);
 
-                    // Create a result from the response.
-                    $response = (yield $promise);
-                    yield $this->transformResponseToResult($response, $request, $command);
+                        // Create a result from the response.
+                        $response = (yield $promise);
+                        yield $this->transformResponseToResult($response, $request, $command);
+                    } catch (CommandException $exception) {
+                        yield $this->transformResponseToResult($exception->getResponse(), $exception->getRequest(), $exception->getCommand());
+                        throw $exception;
+                    }
                 } catch (\Exception $e) {
                     throw CommandException::fromPrevious($command, $e);
                 }
