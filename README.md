@@ -1,49 +1,88 @@
 # Guzzle Commands
 
-This library uses Guzzle (``guzzlehttp/guzzle``, version 7.x) and provides the
-foundations to create fully-featured web service clients by abstracting Guzzle
-HTTP **requests** and **responses** into higher-level **commands** and
-**results**. A **middleware** system, analogous to — but separate from — the one
-in the HTTP layer may be used to customize client behavior when preparing
-commands into requests and processing responses into results.
+This library uses Guzzle and provides the foundations to create fully-featured
+web service clients by abstracting Guzzle HTTP *requests* and *responses* into
+higher-level *commands* and *results*. A *middleware* system, analogous to, but
+separate from, the one in the HTTP layer may be used to customize client
+behavior when preparing commands into requests and processing responses into
+results.
 
 ### Commands
 
-Key-value pair objects representing an operation of a web service. Commands have a name and a set of parameters.
+Key-value pair objects representing an operation of a web service. Commands
+have a name and a set of parameters.
 
 ### Results
 
-Key-value pair objects representing the processed result of executing an operation of a web service.
+Key-value pair objects representing the processed result of executing an
+operation of a web service.
 
 ## Installing
 
-This project can be installed using Composer:
+This project can be installed using [Composer](https://getcomposer.org/):
 
-``composer require guzzlehttp/command``
-
-For **Guzzle 5**, use ``composer require guzzlehttp/command:0.8.*``. The source
-code for the Guzzle 5 version is available on the
-`0.8 branch <https://github.com/guzzle/command/tree/0.8>`_.
-
-**Note:** If Composer is not installed [globally](https://getcomposer.org/doc/00-intro.md#globally) then you may need to run the preceding Composer commands using ``php composer.phar`` (where ``composer.phar`` is the path to your copy of Composer), instead of just ``composer``.
+```
+composer require guzzlehttp/command
+```
 
 ## Service Clients
 
 Service Clients are web service clients that implement the
-``GuzzleHttp\Command\ServiceClientInterface`` and use an underlying Guzzle HTTP
-client (``GuzzleHttp\Client``) to communicate with the service. Service clients
-create and execute **commands** (``GuzzleHttp\Command\CommandInterface``),
+`GuzzleHttp\Command\ServiceClientInterface` and use an underlying Guzzle HTTP
+client (`GuzzleHttp\ClientInterface`) to communicate with the service. Service
+clients create and execute *commands* (`GuzzleHttp\Command\CommandInterface`),
 which encapsulate operations within the web service, including the operation
 name and parameters. This library provides a generic implementation of a service
-client: the ``GuzzleHttp\Command\ServiceClient`` class.
+client: the `GuzzleHttp\Command\ServiceClient` class.
 
 ## Instantiating a Service Client
 
-@TODO Add documentation
+The provided service client implementation (`GuzzleHttp\Command\ServiceClient`)
+can be instantiated by providing the following arguments:
 
-* ``ServiceClient``'s constructor
-* Transformer functions (``$commandToRequestTransformer`` and ``$responseToResultTransformer``)
-* The ``HandlerStack``
+1. A fully-configured Guzzle HTTP client that will be used to perform the
+   underlying HTTP requests. That is, an instance of an object implementing
+   `GuzzleHttp\ClientInterface` such as `new GuzzleHttp\Client()`.
+1. A callable that transforms a Command into a Request. The function should
+   accept a `GuzzleHttp\Command\CommandInterface` object and return a
+   `Psr\Http\Message\RequestInterface` object.
+1. A callable that transforms a Response into a Result. The function should
+   accept a `Psr\Http\Message\ResponseInterface` object and optionally a
+   `Psr\Http\Message\RequestInterface` object, and return a
+   `GuzzleHttp\Command\ResultInterface` object.
+1. Optionally, a Guzzle HandlerStack (`GuzzleHttp\HandlerStack`), which can be
+   used to add command-level middleware to the service client.
+
+Below is an example configured to send and receive JSON payloads:
+
+```php
+use GuzzleHttp\Command\CommandInterface;
+use GuzzleHttp\Command\Result;
+use GuzzleHttp\Command\ResultInterface;
+use GuzzleHttp\Command\ServiceClient;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\UriTemplate\UriTemplate;
+use GuzzleHttp\Utils;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+$client = new ServiceClient(
+    new HttpClient(),
+    function (CommandInterface $command): RequestInterface {
+        return new Request(
+            'POST',
+            UriTemplate::expand('/{command}', ['command' => $command->getName()]),
+            ['Accept' => 'application/json', 'Content-Type' => 'application/json'],
+            Utils::jsonEncode($command->toArray())
+        );
+    },
+    function (ResponseInterface $response, RequestInterface $request): ResultInterface {
+        return new Result(
+            Utils::jsonDecode((string) $response->getBody(), true)
+        );
+    }
+);
+```
 
 ## Executing Commands
 
@@ -53,18 +92,18 @@ Service clients create command objects using the ``getCommand()`` method.
 $commandName = 'foo';
 $arguments = ['baz' => 'bar'];
 $command = $client->getCommand($commandName, $arguments);
-
 ```
 
-After creating a command, you may execute the command using the ``execute()`` method of the client.
+After creating a command, you may execute the command using the `execute()`
+method of the client.
 
 ```php
 $result = $client->execute($command);
 ```
 
-The result of executing a command will be a ``GuzzleHttp\Command\ResultInterface``
-object. Result objects are ``ArrayAccess``-ible and contain the data parsed from
-HTTP response.
+The result of executing a command will be an instance of an object implementing
+`GuzzleHttp\Command\ResultInterface`. Result objects are `ArrayAccess`-ible and
+contain the data parsed from HTTP response.
 
 Service clients have magic methods that act as shortcuts to executing commands
 by name without having to create the ``Command`` object in a separate step
