@@ -38,11 +38,6 @@
             "GuzzleHttp\\Command\\": "src/"
         }
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.2-dev"
-        }
-    },
     "config": {
         "preferred-install": "dist",
         "sort-packages": true
