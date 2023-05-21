@@ -1,9 +1,10 @@
 <?php
+
 namespace GuzzleHttp\Tests\Command;
 
-use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\HandlerStack;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \GuzzleHttp\Command\Command

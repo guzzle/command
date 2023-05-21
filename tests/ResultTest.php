@@ -1,8 +1,9 @@
 <?php
+
 namespace GuzzleHttp\Tests\Command;
 
-use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Command\Result;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \GuzzleHttp\Command\Result

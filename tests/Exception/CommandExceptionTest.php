@@ -1,12 +1,13 @@
 <?php
+
 namespace GuzzleHttp\Tests\Command\CommandException;
 
-use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\Exception\CommandClientException;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Exception\CommandServerException;
 use GuzzleHttp\Exception\RequestException;
+use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -30,7 +31,7 @@ class CommandExceptionTest extends TestCase
     public function testFactoryReturnsExceptionIfAlreadyCommandException()
     {
         $command = $this->getMockForAbstractClass(CommandInterface::class);
-        $previous = CommandException::fromPrevious($command, new \Exception);
+        $previous = CommandException::fromPrevious($command, new \Exception());
 
         $exception = CommandException::fromPrevious($command, $previous);
         $this->assertSame($previous, $exception);

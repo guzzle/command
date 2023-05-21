@@ -1,7 +1,7 @@
 <?php
+
 namespace GuzzleHttp\Tests\Command\Guzzle;
 
-use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Command\Command;
 use GuzzleHttp\Command\CommandInterface;
@@ -11,10 +11,11 @@ use GuzzleHttp\Command\ServiceClient;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use GuzzleHttp\Psr7\Request;
 
 /**
  * @covers \GuzzleHttp\Command\ServiceClient
@@ -25,16 +26,18 @@ class ServiceClientTest extends TestCase
     {
         return new ServiceClient(
             new HttpClient([
-                'handler' => new MockHandler($responses)
+                'handler' => new MockHandler($responses),
             ]),
             function (CommandInterface $command) {
                 $data = $command->toArray();
                 $data['action'] = $command->getName();
+
                 return new Request('POST', '/', [], http_build_query($data));
             },
             function (ResponseInterface $response, RequestInterface $request) {
                 $data = json_decode($response->getBody(), true);
                 parse_str($request->getBody(), $data['_request']);
+
                 return new Result($data);
             }
         );
