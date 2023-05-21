@@ -121,7 +121,7 @@ class ServiceClient implements ServiceClientInterface
         }
 
         // Convert the iterator of commands to a generator of promises.
-        $commands = Promise\iter_for($commands);
+        $commands = Promise\Create::iterFor($commands);
         $promises = function () use ($commands) {
             foreach ($commands as $key => $command) {
                 if (!$command instanceof CommandInterface) {
@@ -166,7 +166,7 @@ class ServiceClient implements ServiceClientInterface
     private function createCommandHandler()
     {
         return function (CommandInterface $command) {
-            return Promise\coroutine(function () use ($command) {
+            return Promise\Coroutine::of(function () use ($command) {
                 // Prepare the HTTP options.
                 $opts = $command['@http'] ?: [];
                 unset($command['@http']);
