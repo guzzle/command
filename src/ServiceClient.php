@@ -153,9 +153,9 @@ class ServiceClient implements ServiceClientInterface
             $command = $this->getCommand(substr($name, 0, -5), $args);
 
             return $this->executeAsync($command);
-        } else {
-            return $this->execute($this->getCommand($name, $args));
         }
+
+        return $this->execute($this->getCommand($name, $args));
     }
 
     /**
