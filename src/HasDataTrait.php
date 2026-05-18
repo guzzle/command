@@ -26,24 +26,40 @@ trait HasDataTrait
     #[\ReturnTypeWillChange]
     public function offsetExists($offset)
     {
+        if ($offset === null) {
+            $offset = '';
+        }
+
         return array_key_exists($offset, $this->data);
     }
 
     #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
+        if ($offset === null) {
+            $offset = '';
+        }
+
         return isset($this->data[$offset]) ? $this->data[$offset] : null;
     }
 
     #[\ReturnTypeWillChange]
     public function offsetSet($offset, $value)
     {
+        if ($offset === null) {
+            $offset = '';
+        }
+
         $this->data[$offset] = $value;
     }
 
     #[\ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
+        if ($offset === null) {
+            $offset = '';
+        }
+
         unset($this->data[$offset]);
     }
 

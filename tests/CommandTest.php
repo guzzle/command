@@ -23,6 +23,12 @@ class CommandTest extends TestCase
         $this->assertInstanceOf('Traversable', $c->getIterator());
     }
 
+    public function testHasParamNormalizesNullToEmptyString()
+    {
+        $c = new Command('foo', ['' => 'bar']);
+        $this->assertTrue($c->hasParam(null));
+    }
+
     public function testCanInjectHandlerStack()
     {
         $handlerStack = new HandlerStack();

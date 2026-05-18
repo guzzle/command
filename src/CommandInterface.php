@@ -32,7 +32,7 @@ interface CommandInterface extends \ArrayAccess, \IteratorAggregate, \Countable,
     /**
      * Check if the command has a parameter by name.
      *
-     * @param string $name Name of the parameter to check.
+     * @param string|null $name Name of the parameter to check.
      *
      * @return bool
      */

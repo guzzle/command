@@ -24,4 +24,25 @@ class ResultTest extends TestCase
         $this->assertInstanceOf('Traversable', $c->getIterator());
         $this->assertStringContainsString('bar', (string) $c);
     }
+
+    public function testNullOffsetUsesEmptyStringKey()
+    {
+        $c = new Result(['' => 'bar']);
+        $this->assertTrue(isset($c[null]));
+        $this->assertSame('bar', $c[null]);
+
+        $c[null] = 'baz';
+        $this->assertSame(['' => 'baz'], $c->toArray());
+
+        unset($c[null]);
+        $this->assertSame([], $c->toArray());
+    }
+
+    public function testAppendSyntaxUsesEmptyStringKey()
+    {
+        $c = new Result();
+        $c[] = 'bar';
+
+        $this->assertSame(['' => 'bar'], $c->toArray());
+    }
 }
