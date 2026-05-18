@@ -32,24 +32,24 @@
     },
     "require-dev": {
         "bamarni/composer-bin-plugin": "^1.8.2",
-        "phpunit/phpunit": "^8.5.19 || ^9.5.8"
+        "phpunit/phpunit": "^8.5.52 || ^9.6.34"
     },
     "autoload": {
         "psr-4": {
             "GuzzleHttp\\Command\\": "src/"
         }
     },
+    "config": {
+        "allow-plugins": {
+            "bamarni/composer-bin-plugin": true
+        },
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
     "extra": {
         "bamarni-bin": {
             "bin-links": true,
             "forward-command": false
-        }
-    },
-    "config": {
-        "preferred-install": "dist",
-        "sort-packages": true,
-        "allow-plugins": {
-            "bamarni/composer-bin-plugin": true
         }
     }
 }
