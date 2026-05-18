@@ -139,6 +139,55 @@ class ServiceClientTest extends TestCase
         $this->assertEquals('Z', $results[2]['letter']);
     }
 
+    public function testExecuteAllNormalizesNullResultKeys()
+    {
+        $generateCommands = function () {
+            yield null => new Command('capitalize', ['letter' => 'a']);
+        };
+
+        $client = $this->getServiceClient([
+            new Response(200, [], '{"letter":"A"}'),
+        ]);
+
+        $fulfilledKey = 'not-called';
+        $results = $client->executeAll($generateCommands(), [
+            'fulfilled' => function ($result, $key) use (&$fulfilledKey) {
+                $fulfilledKey = $key;
+            },
+        ]);
+
+        $this->assertNull($fulfilledKey);
+        $this->assertArrayHasKey('', $results);
+        $this->assertInstanceOf(Result::class, $results['']);
+        $this->assertSame('A', $results['']['letter']);
+    }
+
+    public function testExecuteAllNormalizesNullResultKeysForRejectedCommands()
+    {
+        $generateCommands = function () {
+            yield null => new Command('capitalize', ['letter' => '2']);
+        };
+
+        $client = $this->getServiceClient([
+            new BadResponseException(
+                'Bad Response',
+                $this->getMockForAbstractClass(RequestInterface::class),
+                new Response(200, [], '{"error":"Not a letter"}')
+            ),
+        ]);
+
+        $rejectedKey = 'not-called';
+        $results = $client->executeAll($generateCommands(), [
+            'rejected' => function ($reason, $key) use (&$rejectedKey) {
+                $rejectedKey = $key;
+            },
+        ]);
+
+        $this->assertNull($rejectedKey);
+        $this->assertArrayHasKey('', $results);
+        $this->assertInstanceOf(CommandException::class, $results['']);
+    }
+
     public function testMultipleCommandsFailsForNonCommands()
     {
         $generateCommands = function () {

@@ -44,6 +44,10 @@ class Command implements CommandInterface
 
     public function hasParam($name)
     {
+        if ($name === null) {
+            $name = '';
+        }
+
         return array_key_exists($name, $this->data);
     }
 
