@@ -59,8 +59,6 @@ interface ServiceClientInterface
      *                                  - rejected: (callable) Function to invoke when a command fails.
      *
      * @return array
-     *
-     * @see GuzzleHttp\Command\ServiceClientInterface::createPool for options.
      */
     public function executeAll($commands, array $options = []);
 
@@ -76,8 +74,6 @@ interface ServiceClientInterface
      *                                  - rejected: (callable) Function to invoke when a command fails.
      *
      * @return PromiseInterface
-     *
-     * @see GuzzleHttp\Command\ServiceClientInterface::createPool for options.
      */
     public function executeAllAsync($commands, array $options = []);
 
