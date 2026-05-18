@@ -4,41 +4,32 @@
 
 * Add support for `guzzlehttp/promises` 2.x
 * Replace deprecated promise helper calls
-* Add PHP-CS-Fixer static analysis
-* Apply Symfony code style
 
 ## 1.2.3 - 2023-04-18
 
-* Add PHP 8.2 CI coverage
+* Add PHP 8.2 support
 * Bump minimum Guzzle dependency versions
-* Add Composer Normalize checks
-* Refresh GitHub Actions configuration
 
 ## 1.2.2 - 2022-02-08
 
 * Fix PHP 8.1 return type deprecation notices
 * Bump minimum Guzzle dependency versions
-* Improve README documentation
 
 ## 1.2.1 - 2021-09-05
 
-* Add PHP 8.1 test support
+* Add PHP 8.1 support
 * Update package metadata and license text
-* Add security and funding documentation
 
 ## 1.2.0 - 2021-08-14
 
 * Add PHP 8.0 support
 * Update dependency constraints for Guzzle 7.3
 * Add support for PSR-7 2.x
-* Replace Travis CI with GitHub Actions
-* Simplify the test Makefile
 
 ## 1.1.0 - 2020-09-28
 
 * Update to Guzzle 7
 * Raise the minimum PHP version to 7.2.5
-* Update tests to PHPUnit 8
 
 ## 1.0.0 - 2016-11-24
 
@@ -102,7 +93,6 @@
 ## 0.4.0 - 2014-04-29
 
 * Add support for intercepting command error events
-* Refactor command event handling
 * Improve error context handling
 * Add an emitter option to `AbstractClient`
 
