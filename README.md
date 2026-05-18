@@ -56,6 +56,7 @@ can be instantiated by providing the following arguments:
 Below is an example configured to send and receive JSON payloads:
 
 ```php
+use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\Result;
 use GuzzleHttp\Command\ResultInterface;
@@ -67,7 +68,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 $client = new ServiceClient(
-    new HttpClient(),
+    new HttpClient(['base_uri' => 'https://api.example.com']),
     function (CommandInterface $command): RequestInterface {
         return new Request(
             'POST',
@@ -76,7 +77,11 @@ $client = new ServiceClient(
             Utils::jsonEncode($command->toArray())
         );
     },
-    function (ResponseInterface $response, RequestInterface $request): ResultInterface {
+    function (
+        ResponseInterface $response,
+        RequestInterface $request,
+        CommandInterface $command
+    ): ResultInterface {
         return new Result(
             Utils::jsonDecode((string) $response->getBody(), true)
         );
@@ -113,25 +118,76 @@ before executing it.
 $result = $client->foo(['baz' => 'bar']);
 ```
 
-## Asynchronous Commands
+### Per-command HTTP options
 
-@TODO Add documentation
+`GuzzleHttp\Command\ServiceClient` reserves the `@http` command parameter for
+per-command Guzzle request options. When a command is executed, the service
+client reads `$command['@http']`, removes it from the command, transforms the
+remaining command data into a PSR-7 request, and passes the `@http` array to the
+underlying Guzzle HTTP client.
 
-* ``-Async`` suffix for client methods
-* Promises
+This is intended for trusted application code that needs to adjust transport
+behavior for a single command, such as setting a shorter timeout. Treat `@http`
+as a reserved control key, not as an operation parameter. Do not pass untrusted
+input directly into command arguments without filtering it first. If external
+input can include `@http`, that input may be able to influence the underlying
+HTTP request or transfer depending on the configured Guzzle client and handler.
+The `@http` value must be an array of Guzzle request options. Be especially
+careful with options that affect the target URI, proxy, TLS verification,
+headers, body, response sink, redirects, or timeouts.
+
+Build command arguments from an allowlist of expected operation parameters, or
+explicitly reject reserved keys such as `@http` before creating commands:
 
 ```php
-// Create and execute an asynchronous command.
-$command = $command = $client->getCommand('foo', ['baz' => 'bar']);
-$promise = $client->executeAsync($command);
+if (array_key_exists('@http', $input)) {
+    throw new InvalidArgumentException('"@http" is reserved.');
+}
 
-// Use asynchronous commands with magic methods.
-$promise = $client->fooAsync(['baz' => 'bar']);
+$command = $client->getCommand('foo', [
+    'baz' => (string) $input['baz'],
+]);
 ```
 
-@TODO Add documentation
+When setting per-command HTTP options intentionally, only expose and validate the
+specific options your application needs:
 
-* ``wait()``-ing on promises.
+```php
+use GuzzleHttp\RequestOptions;
+
+$command = $client->getCommand('foo', [
+    'baz' => 'bar',
+    '@http' => [
+        RequestOptions::CONNECT_TIMEOUT => 1.0,
+        RequestOptions::TIMEOUT => 2.0,
+    ],
+]);
+
+$result = $client->execute($command);
+```
+
+Because `@http` is removed during execution, create a new command if you need to
+execute the same operation again with the same per-command HTTP options.
+
+## Asynchronous Commands
+
+Commands can be executed asynchronously using `executeAsync()`. This method
+returns a `GuzzleHttp\Promise\PromiseInterface` that resolves to a
+`GuzzleHttp\Command\ResultInterface`.
+
+```php
+use GuzzleHttp\Command\ResultInterface;
+
+// Create and execute an asynchronous command.
+$command = $client->getCommand('foo', ['baz' => 'bar']);
+$promise = $client->executeAsync($command);
+
+$promise->then(function (ResultInterface $result) {
+    echo $result['fizz']; //> 'buzz'
+})->wait();
+```
+
+Synchronous execution is equivalent to waiting on the asynchronous operation:
 
 ```php
 $result = $promise->wait();
@@ -139,19 +195,98 @@ $result = $promise->wait();
 echo $result['fizz']; //> 'buzz'
 ```
 
+Magic methods may also be used asynchronously by appending `Async` to the
+operation name. For example, `fooAsync()` creates a `foo` command and executes it
+asynchronously:
+
+```php
+$promise = $client->fooAsync(['baz' => 'bar']);
+$result = $promise->wait();
+```
+
+If execution fails, the promise is rejected with a
+`GuzzleHttp\Command\Exception\CommandException`. When HTTP errors are enabled,
+4xx and 5xx responses are represented by `CommandClientException` and
+`CommandServerException`, respectively, when the underlying Guzzle exception
+contains a response.
+
 ## Concurrent Requests
 
-@TODO Add documentation
+Use `executeAll()` or `executeAllAsync()` to execute multiple commands with a
+fixed concurrency limit. Both methods accept an array or iterator that yields
+`CommandInterface` objects.
 
-* ``executeAll()``
-* ``executeAllAsync()``.
-* Options (``fulfilled``, ``rejected``, ``concurrency``)
+`executeAll()` waits for the pool to finish and returns an array keyed like the
+input commands. Successful entries contain results. Failed entries contain the
+rejection reason, typically a `CommandException`.
+
+```php
+use GuzzleHttp\Command\ResultInterface;
+
+$commands = [
+    'first' => $client->getCommand('foo', ['baz' => 'bar']),
+    'second' => $client->getCommand('foo', ['baz' => 'qux']),
+];
+
+$results = $client->executeAll($commands, [
+    'concurrency' => 10,
+    'fulfilled' => function (ResultInterface $result, $key) {
+        // Called when one command succeeds.
+    },
+    'rejected' => function ($reason, $key) {
+        // Called when one command fails.
+    },
+]);
+```
+
+`executeAllAsync()` returns a promise for the command pool instead of waiting for
+it immediately. The same options are supported:
+
+```php
+$promise = $client->executeAllAsync($commands, [
+    'concurrency' => 10,
+]);
+
+$promise->wait();
+```
+
+The supported options are:
+
+* `concurrency`: Maximum number of commands to execute at the same time. The
+  default is `25`.
+* `fulfilled`: Callable invoked as `fulfilled($result, $key)` when an individual
+  command succeeds.
+* `rejected`: Callable invoked as `rejected($reason, $key)` when an individual
+  command fails.
+
+Choose a concurrency value that is appropriate for the remote service and your
+application. Very large command lists should generally be streamed with an
+iterator rather than built eagerly as a large array.
 
 ## Middleware: Extending the Client
 
 Middleware can be added to the service client or underlying HTTP client to
 implement additional behavior and customize the ``Command``-to-``Result`` and
 ``Request``-to-``Response`` lifecycles, respectively.
+
+Command middleware is added to the service client's handler stack and wraps
+commands before they are transformed into HTTP requests. HTTP middleware should
+be configured on the underlying Guzzle HTTP client instead.
+
+```php
+use GuzzleHttp\Command\CommandInterface;
+use GuzzleHttp\RequestOptions;
+
+$client->getHandlerStack()->push(function (callable $handler) {
+    return function (CommandInterface $command) use ($handler) {
+        $http = $command['@http'] ?: [];
+        $http[RequestOptions::TIMEOUT] = 2.0;
+        $command['@http'] = $http;
+
+        return $handler($command);
+    };
+});
+```
 
 ## Security
 
