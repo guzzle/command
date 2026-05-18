@@ -62,6 +62,7 @@ use GuzzleHttp\Command\Result;
 use GuzzleHttp\Command\ResultInterface;
 use GuzzleHttp\Command\ServiceClient;
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\UriTemplate\UriTemplate;
 use GuzzleHttp\Utils;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -71,7 +72,7 @@ $client = new ServiceClient(
     function (CommandInterface $command): RequestInterface {
         return new Request(
             'POST',
-            '/' . rawurlencode($command->getName()),
+            UriTemplate::expand('/{command}', ['command' => $command->getName()]),
             ['Accept' => 'application/json', 'Content-Type' => 'application/json'],
             Utils::jsonEncode($command->toArray())
         );
