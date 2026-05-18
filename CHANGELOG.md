@@ -3,11 +3,8 @@
 ## 1.4.0 - 2026-05-18
 
 * Add PHP 8.5 support
-* Require `guzzlehttp/guzzle` 7.10, `guzzlehttp/promises` 2.3, and `guzzlehttp/psr7` 2.8
-* Improve README documentation for per-command HTTP options, asynchronous commands, concurrent execution, and command middleware
+* Require `guzzlehttp/guzzle` ^7.10, `guzzlehttp/promises` ^2.3, and `guzzlehttp/psr7` ^2.8
 * Remove stale `createPool` references from `ServiceClientInterface` documentation
-* Add PHPStan, Composer Normalize, and updated static analysis tooling
-* Update CI workflows and test matrix
 
 ## 1.3.2 - 2025-02-04
 
