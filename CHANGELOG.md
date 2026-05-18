@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 1.3.2 - 2025-02-04
+
+* Add PHP 8.4 support
+
+## 1.3.1 - 2023-12-03
+
+* Add PHP 8.3 support
+
 ## 1.3.0 - 2023-05-21
 
 * Add support for `guzzlehttp/promises` 2.x
