@@ -2,42 +2,43 @@
 
 ## 1.3.0 - 2023-05-21
 
-* Added support for `guzzlehttp/promises` 2.x.
-* Replaced deprecated promise helper calls with `Promise\Create::iterFor()` and
-  `Promise\Coroutine::of()`.
-* Added PHP-CS-Fixer static analysis and applied Symfony-style formatting
-  updates.
+* Add support for `guzzlehttp/promises` 2.x
+* Replace deprecated promise helper calls
+* Add PHP-CS-Fixer static analysis
+* Apply Symfony code style
 
 ## 1.2.3 - 2023-04-18
 
-* Added PHP 8.2 CI coverage.
-* Bumped minimum supported Guzzle dependency versions.
-* Added Composer Normalize checks and refreshed GitHub Actions configuration.
+* Add PHP 8.2 CI coverage
+* Bump minimum Guzzle dependency versions
+* Add Composer Normalize checks
+* Refresh GitHub Actions configuration
 
 ## 1.2.2 - 2022-02-08
 
-* Fixed PHP 8.1 return type deprecation notices in data container methods.
-* Bumped minimum supported Guzzle dependency versions.
-* Improved README documentation for service client setup and usage.
+* Fix PHP 8.1 return type deprecation notices
+* Bump minimum Guzzle dependency versions
+* Improve README documentation
 
 ## 1.2.1 - 2021-09-05
 
-* Added PHP 8.1 test support.
-* Updated package metadata, license text, security documentation, and funding
-  metadata.
+* Add PHP 8.1 test support
+* Update package metadata and license text
+* Add security and funding documentation
 
 ## 1.2.0 - 2021-08-14
 
-* Added PHP 8.0 support.
-* Updated dependency constraints for Guzzle 7.3, Promises 1.x, and PSR-7 1.x /
-  2.x.
-* Replaced Travis CI with GitHub Actions and simplified the test Makefile.
+* Add PHP 8.0 support
+* Update dependency constraints for Guzzle 7.3
+* Add support for PSR-7 2.x
+* Replace Travis CI with GitHub Actions
+* Simplify the test Makefile
 
 ## 1.1.0 - 2020-09-28
 
-* Updated to Guzzle 7.
-* Raised the minimum PHP version to 7.2.5.
-* Updated tests to PHPUnit 8.
+* Update to Guzzle 7
+* Raise the minimum PHP version to 7.2.5
+* Update tests to PHPUnit 8
 
 ## 1.0.0 - 2016-11-24
 
@@ -100,25 +101,23 @@
 
 ## 0.4.0 - 2014-04-29
 
-* Added support for intercepting command error events with a result before
-  sending a request.
-* Refactored command event handling and error context handling.
-* Added an emitter option to `AbstractClient`.
+* Add support for intercepting command error events
+* Refactor command event handling
+* Improve error context handling
+* Add an emitter option to `AbstractClient`
 
 ## 0.3.0 - 2014-04-02
 
-* Added custom metadata support to `CommandErrorEvent`.
+* Add custom metadata support to `CommandErrorEvent`
 
 ## 0.2.0 - 2014-03-30
 
-* Added `AbstractClient` as a base service client implementation.
-* Added support for command execution, magic command methods, exception wrapping,
-  and parallel command execution.
-* Updated Composer requirements and fixed an undefined offset issue.
+* Add `AbstractClient` as a base service client implementation
+* Add magic command methods
+* Add parallel command execution
+* Update Composer requirements
+* Fix an undefined offset issue
 
 ## 0.1.0 - 2014-03-15
 
-* Initial release of `guzzlehttp/command`.
-* Added command, service client, event, request location, response location, and
-  model abstractions.
-* Added Composer, PHPUnit, Travis CI, tests, and README documentation.
+* Initial release
