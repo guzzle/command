@@ -25,6 +25,15 @@ This project can be installed using [Composer](https://getcomposer.org/):
 composer require guzzlehttp/command
 ```
 
+## Version Guidance
+
+| Version | Status              | PHP Version  |
+|---------|---------------------|--------------|
+| 1.x     | Latest              | >=7.2.5,<8.6 |
+| 2.x     | Experimental        | >=7.4,<8.6   |
+
+See [UPGRADING.md](UPGRADING.md) for notes on upgrading to 2.0.
+
 ## Service Clients
 
 Service Clients are web service clients that implement the
