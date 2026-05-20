@@ -4,11 +4,11 @@ Guzzle Command Upgrade Guide
 2.0 from 1.x
 ------------
 
-Guzzle Command 2.0 is a major release that raises the minimum PHP version and
-updates the Guzzle dependency stack. Applications that only use the
-`ServiceClientInterface` API should usually need small changes. Applications
-that pass request options through commands or use promises directly need closer
-review.
+Guzzle Command 2.0 is a major release that enables strict types, raises the
+minimum PHP version, and updates the Guzzle dependency stack. Applications that
+only use the `ServiceClientInterface` API should usually need small changes.
+Applications that pass request options through commands, use promises directly,
+or provide custom callbacks need closer review.
 
 #### PHP Version and Dependencies
 
@@ -21,6 +21,19 @@ PSR-7 3.x.
 If your application still supports PHP 7.2 or 7.3, or still uses the Guzzle 7
 dependency stack, continue using Guzzle Command 1.x until your minimum PHP and
 dependency versions are raised.
+
+#### Strict Types and Extension Points
+
+Guzzle Command source and test files now declare strict types. This mostly
+affects calls made by Guzzle Command into extension points, including command
+middleware, command-to-request transformers, response-to-result transformers,
+and `executeAll()` callbacks. Custom code does not become strict unless it also
+declares strict types, but scalar arguments passed from strict Guzzle Command
+files are no longer weakly coerced for typed callback parameters.
+
+Review custom callbacks that declare scalar parameter types. In particular,
+`executeAll()` callback keys can be integers, strings, or `null` depending on the
+keys yielded by the command iterable.
 
 #### Per-command HTTP Options
 
