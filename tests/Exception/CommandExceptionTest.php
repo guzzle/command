@@ -18,9 +18,9 @@ class CommandExceptionTest extends TestCase
 {
     public function testCanGetDataFromException()
     {
-        $command = $this->getMockForAbstractClass(CommandInterface::class);
-        $request = $this->getMockForAbstractClass(RequestInterface::class);
-        $response = $this->getMockForAbstractClass(ResponseInterface::class);
+        $command = $this->createMock(CommandInterface::class);
+        $request = $this->createMock(RequestInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
 
         $exception = new CommandException('error', $command, null, $request, $response);
         $this->assertSame($command, $exception->getCommand());
@@ -30,7 +30,7 @@ class CommandExceptionTest extends TestCase
 
     public function testFactoryReturnsExceptionIfAlreadyCommandException()
     {
-        $command = $this->getMockForAbstractClass(CommandInterface::class);
+        $command = $this->createMock(CommandInterface::class);
         $previous = CommandException::fromPrevious($command, new \Exception());
 
         $exception = CommandException::fromPrevious($command, $previous);
@@ -39,9 +39,9 @@ class CommandExceptionTest extends TestCase
 
     public function testFactoryReturnsClientExceptionFor400LevelStatusCode()
     {
-        $command = $this->getMockForAbstractClass(CommandInterface::class);
-        $request = $this->getMockForAbstractClass(RequestInterface::class);
-        $response = $this->getMockForAbstractClass(ResponseInterface::class);
+        $command = $this->createMock(CommandInterface::class);
+        $request = $this->createMock(RequestInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(404);
         $previous = new RequestException('error', $request, $response);
 
@@ -51,9 +51,9 @@ class CommandExceptionTest extends TestCase
 
     public function testFactoryReturnsServerExceptionFor500LevelStatusCode()
     {
-        $command = $this->getMockForAbstractClass(CommandInterface::class);
-        $request = $this->getMockForAbstractClass(RequestInterface::class);
-        $response = $this->getMockForAbstractClass(ResponseInterface::class);
+        $command = $this->createMock(CommandInterface::class);
+        $request = $this->createMock(RequestInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(500);
         $previous = new RequestException('error', $request, $response);
 
