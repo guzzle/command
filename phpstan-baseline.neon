@@ -1,13 +1,2 @@
 parameters:
-	ignoreErrors:
-		-
-			message: '#^Callable callable\(Psr\\Http\\Message\\RequestInterface, array\)\: GuzzleHttp\\Promise\\PromiseInterface invoked with 1 parameter, 2 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: src/ServiceClient.php
-
-		-
-			message: '#^Parameter \#1 of callable callable\(Psr\\Http\\Message\\RequestInterface, array\)\: GuzzleHttp\\Promise\\PromiseInterface expects Psr\\Http\\Message\\RequestInterface, GuzzleHttp\\Command\\CommandInterface given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/ServiceClient.php
+	ignoreErrors: []

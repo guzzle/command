@@ -40,11 +40,11 @@ interface ServiceClientInterface
     public function execute(CommandInterface $command): ResultInterface;
 
     /**
-     * Execute a single command asynchronously
+     * Execute a single command asynchronously.
      *
      * @param CommandInterface $command Command to execute
      *
-     * @return PromiseInterface A Promise that resolves to a Result.
+     * @return PromiseInterface<ResultInterface, mixed> A Promise that resolves to a Result.
      */
     public function executeAsync(CommandInterface $command): PromiseInterface;
 
@@ -68,6 +68,8 @@ interface ServiceClientInterface
      *                           - concurrency: (int) Max number of commands to execute concurrently.
      *                           - fulfilled: (callable) Function to invoke when a command completes.
      *                           - rejected: (callable) Function to invoke when a command fails.
+     *
+     * @return PromiseInterface<mixed, mixed>
      */
     public function executeAllAsync(iterable $commands, array $options = []): PromiseInterface;
 
