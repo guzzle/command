@@ -13,7 +13,7 @@ trait HasDataTrait
     /** @var array Data stored in the collection. */
     protected $data;
 
-    public function __toString()
+    public function __toString(): string
     {
         return print_r($this, true);
     }
