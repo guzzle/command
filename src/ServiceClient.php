@@ -78,9 +78,14 @@ class ServiceClient implements ServiceClientInterface
         return $this->executeAsync($command)->wait();
     }
 
+    /**
+     * @return PromiseInterface<ResultInterface, mixed>
+     */
     public function executeAsync(CommandInterface $command): PromiseInterface
     {
         $stack = $command->getHandlerStack() ?: $this->handlerStack;
+
+        /** @var callable(CommandInterface): PromiseInterface<ResultInterface, mixed> $handler */
         $handler = $stack->resolve();
 
         return $handler($command);
@@ -115,6 +120,9 @@ class ServiceClient implements ServiceClientInterface
             ->wait();
     }
 
+    /**
+     * @return PromiseInterface<mixed, mixed>
+     */
     public function executeAllAsync(iterable $commands, array $options = []): PromiseInterface
     {
         // Apply default concurrency.
@@ -144,7 +152,7 @@ class ServiceClient implements ServiceClientInterface
      * @param string $name Name of the command to execute.
      * @param array  $args Arguments to pass to the getCommand method.
      *
-     * @return ResultInterface|PromiseInterface
+     * @return ResultInterface|PromiseInterface<ResultInterface, mixed>
      *
      * @see ServiceClientInterface::getCommand
      */
