@@ -13,20 +13,19 @@ namespace GuzzleHttp\Command;
 trait HasDataTrait
 {
     /** @var array Data stored in the collection. */
-    protected $data;
+    protected array $data = [];
 
     public function __toString(): string
     {
         return print_r($this, true);
     }
 
-    public function __debugInfo()
+    public function __debugInfo(): array
     {
         return $this->data;
     }
 
-    #[\ReturnTypeWillChange]
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         if ($offset === null) {
             $offset = '';
@@ -45,8 +44,7 @@ trait HasDataTrait
         return isset($this->data[$offset]) ? $this->data[$offset] : null;
     }
 
-    #[\ReturnTypeWillChange]
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         if ($offset === null) {
             $offset = '';
@@ -55,8 +53,7 @@ trait HasDataTrait
         $this->data[$offset] = $value;
     }
 
-    #[\ReturnTypeWillChange]
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         if ($offset === null) {
             $offset = '';
@@ -65,19 +62,17 @@ trait HasDataTrait
         unset($this->data[$offset]);
     }
 
-    #[\ReturnTypeWillChange]
-    public function count()
+    public function count(): int
     {
         return count($this->data);
     }
 
-    #[\ReturnTypeWillChange]
-    public function getIterator()
+    public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->data);
     }
 
-    public function toArray()
+    public function toArray(): array
     {
         return $this->data;
     }

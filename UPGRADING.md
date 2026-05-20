@@ -35,6 +35,14 @@ Review custom callbacks that declare scalar parameter types. In particular,
 `executeAll()` callback keys can be integers, strings, or `null` depending on the
 keys yielded by the command iterable.
 
+#### Native Signatures
+
+Guzzle Command 2.0 adds native parameter and return types to public interfaces and
+classes. Custom implementations of `CommandInterface`, `ServiceClientInterface`,
+or `ToArrayInterface` must update method signatures to remain compatible.
+
+Classes extending package classes should also update overridden method signatures.
+
 #### Per-command HTTP Options
 
 `GuzzleHttp\Command\ServiceClient` still reserves the `@http` command parameter

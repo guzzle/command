@@ -19,24 +19,18 @@ interface CommandInterface extends \ArrayAccess, \IteratorAggregate, \Countable,
      * Retrieves the handler stack specific to this command's execution.
      *
      * This can be used to add middleware that is specific to the command instance.
-     *
-     * @return HandlerStack
      */
-    public function getHandlerStack();
+    public function getHandlerStack(): ?HandlerStack;
 
     /**
      * Get the name of the command.
-     *
-     * @return string
      */
-    public function getName();
+    public function getName(): string;
 
     /**
      * Check if the command has a parameter by name.
      *
      * @param string|null $name Name of the parameter to check.
-     *
-     * @return bool
      */
-    public function hasParam($name);
+    public function hasParam(?string $name): bool;
 }

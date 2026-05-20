@@ -24,11 +24,9 @@ interface ServiceClientInterface
      * @param string $name Name of the operation to use in the command
      * @param array  $args Arguments to pass to the command
      *
-     * @return CommandInterface
-     *
      * @throws \InvalidArgumentException if no command can be found by name
      */
-    public function getCommand($name, array $args = []);
+    public function getCommand(string $name, array $args = []): CommandInterface;
 
     /**
      * Execute a single command.
@@ -39,7 +37,7 @@ interface ServiceClientInterface
      *
      * @throws CommandException
      */
-    public function execute(CommandInterface $command);
+    public function execute(CommandInterface $command): ResultInterface;
 
     /**
      * Execute a single command asynchronously
@@ -48,48 +46,38 @@ interface ServiceClientInterface
      *
      * @return PromiseInterface A Promise that resolves to a Result.
      */
-    public function executeAsync(CommandInterface $command);
+    public function executeAsync(CommandInterface $command): PromiseInterface;
 
     /**
      * Executes multiple commands concurrently using a fixed pool size.
      *
-     * @param array|\Iterator $commands Array or iterator that contains
-     *                                  CommandInterface objects to execute with the client.
-     * @param array           $options  Associative array of options to apply.
-     *                                  - concurrency: (int) Max number of commands to execute concurrently.
-     *                                  - fulfilled: (callable) Function to invoke when a command completes.
-     *                                  - rejected: (callable) Function to invoke when a command fails.
-     *
-     * @return array
+     * @param iterable $commands Iterable that contains CommandInterface objects to execute with the client.
+     * @param array    $options  Associative array of options to apply.
+     *                           - concurrency: (int) Max number of commands to execute concurrently.
+     *                           - fulfilled: (callable) Function to invoke when a command completes.
+     *                           - rejected: (callable) Function to invoke when a command fails.
      */
-    public function executeAll($commands, array $options = []);
+    public function executeAll(iterable $commands, array $options = []): array;
 
     /**
      * Executes multiple commands concurrently and asynchronously using a
      * fixed pool size.
      *
-     * @param array|\Iterator $commands Array or iterator that contains
-     *                                  CommandInterface objects to execute with the client.
-     * @param array           $options  Associative array of options to apply.
-     *                                  - concurrency: (int) Max number of commands to execute concurrently.
-     *                                  - fulfilled: (callable) Function to invoke when a command completes.
-     *                                  - rejected: (callable) Function to invoke when a command fails.
-     *
-     * @return PromiseInterface
+     * @param iterable $commands Iterable that contains CommandInterface objects to execute with the client.
+     * @param array    $options  Associative array of options to apply.
+     *                           - concurrency: (int) Max number of commands to execute concurrently.
+     *                           - fulfilled: (callable) Function to invoke when a command completes.
+     *                           - rejected: (callable) Function to invoke when a command fails.
      */
-    public function executeAllAsync($commands, array $options = []);
+    public function executeAllAsync(iterable $commands, array $options = []): PromiseInterface;
 
     /**
      * Get the HTTP client used to send requests for the web service client
-     *
-     * @return ClientInterface
      */
-    public function getHttpClient();
+    public function getHttpClient(): ClientInterface;
 
     /**
      * Get the HandlerStack which can be used to add middleware to the client.
-     *
-     * @return HandlerStack
      */
-    public function getHandlerStack();
+    public function getHandlerStack(): HandlerStack;
 }
