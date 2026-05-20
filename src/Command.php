@@ -51,7 +51,7 @@ class Command implements CommandInterface
         return array_key_exists($name, $this->data);
     }
 
-    public function __clone(): void
+    public function __clone()
     {
         if ($this->handlerStack) {
             $this->handlerStack = clone $this->handlerStack;
