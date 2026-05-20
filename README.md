@@ -32,7 +32,7 @@ composer require guzzlehttp/command
 | 1.x     | Latest              | >=7.2.5,<8.6 |
 | 2.x     | Experimental        | >=7.4,<8.6   |
 
-See [UPGRADING.md](UPGRADING.md) for notes on upgrading to 2.0.
+See [UPGRADING.md](UPGRADING.md) for upgrade notes.
 
 ## Service Clients
 
