@@ -18,7 +18,7 @@ use Psr\Http\Message\ResponseInterface;
  */
 class CommandExceptionTest extends TestCase
 {
-    public function testCanGetDataFromException()
+    public function testCanGetDataFromException(): void
     {
         $command = $this->createMock(CommandInterface::class);
         $request = $this->createMock(RequestInterface::class);
@@ -30,7 +30,7 @@ class CommandExceptionTest extends TestCase
         $this->assertSame($response, $exception->getResponse());
     }
 
-    public function testFactoryReturnsExceptionIfAlreadyCommandException()
+    public function testFactoryReturnsExceptionIfAlreadyCommandException(): void
     {
         $command = $this->createMock(CommandInterface::class);
         $previous = CommandException::fromPrevious($command, new \Exception());
@@ -39,7 +39,7 @@ class CommandExceptionTest extends TestCase
         $this->assertSame($previous, $exception);
     }
 
-    public function testFactoryReturnsClientExceptionFor400LevelStatusCode()
+    public function testFactoryReturnsClientExceptionFor400LevelStatusCode(): void
     {
         $command = $this->createMock(CommandInterface::class);
         $request = $this->createMock(RequestInterface::class);
@@ -51,7 +51,7 @@ class CommandExceptionTest extends TestCase
         $this->assertInstanceOf(CommandClientException::class, $exception);
     }
 
-    public function testFactoryReturnsServerExceptionFor500LevelStatusCode()
+    public function testFactoryReturnsServerExceptionFor500LevelStatusCode(): void
     {
         $command = $this->createMock(CommandInterface::class);
         $request = $this->createMock(RequestInterface::class);
