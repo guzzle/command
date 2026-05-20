@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GuzzleHttp\Tests\Command\Guzzle;
 
 use GuzzleHttp\Client as HttpClient;
@@ -35,8 +37,8 @@ class ServiceClientTest extends TestCase
                 return new Request('POST', '/', [], http_build_query($data));
             },
             function (ResponseInterface $response, RequestInterface $request) {
-                $data = json_decode($response->getBody(), true);
-                parse_str($request->getBody(), $data['_request']);
+                $data = json_decode((string) $response->getBody(), true);
+                parse_str((string) $request->getBody(), $data['_request']);
 
                 return new Result($data);
             }
