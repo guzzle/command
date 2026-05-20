@@ -4,8 +4,9 @@
 
 * Drop support for PHP 7.2 and 7.3
 * Require `guzzlehttp/guzzle` ^8.0, `guzzlehttp/promises` ^3.0, and `guzzlehttp/psr7` ^3.0
-* Enable strict types across source and test files
-* Add native parameter and return types to public interfaces and classes
+* Require custom implementations and subclasses of public command APIs to match native method signatures
+* Require service client response transformers to return `ResultInterface` values
+* Require custom middleware, transformers, and `executeAll()` callbacks to accept exact argument types instead of relying on scalar coercion
 
 ## 1.4.0 - 2026-05-18
 
