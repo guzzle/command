@@ -77,8 +77,8 @@ class ServiceClientTest extends TestCase
         $client = $this->getServiceClient([
             new BadResponseException(
                 'Bad Response',
-                $this->getMockForAbstractClass(RequestInterface::class),
-                $this->getMockForAbstractClass(ResponseInterface::class)
+                $this->createMock(RequestInterface::class),
+                $this->createMock(ResponseInterface::class)
             ),
         ]);
 
@@ -101,7 +101,7 @@ class ServiceClientTest extends TestCase
             new Response(200, [], '{"letter":"A"}'),
             new BadResponseException(
                 'Bad Response',
-                $this->getMockForAbstractClass(RequestInterface::class),
+                $this->createMock(RequestInterface::class),
                 new Response(200, [], '{"error":"Not a letter"}')
             ),
             new Response(200, [], '{"letter":"Z"}'),
@@ -171,7 +171,7 @@ class ServiceClientTest extends TestCase
         $client = $this->getServiceClient([
             new BadResponseException(
                 'Bad Response',
-                $this->getMockForAbstractClass(RequestInterface::class),
+                $this->createMock(RequestInterface::class),
                 new Response(200, [], '{"error":"Not a letter"}')
             ),
         ]);
