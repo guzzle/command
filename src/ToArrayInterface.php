@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GuzzleHttp\Command;
 
 /**
@@ -9,8 +11,6 @@ interface ToArrayInterface
 {
     /**
      * Get the array representation of an object
-     *
-     * @return array
      */
-    public function toArray();
+    public function toArray(): array;
 }

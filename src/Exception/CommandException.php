@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GuzzleHttp\Command\Exception;
 
 use GuzzleHttp\Command\CommandInterface;
@@ -13,19 +15,13 @@ use Psr\Http\Message\ResponseInterface;
  */
 class CommandException extends \RuntimeException implements GuzzleException
 {
-    /** @var CommandInterface */
-    private $command;
+    private CommandInterface $command;
 
-    /** @var RequestInterface */
-    private $request;
+    private ?RequestInterface $request;
 
-    /** @var ResponseInterface */
-    private $response;
+    private ?ResponseInterface $response;
 
-    /**
-     * @return CommandException
-     */
-    public static function fromPrevious(CommandInterface $command, \Exception $prev)
+    public static function fromPrevious(CommandInterface $command, \Exception $prev): self
     {
         // If the exception is already a command exception, return it.
         if ($prev instanceof self && $command === $prev->getCommand()) {
@@ -61,7 +57,7 @@ class CommandException extends \RuntimeException implements GuzzleException
      * @param \Exception|null $previous Previous exception (if any)
      */
     public function __construct(
-        $message,
+        string $message,
         CommandInterface $command,
         ?\Exception $previous = null,
         ?RequestInterface $request = null,
@@ -75,30 +71,24 @@ class CommandException extends \RuntimeException implements GuzzleException
 
     /**
      * Gets the command that failed.
-     *
-     * @return CommandInterface
      */
-    public function getCommand()
+    public function getCommand(): CommandInterface
     {
         return $this->command;
     }
 
     /**
      * Gets the request that caused the exception
-     *
-     * @return RequestInterface|null
      */
-    public function getRequest()
+    public function getRequest(): ?RequestInterface
     {
         return $this->request;
     }
 
     /**
      * Gets the associated response
-     *
-     * @return ResponseInterface|null
      */
-    public function getResponse()
+    public function getResponse(): ?ResponseInterface
     {
         return $this->response;
     }

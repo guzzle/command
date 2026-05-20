@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GuzzleHttp\Command;
 
 use GuzzleHttp\HandlerStack;
@@ -11,19 +13,17 @@ class Command implements CommandInterface
 {
     use HasDataTrait;
 
-    /** @var string */
-    private $name;
+    private string $name;
 
-    /** @var HandlerStack */
-    private $handlerStack;
+    private ?HandlerStack $handlerStack;
 
     /**
-     * @param string       $name         Name of the command
-     * @param array        $args         Arguments to pass to the command
-     * @param HandlerStack $handlerStack Stack of middleware for the command
+     * @param string            $name         Name of the command
+     * @param array             $args         Arguments to pass to the command
+     * @param HandlerStack|null $handlerStack Stack of middleware for the command
      */
     public function __construct(
-        $name,
+        string $name,
         array $args = [],
         ?HandlerStack $handlerStack = null
     ) {
@@ -32,17 +32,17 @@ class Command implements CommandInterface
         $this->handlerStack = $handlerStack;
     }
 
-    public function getHandlerStack()
+    public function getHandlerStack(): ?HandlerStack
     {
         return $this->handlerStack;
     }
 
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
-    public function hasParam($name)
+    public function hasParam(?string $name): bool
     {
         if ($name === null) {
             $name = '';

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GuzzleHttp\Command;
 
 use GuzzleHttp\ClientInterface as HttpClient;
@@ -16,11 +18,9 @@ use Psr\Http\Message\ResponseInterface;
  */
 class ServiceClient implements ServiceClientInterface
 {
-    /** @var HttpClient HTTP client used to send requests */
-    private $httpClient;
+    private HttpClient $httpClient;
 
-    /** @var HandlerStack */
-    private $handlerStack;
+    private HandlerStack $handlerStack;
 
     /** @var callable */
     private $commandToRequestTransformer;
@@ -31,19 +31,19 @@ class ServiceClient implements ServiceClientInterface
     /**
      * Instantiates a Guzzle ServiceClient for making requests to a web service.
      *
-     * @param HttpClient   $httpClient                  A fully-configured Guzzle HTTP client that
-     *                                                  will be used to perform the underlying HTTP requests.
-     * @param callable     $commandToRequestTransformer A callable that transforms
-     *                                                  a Command into a Request. The function should accept a
-     *                                                  `GuzzleHttp\Command\CommandInterface` object and return a
-     *                                                  `Psr\Http\Message\RequestInterface` object.
-     * @param callable     $responseToResultTransformer A callable that transforms a
-     *                                                  Response into a Result. The function should accept a
-     *                                                  `Psr\Http\Message\ResponseInterface` object (and optionally a
-     *                                                  `Psr\Http\Message\RequestInterface` object) and return a
-     *                                                  `GuzzleHttp\Command\ResultInterface` object.
-     * @param HandlerStack $commandHandlerStack         A Guzzle HandlerStack, which can
-     *                                                  be used to add command-level middleware to the service client.
+     * @param HttpClient        $httpClient                  A fully-configured Guzzle HTTP client that
+     *                                                       will be used to perform the underlying HTTP requests.
+     * @param callable          $commandToRequestTransformer A callable that transforms
+     *                                                       a Command into a Request. The function should accept a
+     *                                                       `GuzzleHttp\Command\CommandInterface` object and return a
+     *                                                       `Psr\Http\Message\RequestInterface` object.
+     * @param callable          $responseToResultTransformer A callable that transforms a
+     *                                                       Response into a Result. The function should accept a
+     *                                                       `Psr\Http\Message\ResponseInterface` object (and optionally a
+     *                                                       `Psr\Http\Message\RequestInterface` object) and return a
+     *                                                       `GuzzleHttp\Command\ResultInterface` object.
+     * @param HandlerStack|null $commandHandlerStack         A Guzzle HandlerStack, which can
+     *                                                       be used to add command-level middleware to the service client.
      */
     public function __construct(
         HttpClient $httpClient,
@@ -58,27 +58,27 @@ class ServiceClient implements ServiceClientInterface
         $this->handlerStack->setHandler($this->createCommandHandler());
     }
 
-    public function getHttpClient()
+    public function getHttpClient(): HttpClient
     {
         return $this->httpClient;
     }
 
-    public function getHandlerStack()
+    public function getHandlerStack(): HandlerStack
     {
         return $this->handlerStack;
     }
 
-    public function getCommand($name, array $params = [])
+    public function getCommand(string $name, array $params = []): CommandInterface
     {
         return new Command($name, $params, clone $this->handlerStack);
     }
 
-    public function execute(CommandInterface $command)
+    public function execute(CommandInterface $command): ResultInterface
     {
         return $this->executeAsync($command)->wait();
     }
 
-    public function executeAsync(CommandInterface $command)
+    public function executeAsync(CommandInterface $command): PromiseInterface
     {
         $stack = $command->getHandlerStack() ?: $this->handlerStack;
         $handler = $stack->resolve();
@@ -86,7 +86,7 @@ class ServiceClient implements ServiceClientInterface
         return $handler($command);
     }
 
-    public function executeAll($commands, array $options = [])
+    public function executeAll(iterable $commands, array $options = []): array
     {
         // Modify provided callbacks to track results.
         $results = [];
@@ -115,7 +115,7 @@ class ServiceClient implements ServiceClientInterface
             ->wait();
     }
 
-    public function executeAllAsync($commands, array $options = [])
+    public function executeAllAsync(iterable $commands, array $options = []): PromiseInterface
     {
         // Apply default concurrency.
         if (!isset($options['concurrency'])) {
@@ -148,7 +148,7 @@ class ServiceClient implements ServiceClientInterface
      *
      * @see ServiceClientInterface::getCommand
      */
-    public function __call($name, array $args)
+    public function __call(string $name, array $args)
     {
         $args = isset($args[0]) ? $args[0] : [];
         if (substr($name, -5) === 'Async') {
@@ -162,10 +162,8 @@ class ServiceClient implements ServiceClientInterface
 
     /**
      * Defines the main handler for commands that uses the HTTP client.
-     *
-     * @return callable
      */
-    private function createCommandHandler()
+    private function createCommandHandler(): callable
     {
         return function (CommandInterface $command) {
             return Promise\Coroutine::of(function () use ($command) {
@@ -190,10 +188,8 @@ class ServiceClient implements ServiceClientInterface
 
     /**
      * Transforms a Command object into a Request object.
-     *
-     * @return RequestInterface
      */
-    private function transformCommandToRequest(CommandInterface $command)
+    private function transformCommandToRequest(CommandInterface $command): RequestInterface
     {
         $transform = $this->commandToRequestTransformer;
 
@@ -203,14 +199,12 @@ class ServiceClient implements ServiceClientInterface
     /**
      * Transforms a Response object, also using data from the Request object,
      * into a Result object.
-     *
-     * @return ResultInterface
      */
     private function transformResponseToResult(
         ResponseInterface $response,
         RequestInterface $request,
         CommandInterface $command
-    ) {
+    ): ResultInterface {
         $transform = $this->responseToResultTransformer;
 
         return $transform($response, $request, $command);
