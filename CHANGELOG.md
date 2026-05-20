@@ -4,6 +4,8 @@
 
 * Drop support for PHP 7.2 and 7.3
 * Require `guzzlehttp/guzzle` ^8.0, `guzzlehttp/promises` ^3.0, and `guzzlehttp/psr7` ^3.0
+* Enable strict types across source and test files
+* Add native parameter and return types to public interfaces and classes
 
 ## 1.4.0 - 2026-05-18
 
