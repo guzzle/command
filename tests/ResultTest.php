@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  */
 class ResultTest extends TestCase
 {
-    public function testHasData()
+    public function testHasData(): void
     {
         $c = new Result(['baz' => 'bar']);
         $this->assertSame('bar', $c['baz']);
@@ -27,7 +27,7 @@ class ResultTest extends TestCase
         $this->assertStringContainsString('bar', (string) $c);
     }
 
-    public function testNullOffsetUsesEmptyStringKey()
+    public function testNullOffsetUsesEmptyStringKey(): void
     {
         $c = new Result(['' => 'bar']);
         $this->assertTrue(isset($c[null]));
@@ -40,7 +40,7 @@ class ResultTest extends TestCase
         $this->assertSame([], $c->toArray());
     }
 
-    public function testAppendSyntaxUsesEmptyStringKey()
+    public function testAppendSyntaxUsesEmptyStringKey(): void
     {
         $c = new Result();
         $c[] = 'bar';

@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  */
 class CommandTest extends TestCase
 {
-    public function testHasData()
+    public function testHasData(): void
     {
         $c = new Command('foo', ['baz' => 'bar']);
         $this->assertSame('bar', $c['baz']);
@@ -25,20 +25,20 @@ class CommandTest extends TestCase
         $this->assertInstanceOf('Traversable', $c->getIterator());
     }
 
-    public function testHasParamNormalizesNullToEmptyString()
+    public function testHasParamNormalizesNullToEmptyString(): void
     {
         $c = new Command('foo', ['' => 'bar']);
         $this->assertTrue($c->hasParam(null));
     }
 
-    public function testCanInjectHandlerStack()
+    public function testCanInjectHandlerStack(): void
     {
         $handlerStack = new HandlerStack();
         $c = new Command('foo', [], $handlerStack);
         $this->assertSame($handlerStack, $c->getHandlerStack());
     }
 
-    public function testCloneUsesDifferentHandlerStack()
+    public function testCloneUsesDifferentHandlerStack(): void
     {
         $originalStack = new HandlerStack();
         $command = new Command('foo', [], $originalStack);

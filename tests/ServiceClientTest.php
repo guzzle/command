@@ -24,19 +24,19 @@ use Psr\Http\Message\ResponseInterface;
  */
 class ServiceClientTest extends TestCase
 {
-    private function getServiceClient(array $responses)
+    private function getServiceClient(array $responses): ServiceClient
     {
         return new ServiceClient(
             new HttpClient([
                 'handler' => new MockHandler($responses),
             ]),
-            function (CommandInterface $command) {
+            function (CommandInterface $command): Request {
                 $data = $command->toArray();
                 $data['action'] = $command->getName();
 
                 return new Request('POST', '/', [], http_build_query($data));
             },
-            function (ResponseInterface $response, RequestInterface $request) {
+            function (ResponseInterface $response, RequestInterface $request): Result {
                 $data = json_decode((string) $response->getBody(), true);
                 parse_str((string) $request->getBody(), $data['_request']);
 
@@ -45,17 +45,17 @@ class ServiceClientTest extends TestCase
         );
     }
 
-    public function testCanGetHttpClientAndHandlers()
+    public function testCanGetHttpClientAndHandlers(): void
     {
         $httpClient = new HttpClient();
         $handlers = new HandlerStack();
-        $fn = function () {};
+        $fn = function (): void {};
         $serviceClient = new ServiceClient($httpClient, $fn, $fn, $handlers);
         $this->assertSame($httpClient, $serviceClient->getHttpClient());
         $this->assertSame($handlers, $serviceClient->getHandlerStack());
     }
 
-    public function testExecuteCommandViaMagicMethod()
+    public function testExecuteCommandViaMagicMethod(): void
     {
         $client = $this->getServiceClient([
             new Response(200, [], '{"foo":"bar"}'),
@@ -74,7 +74,7 @@ class ServiceClientTest extends TestCase
         $this->assertEquals('doThatThingOtherYouDo', $result2['_request']['action']);
     }
 
-    public function testCommandExceptionIsThrownWhenAnErrorOccurs()
+    public function testCommandExceptionIsThrownWhenAnErrorOccurs(): void
     {
         $client = $this->getServiceClient([
             new BadResponseException(
@@ -88,10 +88,10 @@ class ServiceClientTest extends TestCase
         $client->execute($client->getCommand('foo'));
     }
 
-    public function testExecuteMultipleCommands()
+    public function testExecuteMultipleCommands(): void
     {
         // Set up commands to execute concurrently.
-        $generateCommands = function () {
+        $generateCommands = function (): \Generator {
             yield new Command('capitalize', ['letter' => 'a']);
             yield new Command('capitalize', ['letter' => '2']);
             yield new Command('capitalize', ['letter' => 'z']);
@@ -113,10 +113,10 @@ class ServiceClientTest extends TestCase
         $fulfilledFnCalled = false;
         $rejectedFnCalled = false;
         $options = [
-            'fulfilled' => function () use (&$fulfilledFnCalled) {
+            'fulfilled' => function () use (&$fulfilledFnCalled): void {
                 $fulfilledFnCalled = true;
             },
-            'rejected' => function () use (&$rejectedFnCalled) {
+            'rejected' => function () use (&$rejectedFnCalled): void {
                 $rejectedFnCalled = true;
             },
         ];
@@ -141,9 +141,9 @@ class ServiceClientTest extends TestCase
         $this->assertEquals('Z', $results[2]['letter']);
     }
 
-    public function testExecuteAllNormalizesNullResultKeys()
+    public function testExecuteAllNormalizesNullResultKeys(): void
     {
-        $generateCommands = function () {
+        $generateCommands = function (): \Generator {
             yield null => new Command('capitalize', ['letter' => 'a']);
         };
 
@@ -153,7 +153,7 @@ class ServiceClientTest extends TestCase
 
         $fulfilledKey = 'not-called';
         $results = $client->executeAll($generateCommands(), [
-            'fulfilled' => function ($result, $key) use (&$fulfilledKey) {
+            'fulfilled' => function (Result $result, ?string $key) use (&$fulfilledKey): void {
                 $fulfilledKey = $key;
             },
         ]);
@@ -164,9 +164,9 @@ class ServiceClientTest extends TestCase
         $this->assertSame('A', $results['']['letter']);
     }
 
-    public function testExecuteAllNormalizesNullResultKeysForRejectedCommands()
+    public function testExecuteAllNormalizesNullResultKeysForRejectedCommands(): void
     {
-        $generateCommands = function () {
+        $generateCommands = function (): \Generator {
             yield null => new Command('capitalize', ['letter' => '2']);
         };
 
@@ -180,7 +180,7 @@ class ServiceClientTest extends TestCase
 
         $rejectedKey = 'not-called';
         $results = $client->executeAll($generateCommands(), [
-            'rejected' => function ($reason, $key) use (&$rejectedKey) {
+            'rejected' => function (CommandException $reason, ?string $key) use (&$rejectedKey): void {
                 $rejectedKey = $key;
             },
         ]);
@@ -190,9 +190,9 @@ class ServiceClientTest extends TestCase
         $this->assertInstanceOf(CommandException::class, $results['']);
     }
 
-    public function testMultipleCommandsFailsForNonCommands()
+    public function testMultipleCommandsFailsForNonCommands(): void
     {
-        $generateCommands = function () {
+        $generateCommands = function (): \Generator {
             yield 'foo';
         };
 
