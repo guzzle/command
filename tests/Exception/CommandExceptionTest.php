@@ -8,6 +8,7 @@ use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\Exception\CommandClientException;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Exception\CommandServerException;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
@@ -61,5 +62,17 @@ class CommandExceptionTest extends TestCase
 
         $exception = CommandException::fromPrevious($command, $previous);
         $this->assertInstanceOf(CommandServerException::class, $exception);
+    }
+
+    public function testFactoryCopiesRequestFromNetworkException(): void
+    {
+        $command = $this->createMock(CommandInterface::class);
+        $request = $this->createMock(RequestInterface::class);
+        $previous = new ConnectException('error', $request);
+
+        $exception = CommandException::fromPrevious($command, $previous);
+        $this->assertSame($request, $exception->getRequest());
+        $this->assertNull($exception->getResponse());
+        $this->assertSame($previous, $exception->getPrevious());
     }
 }

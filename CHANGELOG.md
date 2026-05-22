@@ -8,6 +8,7 @@
 * Require custom implementations and subclasses of public command APIs to match native method signatures
 * Require service client response transformers to return `ResultInterface` values
 * Require custom middleware, transformers, and `executeAll()` callbacks to accept exact argument types instead of relying on scalar coercion
+* Preserve requests from PSR-18 request and network exceptions when wrapping command failures
 
 ## 1.4.0 - 2026-05-18
 
