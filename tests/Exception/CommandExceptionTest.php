@@ -8,8 +8,10 @@ use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\Exception\CommandClientException;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Exception\CommandServerException;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\RequestExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -61,5 +63,42 @@ class CommandExceptionTest extends TestCase
 
         $exception = CommandException::fromPrevious($command, $previous);
         $this->assertInstanceOf(CommandServerException::class, $exception);
+    }
+
+    public function testFactoryCopiesRequestFromNetworkException(): void
+    {
+        $command = $this->createMock(CommandInterface::class);
+        $request = $this->createMock(RequestInterface::class);
+        $previous = new ConnectException('error', $request);
+
+        $exception = CommandException::fromPrevious($command, $previous);
+        $this->assertSame($request, $exception->getRequest());
+        $this->assertNull($exception->getResponse());
+        $this->assertSame($previous, $exception->getPrevious());
+    }
+
+    public function testFactoryCopiesRequestFromPsrRequestException(): void
+    {
+        $command = $this->createMock(CommandInterface::class);
+        $request = $this->createMock(RequestInterface::class);
+        $previous = new class('error', $request) extends \RuntimeException implements RequestExceptionInterface {
+            private RequestInterface $request;
+
+            public function __construct(string $message, RequestInterface $request)
+            {
+                parent::__construct($message);
+                $this->request = $request;
+            }
+
+            public function getRequest(): RequestInterface
+            {
+                return $this->request;
+            }
+        };
+
+        $exception = CommandException::fromPrevious($command, $previous);
+        $this->assertSame($request, $exception->getRequest());
+        $this->assertNull($exception->getResponse());
+        $this->assertSame($previous, $exception->getPrevious());
     }
 }
