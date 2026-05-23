@@ -15,8 +15,14 @@ or provide custom callbacks need closer review.
 Guzzle Command 2.0 requires PHP `^7.4 || ^8.0`. Guzzle Command 1.x supported
 PHP `^7.2.5 || ^8.0`.
 
-Guzzle Command 2.0 also requires Guzzle 8.x, Guzzle Promises 3.x, and Guzzle
-PSR-7 3.x.
+Guzzle Command 2.0 also requires
+[Guzzle 8.x](https://github.com/guzzle/guzzle/blob/8.0/UPGRADING.md),
+[Guzzle Promises 3.x](https://github.com/guzzle/promises/blob/3.0/UPGRADING.md),
+and [Guzzle PSR-7 3.x](https://github.com/guzzle/psr7/blob/3.0/UPGRADING.md).
+Guzzle Command 1.x supported Guzzle `^7.10`, Guzzle Promises `^2.3`, and Guzzle
+PSR-7 `^2.8`.
+
+Guzzle Command 2.0 now requires `psr/http-client:^1.0` directly.
 
 If your application still supports PHP 7.2 or 7.3, or still uses the Guzzle 7
 dependency stack, continue using Guzzle Command 1.x until your minimum PHP and
@@ -49,15 +55,15 @@ Classes extending package classes should also update overridden method signature
 for per-command Guzzle request options. These options are passed to the
 underlying Guzzle client when the command is executed.
 
-Review the Guzzle 8 upgrade guide for request option changes, especially
-stricter `proxy` option validation and the extra request argument passed to
-`on_headers` callbacks.
+Guzzle 8 changes some request option behavior, especially stricter `proxy`
+option validation and the extra request argument passed to `on_headers`
+callbacks.
 
 #### Asynchronous Commands
 
 `executeAsync()` and `executeAllAsync()` now return promises from Guzzle Promises
-3.x. Code using Guzzle Promises directly should review the Guzzle Promises 3.0
-upgrade guide.
+3.x. Code using Guzzle Promises directly should account for its 3.0 behavior and
+signature changes.
 
 1.0 from 0.8
 ------------
