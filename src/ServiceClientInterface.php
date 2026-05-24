@@ -51,11 +51,16 @@ interface ServiceClientInterface
     /**
      * Executes multiple commands concurrently using a fixed pool size.
      *
+     * Numeric-string command keys may become integer keys before callbacks receive them. Null keys are stored as an empty string in the returned result array.
+     *
      * @param iterable $commands Iterable that contains CommandInterface objects to execute with the client.
-     * @param array    $options  Associative array of options to apply.
-     *                           - concurrency: (int) Max number of commands to execute concurrently.
-     *                           - fulfilled: (callable) Function to invoke when a command completes.
-     *                           - rejected: (callable) Function to invoke when a command fails.
+     * @param array{
+     *     concurrency?: int|(callable(int): int),
+     *     fulfilled?: callable(ResultInterface, int|string|null): mixed,
+     *     rejected?: callable(mixed, int|string|null): mixed
+     * } $options
+     *
+     * @return array<array-key, mixed>
      */
     public function executeAll(iterable $commands, array $options = []): array;
 
@@ -64,10 +69,11 @@ interface ServiceClientInterface
      * fixed pool size.
      *
      * @param iterable $commands Iterable that contains CommandInterface objects to execute with the client.
-     * @param array    $options  Associative array of options to apply.
-     *                           - concurrency: (int) Max number of commands to execute concurrently.
-     *                           - fulfilled: (callable) Function to invoke when a command completes.
-     *                           - rejected: (callable) Function to invoke when a command fails.
+     * @param array{
+     *     concurrency?: int|(callable(int): int),
+     *     fulfilled?: callable(ResultInterface, int|string|null, PromiseInterface<mixed, mixed>): mixed,
+     *     rejected?: callable(mixed, int|string|null, PromiseInterface<mixed, mixed>): mixed
+     * } $options
      *
      * @return PromiseInterface<mixed, mixed>
      */
@@ -80,6 +86,8 @@ interface ServiceClientInterface
 
     /**
      * Get the HandlerStack which can be used to add middleware to the client.
+     *
+     * @return HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>>
      */
     public function getHandlerStack(): HandlerStack;
 }

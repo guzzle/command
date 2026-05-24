@@ -20,30 +20,22 @@ class ServiceClient implements ServiceClientInterface
 {
     private HttpClient $httpClient;
 
+    /** @var HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>> */
     private HandlerStack $handlerStack;
 
-    /** @var callable */
+    /** @var callable(CommandInterface): RequestInterface */
     private $commandToRequestTransformer;
 
-    /** @var callable */
+    /** @var callable(ResponseInterface, RequestInterface, CommandInterface): ResultInterface */
     private $responseToResultTransformer;
 
     /**
      * Instantiates a Guzzle ServiceClient for making requests to a web service.
      *
-     * @param HttpClient        $httpClient                  A fully-configured Guzzle HTTP client that
-     *                                                       will be used to perform the underlying HTTP requests.
-     * @param callable          $commandToRequestTransformer A callable that transforms
-     *                                                       a Command into a Request. The function should accept a
-     *                                                       `GuzzleHttp\Command\CommandInterface` object and return a
-     *                                                       `Psr\Http\Message\RequestInterface` object.
-     * @param callable          $responseToResultTransformer A callable that transforms a
-     *                                                       Response into a Result. The function should accept a
-     *                                                       `Psr\Http\Message\ResponseInterface` object (and optionally a
-     *                                                       `Psr\Http\Message\RequestInterface` object) and return a
-     *                                                       `GuzzleHttp\Command\ResultInterface` object.
-     * @param HandlerStack|null $commandHandlerStack         A Guzzle HandlerStack, which can
-     *                                                       be used to add command-level middleware to the service client.
+     * @param HttpClient                                                                              $httpClient                  A fully-configured Guzzle HTTP client that will be used to perform the underlying HTTP requests.
+     * @param callable(CommandInterface): RequestInterface                                            $commandToRequestTransformer A callable that transforms a Command into a Request.
+     * @param callable(ResponseInterface, RequestInterface, CommandInterface): ResultInterface        $responseToResultTransformer A callable that transforms a Response into a Result.
+     * @param HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>>|null $commandHandlerStack         A Guzzle HandlerStack, which can be used to add command-level middleware to the service client.
      */
     public function __construct(
         HttpClient $httpClient,
@@ -54,7 +46,9 @@ class ServiceClient implements ServiceClientInterface
         $this->httpClient = $httpClient;
         $this->commandToRequestTransformer = $commandToRequestTransformer;
         $this->responseToResultTransformer = $responseToResultTransformer;
-        $this->handlerStack = $commandHandlerStack ?: new HandlerStack();
+        /** @var HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>> $handlerStack */
+        $handlerStack = $commandHandlerStack ?: new HandlerStack();
+        $this->handlerStack = $handlerStack;
         $this->handlerStack->setHandler($this->createCommandHandler());
     }
 
@@ -63,6 +57,9 @@ class ServiceClient implements ServiceClientInterface
         return $this->httpClient;
     }
 
+    /**
+     * @return HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>>
+     */
     public function getHandlerStack(): HandlerStack
     {
         return $this->handlerStack;
@@ -91,20 +88,37 @@ class ServiceClient implements ServiceClientInterface
         return $handler($command);
     }
 
+    /**
+     * Executes multiple commands synchronously.
+     *
+     * Numeric-string command keys may become integer keys before callbacks receive them. Null keys are stored as an empty string in the returned result array.
+     *
+     * @param array{
+     *     concurrency?: int|(callable(int): int),
+     *     fulfilled?: callable(ResultInterface, int|string|null): mixed,
+     *     rejected?: callable(mixed, int|string|null): mixed
+     * } $options
+     *
+     * @return array<array-key, mixed>
+     */
     public function executeAll(iterable $commands, array $options = []): array
     {
+        $fulfilled = $options['fulfilled'] ?? null;
+        $rejected = $options['rejected'] ?? null;
+
         // Modify provided callbacks to track results.
         $results = [];
-        $options['fulfilled'] = function ($v, $k) use (&$results, $options): void {
-            if (isset($options['fulfilled'])) {
-                $options['fulfilled']($v, $k);
+        $options['fulfilled'] = function ($v, $k) use (&$results, $fulfilled): void {
+            if ($fulfilled !== null) {
+                /** @var ResultInterface $v */
+                $fulfilled($v, $k);
             }
             $resultKey = $k === null ? '' : $k;
             $results[$resultKey] = $v;
         };
-        $options['rejected'] = function ($v, $k) use (&$results, $options): void {
-            if (isset($options['rejected'])) {
-                $options['rejected']($v, $k);
+        $options['rejected'] = function ($v, $k) use (&$results, $rejected): void {
+            if ($rejected !== null) {
+                $rejected($v, $k);
             }
             $resultKey = $k === null ? '' : $k;
             $results[$resultKey] = $v;
@@ -121,6 +135,12 @@ class ServiceClient implements ServiceClientInterface
     }
 
     /**
+     * @param array{
+     *     concurrency?: int|(callable(int): int),
+     *     fulfilled?: callable(ResultInterface, int|string|null, PromiseInterface<mixed, mixed>): mixed,
+     *     rejected?: callable(mixed, int|string|null, PromiseInterface<mixed, mixed>): mixed
+     * } $options
+     *
      * @return PromiseInterface<mixed, mixed>
      */
     public function executeAllAsync(iterable $commands, array $options = []): PromiseInterface
@@ -170,6 +190,8 @@ class ServiceClient implements ServiceClientInterface
 
     /**
      * Defines the main handler for commands that uses the HTTP client.
+     *
+     * @return callable(CommandInterface): PromiseInterface<ResultInterface, mixed>
      */
     private function createCommandHandler(): callable
     {

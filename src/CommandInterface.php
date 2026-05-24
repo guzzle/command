@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace GuzzleHttp\Command;
 
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Promise\PromiseInterface;
 
 /**
  * A command object encapsulates the input parameters used to control the
@@ -19,6 +20,8 @@ interface CommandInterface extends \ArrayAccess, \IteratorAggregate, \Countable,
      * Retrieves the handler stack specific to this command's execution.
      *
      * This can be used to add middleware that is specific to the command instance.
+     *
+     * @return HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>>|null
      */
     public function getHandlerStack(): ?HandlerStack;
 

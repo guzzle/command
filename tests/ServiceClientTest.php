@@ -13,6 +13,7 @@ use GuzzleHttp\Command\ServiceClient;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
@@ -53,6 +54,53 @@ class ServiceClientTest extends TestCase
         $serviceClient = new ServiceClient($httpClient, $fn, $fn, $handlers);
         $this->assertSame($httpClient, $serviceClient->getHttpClient());
         $this->assertSame($handlers, $serviceClient->getHandlerStack());
+    }
+
+    public function testResponseTransformerMayDeclareFewerArguments(): void
+    {
+        $client = $this->getServiceClient([
+            new Response(200, [], '{"foo":"bar"}'),
+        ]);
+
+        $result = $client->execute($client->getCommand('foo'));
+
+        $this->assertSame('bar', $result['foo']);
+    }
+
+    public function testResponseTransformerReceivesCommand(): void
+    {
+        $receivedCommand = null;
+        $client = new ServiceClient(
+            new HttpClient([
+                'handler' => new MockHandler([
+                    new Response(200, [], '{}'),
+                ]),
+            ]),
+            function (CommandInterface $command): RequestInterface {
+                return new Request('POST', '/', [], $command->getName());
+            },
+            function (
+                ResponseInterface $response,
+                RequestInterface $request,
+                CommandInterface $command
+            ) use (&$receivedCommand): Result {
+                $receivedCommand = $command;
+
+                return new Result([
+                    'command' => $command->getName(),
+                    'request' => (string) $request->getBody(),
+                    'status' => $response->getStatusCode(),
+                ]);
+            }
+        );
+
+        $command = $client->getCommand('foo');
+        $result = $client->execute($command);
+
+        $this->assertSame($command, $receivedCommand);
+        $this->assertSame('foo', $result['command']);
+        $this->assertSame('foo', $result['request']);
+        $this->assertSame(200, $result['status']);
     }
 
     public function testExecuteCommandViaMagicMethod(): void
@@ -112,12 +160,16 @@ class ServiceClientTest extends TestCase
         // Setup fulfilled/rejected callbacks, just to confirm they are called.
         $fulfilledFnCalled = false;
         $rejectedFnCalled = false;
+        $fulfilledArgs = [];
+        $rejectedArgs = [];
         $options = [
-            'fulfilled' => function () use (&$fulfilledFnCalled): void {
+            'fulfilled' => function (...$args) use (&$fulfilledFnCalled, &$fulfilledArgs): void {
                 $fulfilledFnCalled = true;
+                $fulfilledArgs = $args;
             },
-            'rejected' => function () use (&$rejectedFnCalled): void {
+            'rejected' => function (...$args) use (&$rejectedFnCalled, &$rejectedArgs): void {
                 $rejectedFnCalled = true;
+                $rejectedArgs = $args;
             },
         ];
 
@@ -127,6 +179,12 @@ class ServiceClientTest extends TestCase
         // Make sure the callbacks were called
         $this->assertTrue($fulfilledFnCalled);
         $this->assertTrue($rejectedFnCalled);
+        $this->assertCount(2, $fulfilledArgs);
+        $this->assertInstanceOf(Result::class, $fulfilledArgs[0]);
+        $this->assertContains($fulfilledArgs[1], [0, 2]);
+        $this->assertCount(2, $rejectedArgs);
+        $this->assertInstanceOf(CommandException::class, $rejectedArgs[0]);
+        $this->assertSame(1, $rejectedArgs[1]);
 
         // Validate that the results are as expected.
         $this->assertCount(3, $results);
@@ -200,5 +258,45 @@ class ServiceClientTest extends TestCase
 
         $client = $this->getServiceClient([]);
         $client->executeAll($generateCommands());
+    }
+
+    public function testExecuteAllAsyncCallbacksReceiveAggregatePromise(): void
+    {
+        $client = $this->getServiceClient([
+            new Response(200, [], '{"letter":"A"}'),
+            new BadResponseException(
+                'Bad Response',
+                $this->createMock(RequestInterface::class),
+                new Response(200, [], '{"error":"Not a letter"}')
+            ),
+        ]);
+
+        $commands = [
+            'success' => new Command('capitalize', ['letter' => 'a']),
+            'failure' => new Command('capitalize', ['letter' => '2']),
+        ];
+
+        $fulfilledKey = null;
+        $fulfilledPromise = null;
+        $rejectedKey = null;
+        $rejectedPromise = null;
+        $promise = $client->executeAllAsync($commands, [
+            'fulfilled' => function (Result $result, $key, PromiseInterface $aggregate) use (&$fulfilledKey, &$fulfilledPromise): void {
+                $fulfilledKey = $key;
+                $fulfilledPromise = $aggregate;
+            },
+            'rejected' => function ($reason, $key, PromiseInterface $aggregate) use (&$rejectedKey, &$rejectedPromise): void {
+                $this->assertInstanceOf(CommandException::class, $reason);
+                $rejectedKey = $key;
+                $rejectedPromise = $aggregate;
+            },
+        ]);
+
+        $promise->wait();
+
+        $this->assertSame('success', $fulfilledKey);
+        $this->assertSame($promise, $fulfilledPromise);
+        $this->assertSame('failure', $rejectedKey);
+        $this->assertSame($promise, $rejectedPromise);
     }
 }
