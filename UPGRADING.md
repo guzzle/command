@@ -65,6 +65,21 @@ callbacks.
 3.x. Code using Guzzle Promises directly should account for its 3.0 behavior and
 signature changes.
 
+#### Static Analysis PHPDoc
+
+Guzzle Command 2.0 documents command handler stacks, transformer callables, and
+concurrent command callbacks more precisely for static analysis. Command handler
+stacks are documented as handlers that accept `CommandInterface` and return
+`PromiseInterface<ResultInterface, mixed>`. Command-to-request transformers are
+documented as receiving `CommandInterface`, and response-to-result transformers
+are documented as receiving `ResponseInterface`, `RequestInterface`, and
+`CommandInterface`.
+
+`executeAll()` callbacks are documented with the result or rejection reason and
+the command key. `executeAllAsync()` callbacks are documented with the same first
+two arguments plus the aggregate promise as a third argument. Lower-arity
+userland callbacks continue to work at runtime when PHP accepts them.
+
 1.0 from 0.8
 ------------
 

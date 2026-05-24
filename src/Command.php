@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace GuzzleHttp\Command;
 
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Promise\PromiseInterface;
 
 /**
  * Default command implementation.
@@ -15,12 +16,13 @@ class Command implements CommandInterface
 
     private string $name;
 
+    /** @var HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>>|null */
     private ?HandlerStack $handlerStack;
 
     /**
-     * @param string            $name         Name of the command
-     * @param array             $args         Arguments to pass to the command
-     * @param HandlerStack|null $handlerStack Stack of middleware for the command
+     * @param string                                                                                  $name         Name of the command
+     * @param array                                                                                   $args         Arguments to pass to the command
+     * @param HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>>|null $handlerStack Stack of middleware for the command
      */
     public function __construct(
         string $name,
@@ -32,6 +34,9 @@ class Command implements CommandInterface
         $this->handlerStack = $handlerStack;
     }
 
+    /**
+     * @return HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>>|null
+     */
     public function getHandlerStack(): ?HandlerStack
     {
         return $this->handlerStack;

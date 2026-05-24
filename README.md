@@ -52,13 +52,10 @@ can be instantiated by providing the following arguments:
 1. A fully-configured Guzzle HTTP client that will be used to perform the
    underlying HTTP requests. That is, an instance of an object implementing
    `GuzzleHttp\ClientInterface` such as `new GuzzleHttp\Client()`.
-1. A callable that transforms a Command into a Request. The function should
-   accept a `GuzzleHttp\Command\CommandInterface` object and return a
-   `Psr\Http\Message\RequestInterface` object.
-1. A callable that transforms a Response into a Result. The function should
-   accept a `Psr\Http\Message\ResponseInterface` object and optionally a
-   `Psr\Http\Message\RequestInterface` object, and return a
-   `GuzzleHttp\Command\ResultInterface` object.
+1. A callable that transforms a Command into a Request. The callable is invoked
+   as `callable(GuzzleHttp\Command\CommandInterface): Psr\Http\Message\RequestInterface`.
+1. A callable that transforms a Response into a Result. The callable is invoked
+   as `callable(Psr\Http\Message\ResponseInterface, Psr\Http\Message\RequestInterface, GuzzleHttp\Command\CommandInterface): GuzzleHttp\Command\ResultInterface`.
 1. Optionally, a Guzzle HandlerStack (`GuzzleHttp\HandlerStack`), which can be
    used to add command-level middleware to the service client.
 
@@ -181,8 +178,7 @@ execute the same operation again with the same per-command HTTP options.
 ## Asynchronous Commands
 
 Commands can be executed asynchronously using `executeAsync()`. This method
-returns a `GuzzleHttp\Promise\PromiseInterface` that resolves to a
-`GuzzleHttp\Command\ResultInterface`.
+returns a `GuzzleHttp\Promise\PromiseInterface<GuzzleHttp\Command\ResultInterface, mixed>`.
 
 ```php
 use GuzzleHttp\Command\ResultInterface;
@@ -213,11 +209,11 @@ $promise = $client->fooAsync(['baz' => 'bar']);
 $result = $promise->wait();
 ```
 
-If execution fails, the promise is rejected with a
+If built-in execution fails, the promise is typically rejected with a
 `GuzzleHttp\Command\Exception\CommandException`. When HTTP errors are enabled,
 4xx and 5xx responses are represented by `CommandClientException` and
 `CommandServerException`, respectively, when the underlying Guzzle exception
-contains a response.
+contains a response. Custom middleware and handlers may reject with other values.
 
 ## Concurrent Requests
 
@@ -227,7 +223,10 @@ fixed concurrency limit. Both methods accept an array or iterator that yields
 
 `executeAll()` waits for the pool to finish and returns an array keyed like the
 input commands. Successful entries contain results. Failed entries contain the
-rejection reason, typically a `CommandException`.
+rejection reason, typically a `CommandException`. Callback keys may be integers,
+strings, or `null`. Returned array keys follow PHP array-key normalization;
+numeric-string keys may become integers, and `null` keys are stored as an empty
+string.
 
 ```php
 use GuzzleHttp\Command\ResultInterface;
@@ -249,11 +248,21 @@ $results = $client->executeAll($commands, [
 ```
 
 `executeAllAsync()` returns a promise for the command pool instead of waiting for
-it immediately. The same options are supported:
+it immediately. Fulfilled and rejected callbacks may also declare the aggregate
+promise as a third argument:
 
 ```php
+use GuzzleHttp\Command\ResultInterface;
+use GuzzleHttp\Promise\PromiseInterface;
+
 $promise = $client->executeAllAsync($commands, [
     'concurrency' => 10,
+    'fulfilled' => function (ResultInterface $result, $key, PromiseInterface $aggregate) {
+        // Called when one command succeeds.
+    },
+    'rejected' => function ($reason, $key, PromiseInterface $aggregate) {
+        // Called when one command fails.
+    },
 ]);
 
 $promise->wait();
@@ -263,10 +272,12 @@ The supported options are:
 
 * `concurrency`: Maximum number of commands to execute at the same time. The
   default is `25`.
-* `fulfilled`: Callable invoked as `fulfilled($result, $key)` when an individual
-  command succeeds.
-* `rejected`: Callable invoked as `rejected($reason, $key)` when an individual
-  command fails.
+* `fulfilled`: Callable invoked as `fulfilled($result, $key)` by `executeAll()`
+  when an individual command succeeds. `executeAllAsync()` also passes the
+  aggregate promise as a third argument.
+* `rejected`: Callable invoked as `rejected($reason, $key)` by `executeAll()`
+  when an individual command fails. `executeAllAsync()` also passes the aggregate
+  promise as a third argument.
 
 Choose a concurrency value that is appropriate for the remote service and your
 application. Very large command lists should generally be streamed with an
@@ -279,8 +290,8 @@ implement additional behavior and customize the ``Command``-to-``Result`` and
 ``Request``-to-``Response`` lifecycles, respectively.
 
 Command middleware is added to the service client's handler stack and wraps
-commands before they are transformed into HTTP requests. HTTP middleware should
-be configured on the underlying Guzzle HTTP client instead.
+commands before they are transformed into HTTP requests. Command handlers use the
+shape `callable(GuzzleHttp\Command\CommandInterface): GuzzleHttp\Promise\PromiseInterface<GuzzleHttp\Command\ResultInterface, mixed>`. HTTP middleware should be configured on the underlying Guzzle HTTP client instead.
 
 ```php
 use GuzzleHttp\Command\CommandInterface;
