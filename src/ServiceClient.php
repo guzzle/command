@@ -95,14 +95,14 @@ class ServiceClient implements ServiceClientInterface
     {
         // Modify provided callbacks to track results.
         $results = [];
-        $options['fulfilled'] = function ($v, $k) use (&$results, $options) {
+        $options['fulfilled'] = function ($v, $k) use (&$results, $options): void {
             if (isset($options['fulfilled'])) {
                 $options['fulfilled']($v, $k);
             }
             $resultKey = $k === null ? '' : $k;
             $results[$resultKey] = $v;
         };
-        $options['rejected'] = function ($v, $k) use (&$results, $options) {
+        $options['rejected'] = function ($v, $k) use (&$results, $options): void {
             if (isset($options['rejected'])) {
                 $options['rejected']($v, $k);
             }
@@ -112,7 +112,7 @@ class ServiceClient implements ServiceClientInterface
 
         // Execute multiple commands synchronously, then sort and return the results.
         return $this->executeAllAsync($commands, $options)
-            ->then(function () use (&$results) {
+            ->then(function () use (&$results): array {
                 ksort($results);
 
                 return $results;
@@ -132,7 +132,7 @@ class ServiceClient implements ServiceClientInterface
 
         // Convert the iterator of commands to a generator of promises.
         $commands = Promise\Create::iterFor($commands);
-        $promises = function () use ($commands) {
+        $promises = function () use ($commands): \Generator {
             foreach ($commands as $key => $command) {
                 if (!$command instanceof CommandInterface) {
                     throw new \InvalidArgumentException('The iterator must '
@@ -173,8 +173,8 @@ class ServiceClient implements ServiceClientInterface
      */
     private function createCommandHandler(): callable
     {
-        return function (CommandInterface $command) {
-            return Promise\Coroutine::of(function () use ($command) {
+        return function (CommandInterface $command): PromiseInterface {
+            return Promise\Coroutine::of(function () use ($command): \Generator {
                 // Prepare the HTTP options.
                 $opts = $command['@http'] ?: [];
                 unset($command['@http']);
