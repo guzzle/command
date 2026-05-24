@@ -65,18 +65,26 @@ callbacks.
 3.x. Code using Guzzle Promises directly should account for its 3.0 behavior and
 signature changes.
 
-#### Static Analysis PHPDoc
+#### Generic Promise And Structured PHPDoc Types
 
-Guzzle Command 2.0 documents command handler stacks, transformer callables, and
-concurrent command callbacks more precisely for static analysis. Command handler
-stacks are documented as handlers that accept `CommandInterface` and return
-`PromiseInterface<ResultInterface, mixed>`. Command-to-request transformers are
-documented as receiving `CommandInterface`, and response-to-result transformers
-are documented as receiving `ResponseInterface`, `RequestInterface`, and
-`CommandInterface`.
+Guzzle Command's async service client APIs and command handler stack annotations
+now use generic `PromiseInterface<ResultInterface, mixed>` PHPDoc types. This is
+a static-analysis-only change and does not alter runtime behavior, but projects
+with stricter static analysis may see new or different diagnostics.
 
-`executeAll()` callbacks are documented with the result or rejection reason and
-the command key. `executeAllAsync()` callbacks are documented with the same first
+Code using unparameterized promise types continues to work. If your project
+implements `ServiceClientInterface`, provides custom command middleware, or
+documents reusable command handlers, you may need to update your PHPDoc
+annotations to include promise fulfillment and rejection types.
+
+Transformer, `executeAll()`, and `executeAllAsync()` option PHPDoc now uses
+structured array and callable shapes. This does not change runtime behavior, but
+stricter static analysis may now report invalid option keys, invalid option value
+types, or callback annotations that were previously hidden behind loose `array`
+or `callable` PHPDoc.
+
+`executeAll()` callback annotations include the result or rejection reason and
+the command key. `executeAllAsync()` callback annotations include the same first
 two arguments plus the aggregate promise as a third argument. Lower-arity
 userland callbacks continue to work at runtime when PHP accepts them.
 
