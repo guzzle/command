@@ -60,12 +60,12 @@ class CommandException extends \RuntimeException implements GuzzleException
 
     /**
      * @param string          $message  Exception message
-     * @param \Exception|null $previous Previous exception (if any)
+     * @param \Throwable|null $previous Previous exception (if any)
      */
     public function __construct(
         string $message,
         CommandInterface $command,
-        ?\Exception $previous = null,
+        ?\Throwable $previous = null,
         ?RequestInterface $request = null,
         ?ResponseInterface $response = null
     ) {
