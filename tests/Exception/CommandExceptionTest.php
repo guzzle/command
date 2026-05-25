@@ -32,6 +32,16 @@ class CommandExceptionTest extends TestCase
         $this->assertSame($response, $exception->getResponse());
     }
 
+    public function testAcceptsThrowablePreviousException(): void
+    {
+        $command = $this->createMock(CommandInterface::class);
+        $previous = new \Error('previous');
+
+        $exception = new CommandException('error', $command, $previous);
+
+        $this->assertSame($previous, $exception->getPrevious());
+    }
+
     public function testFactoryReturnsExceptionIfAlreadyCommandException(): void
     {
         $command = $this->createMock(CommandInterface::class);
