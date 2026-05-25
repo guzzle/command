@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace GuzzleHttp\Tests\Command\Guzzle;
+namespace GuzzleHttp\Tests\Command;
 
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Command\Command;
@@ -103,23 +103,42 @@ class ServiceClientTest extends TestCase
         $this->assertSame(200, $result['status']);
     }
 
-    public function testExecuteCommandViaMagicMethod(): void
+    public function testMagicMethodExecutesCommandSynchronously(): void
     {
         $client = $this->getServiceClient([
             new Response(200, [], '{"foo":"bar"}'),
+        ]);
+
+        $result = $client->doThatThingYouDo(['fizz' => 'buzz']);
+
+        $this->assertSame('bar', $result['foo']);
+        $this->assertSame('buzz', $result['_request']['fizz']);
+        $this->assertSame('doThatThingYouDo', $result['_request']['action']);
+    }
+
+    public function testMagicMethodExecutesCommandAsynchronously(): void
+    {
+        $client = $this->getServiceClient([
             new Response(200, [], '{"foofoo":"barbar"}'),
         ]);
 
-        // Synchronous
-        $result1 = $client->doThatThingYouDo(['fizz' => 'buzz']);
-        $this->assertEquals('bar', $result1['foo']);
-        $this->assertEquals('buzz', $result1['_request']['fizz']);
-        $this->assertEquals('doThatThingYouDo', $result1['_request']['action']);
+        $result = $client->doThatThingOtherYouDoAsync(['fizz' => 'buzz'])->wait();
 
-        // Asynchronous
-        $result2 = $client->doThatThingOtherYouDoAsync(['fizz' => 'buzz'])->wait();
-        $this->assertEquals('barbar', $result2['foofoo']);
-        $this->assertEquals('doThatThingOtherYouDo', $result2['_request']['action']);
+        $this->assertSame('barbar', $result['foofoo']);
+        $this->assertSame('buzz', $result['_request']['fizz']);
+        $this->assertSame('doThatThingOtherYouDo', $result['_request']['action']);
+    }
+
+    public function testMagicMethodUsesEmptyArgumentsWhenNoneArePassed(): void
+    {
+        $client = $this->getServiceClient([
+            new Response(200, [], '{"ok":true}'),
+        ]);
+
+        $result = $client->listWidgets();
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame('listWidgets', $result['_request']['action']);
     }
 
     public function testCommandExceptionIsThrownWhenAnErrorOccurs(): void
