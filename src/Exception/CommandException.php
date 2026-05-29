@@ -6,7 +6,7 @@ namespace GuzzleHttp\Command\Exception;
 
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ResponseException;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Client\RequestExceptionInterface;
 use Psr\Http\Message\RequestInterface;
@@ -36,8 +36,8 @@ class CommandException extends \RuntimeException implements GuzzleException
             $request = $prev->getRequest();
         }
 
-        // Guzzle RequestException also exposes the optional Response.
-        if ($prev instanceof RequestException) {
+        // Guzzle response-aware exceptions also expose the Response.
+        if ($prev instanceof ResponseException) {
             $response = $prev->getResponse();
         }
 
