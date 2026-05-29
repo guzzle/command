@@ -11,6 +11,10 @@
 * Preserve requests from PSR-18 request and network exceptions when wrapping command failures
 * Improve PHPDoc for command handler stacks, transformer callables, and concurrent command callbacks
 
+## 1.5.0 - Upcoming
+
+* Deprecate non-iterable command collections
+
 ## 1.4.0 - 2026-05-18
 
 * Add PHP 8.5 support
