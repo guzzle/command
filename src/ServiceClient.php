@@ -134,7 +134,8 @@ class ServiceClient implements ServiceClientInterface
             $commands = [$commands];
         }
 
-        // Convert the iterable of commands to a generator of promises.
+        // Convert the iterator of commands to a generator of promises.
+        $commands = Promise\Create::iterFor($commands);
         $promises = function () use ($commands) {
             foreach ($commands as $key => $command) {
                 if (!$command instanceof CommandInterface) {

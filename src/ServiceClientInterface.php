@@ -51,12 +51,12 @@ interface ServiceClientInterface
     /**
      * Executes multiple commands concurrently using a fixed pool size.
      *
-     * @param iterable $commands Iterable that contains CommandInterface
-     *                           objects to execute with the client.
-     * @param array    $options  Associative array of options to apply.
-     *                           - concurrency: (int) Max number of commands to execute concurrently.
-     *                           - fulfilled: (callable) Function to invoke when a command completes.
-     *                           - rejected: (callable) Function to invoke when a command fails.
+     * @param array|\Iterator $commands Array or iterator that contains
+     *                                  CommandInterface objects to execute with the client.
+     * @param array           $options  Associative array of options to apply.
+     *                                  - concurrency: (int) Max number of commands to execute concurrently.
+     *                                  - fulfilled: (callable) Function to invoke when a command completes.
+     *                                  - rejected: (callable) Function to invoke when a command fails.
      *
      * @return array
      */
@@ -66,12 +66,12 @@ interface ServiceClientInterface
      * Executes multiple commands concurrently and asynchronously using a
      * fixed pool size.
      *
-     * @param iterable $commands Iterable that contains CommandInterface
-     *                           objects to execute with the client.
-     * @param array    $options  Associative array of options to apply.
-     *                           - concurrency: (int) Max number of commands to execute concurrently.
-     *                           - fulfilled: (callable) Function to invoke when a command completes.
-     *                           - rejected: (callable) Function to invoke when a command fails.
+     * @param array|\Iterator $commands Array or iterator that contains
+     *                                  CommandInterface objects to execute with the client.
+     * @param array           $options  Associative array of options to apply.
+     *                                  - concurrency: (int) Max number of commands to execute concurrently.
+     *                                  - fulfilled: (callable) Function to invoke when a command completes.
+     *                                  - rejected: (callable) Function to invoke when a command fails.
      *
      * @return PromiseInterface
      */
