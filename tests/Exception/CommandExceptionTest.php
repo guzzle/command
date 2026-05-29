@@ -9,7 +9,7 @@ use GuzzleHttp\Command\Exception\CommandClientException;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Exception\CommandServerException;
 use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ResponseException;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\RequestExceptionInterface;
 use Psr\Http\Message\RequestInterface;
@@ -57,7 +57,7 @@ class CommandExceptionTest extends TestCase
         $request = $this->createMock(RequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(404);
-        $previous = new RequestException('error', $request, $response);
+        $previous = new ResponseException('error', $request, $response);
 
         $exception = CommandException::fromPrevious($command, $previous);
         $this->assertInstanceOf(CommandClientException::class, $exception);
@@ -69,7 +69,7 @@ class CommandExceptionTest extends TestCase
         $request = $this->createMock(RequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(500);
-        $previous = new RequestException('error', $request, $response);
+        $previous = new ResponseException('error', $request, $response);
 
         $exception = CommandException::fromPrevious($command, $previous);
         $this->assertInstanceOf(CommandServerException::class, $exception);
