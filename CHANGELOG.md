@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.5.0 - Upcoming
+
+* Deprecated non-iterable command collections passed to `executeAll()` and
+  `executeAllAsync()`, which will be rejected in 2.0
+
 ## 1.4.0 - 2026-05-18
 
 * Add PHP 8.5 support

@@ -122,8 +122,19 @@ class ServiceClient implements ServiceClientInterface
             $options['concurrency'] = 25;
         }
 
-        // Convert the iterator of commands to a generator of promises.
-        $commands = Promise\Create::iterFor($commands);
+        if (!\is_iterable($commands)) {
+            @\trigger_error(
+                'Since guzzlehttp/command 1.5: Passing a non-iterable command collection to '
+                .'GuzzleHttp\\Command\\ServiceClient::executeAll() or '
+                .'GuzzleHttp\\Command\\ServiceClient::executeAllAsync() is deprecated; '
+                .'guzzlehttp/command 2.0 will require an iterable.',
+                \E_USER_DEPRECATED
+            );
+
+            $commands = [$commands];
+        }
+
+        // Convert the iterable of commands to a generator of promises.
         $promises = function () use ($commands) {
             foreach ($commands as $key => $command) {
                 if (!$command instanceof CommandInterface) {
