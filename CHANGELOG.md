@@ -2,8 +2,7 @@
 
 ## 1.5.0 - Upcoming
 
-* Deprecated non-iterable command collections passed to `executeAll()` and
-  `executeAllAsync()`, which will be rejected in 2.0
+* Deprecate non-iterable command collections
 
 ## 1.4.0 - 2026-05-18
 

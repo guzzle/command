@@ -123,12 +123,12 @@ class ServiceClient implements ServiceClientInterface
         }
 
         if (!\is_iterable($commands)) {
-            @\trigger_error(
-                'Since guzzlehttp/command 1.5: Passing a non-iterable command collection to '
-                .'GuzzleHttp\\Command\\ServiceClient::executeAll() or '
-                .'GuzzleHttp\\Command\\ServiceClient::executeAllAsync() is deprecated; '
-                .'guzzlehttp/command 2.0 will require an iterable.',
-                \E_USER_DEPRECATED
+            \trigger_deprecation(
+                'guzzlehttp/command',
+                '1.5',
+                'Passing a non-iterable command collection to %s::executeAll() or %s::executeAllAsync() is deprecated; guzzlehttp/command 2.0 will require an iterable.',
+                __CLASS__,
+                __CLASS__
             );
 
             $commands = [$commands];

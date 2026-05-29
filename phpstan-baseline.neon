@@ -7,6 +7,12 @@ parameters:
 			path: src/Command.php
 
 		-
+			message: '#^Call to function is_iterable\(\) with array\|Iterator will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/ServiceClient.php
+
+		-
 			message: '#^Callable callable\(Psr\\Http\\Message\\RequestInterface, array\)\: GuzzleHttp\\Promise\\PromiseInterface invoked with 1 parameter, 2 required\.$#'
 			identifier: arguments.count
 			count: 1
