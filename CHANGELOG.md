@@ -2,6 +2,7 @@
 
 ## 1.5.0 - Upcoming
 
+* Require `guzzlehttp/guzzle` ^7.11, `guzzlehttp/promises` ^2.5, and `guzzlehttp/psr7` ^2.11
 * Deprecate non-iterable command collections
 
 ## 1.4.0 - 2026-05-18
