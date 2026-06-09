@@ -1,16 +1,12 @@
-# Middleware
+# Middleware: Extending the Client
 
-Middleware can be added to the service client or underlying HTTP client to customize different parts of the lifecycle.
+Middleware can be added to the service client or underlying HTTP client to
+implement additional behavior and customize the ``Command``-to-``Result`` and
+``Request``-to-``Response`` lifecycles, respectively.
 
-Command middleware wraps commands before they are transformed into HTTP requests. HTTP middleware should be configured on the underlying Guzzle HTTP client instead.
-
-Command handlers use this shape:
-
-```php
-callable(GuzzleHttp\Command\CommandInterface): GuzzleHttp\Promise\PromiseInterface
-```
-
-## Adding Command Middleware
+Command middleware is added to the service client's handler stack and wraps
+commands before they are transformed into HTTP requests. Command handlers use the
+shape `callable(GuzzleHttp\Command\CommandInterface): GuzzleHttp\Promise\PromiseInterface<GuzzleHttp\Command\ResultInterface, mixed>`. HTTP middleware should be configured on the underlying Guzzle HTTP client instead.
 
 ```php
 use GuzzleHttp\Command\CommandInterface;
@@ -26,5 +22,3 @@ $client->getHandlerStack()->push(function (callable $handler) {
     };
 });
 ```
-
-Use command middleware for behavior tied to service operations. Use Guzzle HTTP middleware for behavior tied to PSR-7 requests and responses.
