@@ -10,6 +10,13 @@ Use this package when you are building an SDK-style client with named operations
 composer require guzzlehttp/command
 ```
 
+## Version Guidance
+
+| Version | Status       | PHP Version  |
+|---------|--------------|--------------|
+| 2.x     | Experimental | >=7.4,<8.6   |
+| 1.x     | Latest       | >=7.2.5,<8.6 |
+
 ## Quick Start
 
 ```php
@@ -56,13 +63,6 @@ The service client can also execute commands asynchronously and run many command
 - [Concurrent requests](docs/index.md#concurrent-requests)
 - [Middleware](docs/index.md#middleware-extending-the-client)
 - [Upgrade guide](UPGRADING.md)
-
-## Version Guidance
-
-| Version | Status       | PHP Version  |
-|---------|--------------|--------------|
-| 2.x     | Experimental | >=7.4,<8.6   |
-| 1.x     | Latest       | >=7.2.5,<8.6 |
 
 ## Security
 
