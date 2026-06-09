@@ -88,6 +88,11 @@ the command key. `executeAllAsync()` callback annotations include the same first
 two arguments plus the aggregate promise as a third argument. Lower-arity
 userland callbacks continue to work at runtime when PHP accepts them.
 
+#### Native PHP Serialization of Service Clients
+
+`ServiceClient` no longer supports native PHP `serialize()` or `unserialize()`.
+Persist command names and parameter arrays instead of runtime client objects.
+
 1.0 from 0.8
 ------------
 

@@ -18,6 +18,8 @@ use Psr\Http\Message\ResponseInterface;
  */
 class ServiceClient implements ServiceClientInterface
 {
+    use NonSerializableTrait;
+
     private HttpClient $httpClient;
 
     /** @var HandlerStack<callable(CommandInterface): PromiseInterface<ResultInterface, mixed>> */
