@@ -19,8 +19,8 @@ Guzzle Command 2.0 also requires
 [Guzzle 8.x](https://github.com/guzzle/guzzle/blob/8.0/UPGRADING.md),
 [Guzzle Promises 3.x](https://github.com/guzzle/promises/blob/3.0/UPGRADING.md),
 and [Guzzle PSR-7 3.x](https://github.com/guzzle/psr7/blob/3.0/UPGRADING.md).
-Guzzle Command 1.x supported Guzzle `^7.10`, Guzzle Promises `^2.3`, and Guzzle
-PSR-7 `^2.8`.
+Guzzle Command 1.x supported Guzzle `^7.11`, Guzzle Promises `^2.5`, and Guzzle
+PSR-7 `^2.11`.
 
 Guzzle Command 2.0 now requires `psr/http-client:^1.0` directly.
 
