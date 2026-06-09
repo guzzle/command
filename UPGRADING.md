@@ -28,11 +28,6 @@ If your application still supports PHP 7.2 or 7.3, or still uses the Guzzle 7
 dependency stack, continue using Guzzle Command 1.x until your minimum PHP and
 dependency versions are raised.
 
-#### Native PHP Serialization Of Service Clients
-
-`ServiceClient` no longer supports native PHP `serialize()` or `unserialize()`.
-Persist command names and parameter arrays instead of runtime client objects.
-
 #### Strict Types and Extension Points
 
 Guzzle Command source and test files now declare strict types. This mostly
@@ -92,6 +87,11 @@ or `callable` PHPDoc.
 the command key. `executeAllAsync()` callback annotations include the same first
 two arguments plus the aggregate promise as a third argument. Lower-arity
 userland callbacks continue to work at runtime when PHP accepts them.
+
+#### Native PHP Serialization of Service Clients
+
+`ServiceClient` no longer supports native PHP `serialize()` or `unserialize()`.
+Persist command names and parameter arrays instead of runtime client objects.
 
 1.0 from 0.8
 ------------
