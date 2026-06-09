@@ -56,13 +56,11 @@ The service client can also execute commands asynchronously and run many command
 
 ## Documentation
 
-- [Full documentation](docs/index.md)
-- [Service clients](docs/index.md#service-clients)
-- [Executing commands](docs/index.md#executing-commands)
-- [Asynchronous commands](docs/index.md#asynchronous-commands)
-- [Concurrent requests](docs/index.md#concurrent-requests)
-- [Middleware](docs/index.md#middleware-extending-the-client)
-- [Upgrade guide](UPGRADING.md)
+- [Service Clients](docs/service-clients.md)
+- [Executing Commands](docs/executing-commands.md)
+- [Async and Concurrency](docs/async-and-concurrency.md)
+- [Middleware](docs/middleware.md)
+- [Upgrade Guide](UPGRADING.md)
 
 ## Security
 
