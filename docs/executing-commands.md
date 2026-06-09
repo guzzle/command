@@ -1,6 +1,10 @@
 # Executing Commands
 
-Service clients create command objects using the ``getCommand()`` method.
+This page covers creating command objects, executing them synchronously, using
+magic operation methods, working with command and result collections, and
+passing per-command HTTP options to the underlying Guzzle client.
+
+Service clients create command objects using the `getCommand()` method.
 
 ```php
 $commandName = 'foo';
@@ -16,16 +20,61 @@ $result = $client->execute($command);
 ```
 
 The result of executing a command will be an instance of an object implementing
-`GuzzleHttp\Command\ResultInterface`. Result objects are `ArrayAccess`-ible and
-contain the data parsed from HTTP response.
+`GuzzleHttp\Command\ResultInterface`. Results are array-like objects that
+contain the data parsed from the HTTP response by the service client's
+response-to-result transformer.
 
 Service clients have magic methods that act as shortcuts to executing commands
-by name without having to create the ``Command`` object in a separate step
-before executing it.
+by name without having to create the `Command` object in a separate step before
+executing it.
 
 ```php
 $result = $client->foo(['baz' => 'bar']);
 ```
+
+## Command and Result Data
+
+Commands and results implement `ArrayAccess`, `Countable`, `IteratorAggregate`,
+and `GuzzleHttp\Command\ToArrayInterface`.
+
+Use array access to read, write, and remove values:
+
+```php
+$command = $client->getCommand('foo', ['baz' => 'bar']);
+
+$command['baz'] = 'qux';
+unset($command['unused']);
+
+$result = $client->execute($command);
+echo $result['fizz'];
+```
+
+Reading a missing key returns `null`. For commands, use `hasParam()` when you
+need to distinguish a missing parameter from a parameter whose value is `null`.
+
+Use `count()` to count stored values, iterate with `foreach`, and call
+`toArray()` to retrieve the underlying array:
+
+```php
+foreach ($result as $name => $value) {
+    // Inspect result values.
+}
+
+$data = $result->toArray();
+$total = count($result);
+```
+
+Commands also provide `hasParam()` to test for a parameter by key, including
+parameters set to `null`:
+
+```php
+if ($command->hasParam('baz')) {
+    // The command contains the baz parameter.
+}
+```
+
+For both commands and results, a `null` array key is normalized to an empty
+string when reading, writing, unsetting, or checking values.
 
 ## Per-Command HTTP Options
 
@@ -41,9 +90,10 @@ as a reserved control key, not as an operation parameter. Do not pass untrusted
 input directly into command arguments without filtering it first. If external
 input can include `@http`, that input may be able to influence the underlying
 HTTP request or transfer depending on the configured Guzzle client and handler.
-The `@http` value must be an array of Guzzle request options. Be especially
-careful with options that affect the target URI, proxy, TLS verification,
-headers, body, response sink, redirects, or timeouts.
+The `@http` value must be an array of [Guzzle request
+options](https://github.com/guzzle/guzzle/blob/8.0/docs/request-options.md). Be
+especially careful with options that affect the target URI, proxy, TLS
+verification, headers, body, response sink, redirects, or timeouts.
 
 Build command arguments from an allowlist of expected operation parameters, or
 explicitly reject reserved keys such as `@http` before creating commands:
@@ -77,3 +127,9 @@ $result = $client->execute($command);
 
 Because `@http` is removed during execution, create a new command if you need to
 execute the same operation again with the same per-command HTTP options.
+
+## Related
+
+- [Service Clients](service-clients.md)
+- [Async and Concurrency](async-and-concurrency.md)
+- [Middleware: Extending the Client](middleware-extending-the-client.md)

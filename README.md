@@ -1,8 +1,10 @@
-# Guzzle Commands
+# Guzzle Command
 
-`guzzlehttp/command` provides the foundation for building command-based web service clients on top of Guzzle. A command represents one service operation, and a result represents the processed response from that operation.
+Guzzle Command provides the foundation for building command-based web service clients on top of Guzzle. A command represents one service operation, and a result represents the processed response from that operation.
 
-Use this package when you are building an SDK-style client with named operations such as `listUsers()` or `createOrder()`. If you only need to send ordinary HTTP requests, install [`guzzlehttp/guzzle`](https://github.com/guzzle/guzzle) instead.
+Use this package when you are building an SDK-style client with named operations such as `listUsers()` or `createOrder()`. If you only need to send ordinary HTTP requests, install [`guzzlehttp/guzzle`](https://github.com/guzzle/guzzle/blob/8.0/README.md) instead.
+
+For declarative service descriptions that define operations from API metadata, see [Guzzle Services](https://github.com/guzzle/guzzle-services/blob/2.0/README.md).
 
 ## Installation
 
@@ -52,15 +54,16 @@ $client = new ServiceClient(
 $result = $client->createUser(['name' => 'Ada']);
 ```
 
-The service client can also execute commands asynchronously and run many commands with a fixed concurrency limit.
+The service client can also execute commands asynchronously and run many commands with a configurable concurrency limit.
 
 ## Documentation
 
 - [Service Clients](docs/service-clients.md)
 - [Executing Commands](docs/executing-commands.md)
 - [Async and Concurrency](docs/async-and-concurrency.md)
-- [Middleware](docs/middleware.md)
+- [Middleware: Extending the Client](docs/middleware-extending-the-client.md)
 - [Upgrade Guide](UPGRADING.md)
+- [Changelog](CHANGELOG.md)
 
 ## Security
 
@@ -68,7 +71,7 @@ If you discover a security vulnerability within this package, please send an ema
 
 ## License
 
-Guzzle is made available under the MIT License (MIT). Please see [License File](LICENSE) for more information.
+Guzzle Command is made available under the MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 ## For Enterprise
 
