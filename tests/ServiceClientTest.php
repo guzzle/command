@@ -274,6 +274,7 @@ class ServiceClientTest extends TestCase
         };
 
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('got string');
 
         $client = $this->getServiceClient([]);
         $client->executeAll($generateCommands());

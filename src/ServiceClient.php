@@ -157,8 +157,7 @@ class ServiceClient implements ServiceClientInterface
         $promises = function () use ($commands): \Generator {
             foreach ($commands as $key => $command) {
                 if (!$command instanceof CommandInterface) {
-                    throw new \InvalidArgumentException('The iterator must '
-                        .'yield instances of '.CommandInterface::class);
+                    throw new \InvalidArgumentException(\sprintf('The iterator must yield instances of %s; got %s', CommandInterface::class, \get_debug_type($command)));
                 }
                 yield $key => $this->executeAsync($command);
             }
@@ -181,7 +180,7 @@ class ServiceClient implements ServiceClientInterface
     public function __call(string $name, array $args)
     {
         $args = isset($args[0]) ? $args[0] : [];
-        if (substr($name, -5) === 'Async') {
+        if (str_ends_with($name, 'Async')) {
             $command = $this->getCommand(substr($name, 0, -5), $args);
 
             return $this->executeAsync($command);
