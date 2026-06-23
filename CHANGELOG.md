@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 1.5.1 - Upcoming
+## 1.5.1 - 2026-06-23
 
 * Require `guzzlehttp/guzzle` ^7.12.3 and `guzzlehttp/psr7` ^2.12.3
 
