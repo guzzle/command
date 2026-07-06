@@ -65,6 +65,22 @@ callbacks.
 3.x. Code using Guzzle Promises directly should account for its 3.0 behavior and
 signature changes.
 
+#### Concurrent Command Collections
+
+`executeAll()` and `executeAllAsync()` now require an iterable of commands.
+Passing a non-iterable throws a `TypeError`, and passing a single command
+throws an `InvalidArgumentException`. In 1.x a single command was executed as
+a one-element collection.
+
+```php
+// 1.x executed the single command; 2.0 throws:
+$results = $client->executeAll($command);
+
+// Wrap single commands, or execute them directly:
+$results = $client->executeAll([$command]);
+$result = $client->execute($command);
+```
+
 #### Generic Promise And Structured PHPDoc Types
 
 Guzzle Command's async service client APIs and command handler stack annotations
