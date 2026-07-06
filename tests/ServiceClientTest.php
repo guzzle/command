@@ -280,6 +280,24 @@ class ServiceClientTest extends TestCase
         $client->executeAll($generateCommands());
     }
 
+    public function testExecuteAllRejectsSingleCommand(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('requires an iterable of commands');
+
+        $client = $this->getServiceClient([]);
+        $client->executeAll(new Command('capitalize', ['letter' => 'a']));
+    }
+
+    public function testExecuteAllAsyncRejectsSingleCommand(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('requires an iterable of commands');
+
+        $client = $this->getServiceClient([]);
+        $client->executeAllAsync(new Command('capitalize', ['letter' => 'a']));
+    }
+
     public function testExecuteAllAsyncCallbacksReceiveAggregatePromise(): void
     {
         $client = $this->getServiceClient([

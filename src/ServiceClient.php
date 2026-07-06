@@ -147,6 +147,12 @@ class ServiceClient implements ServiceClientInterface
      */
     public function executeAllAsync(iterable $commands, array $options = []): PromiseInterface
     {
+        // A single command satisfies the iterable type but would be iterated
+        // as a collection of its own parameters.
+        if ($commands instanceof CommandInterface) {
+            throw new \InvalidArgumentException(\sprintf('%s::executeAllAsync() requires an iterable of commands; a single command was given. Wrap it in an array or use executeAsync() instead.', __CLASS__));
+        }
+
         // Apply default concurrency.
         if (!isset($options['concurrency'])) {
             $options['concurrency'] = 25;

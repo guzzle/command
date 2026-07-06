@@ -8,6 +8,7 @@
 * Reject native PHP serialization of `ServiceClient`
 * Require custom implementations and subclasses of public command APIs to match native method signatures
 * Require service client response transformers to return `ResultInterface` values
+* Require command collections to be iterable and reject single commands in `executeAll()` and `executeAllAsync()`
 * Require custom middleware, transformers, and `executeAll()` callbacks to accept exact argument types instead of relying on scalar coercion
 * Preserve requests from PSR-18 request and network exceptions when wrapping command failures
 * Improve PHPDoc for command handler stacks, transformer callables, and concurrent command callbacks
