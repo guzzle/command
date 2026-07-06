@@ -13,7 +13,7 @@ client stack:
 
 - Command middleware receives commands and resolves to results.
 - HTTP middleware receives PSR-7 requests and resolves to PSR-7 responses.
-- Use [Guzzle HTTP middleware](https://github.com/guzzle/guzzle/blob/8.0/docs/handlers-and-middleware.md#middleware) for transport behavior such as retries, signing, logging, and request/response inspection.
+- Use [Guzzle HTTP middleware](https://github.com/guzzle/guzzle/blob/8.0/docs/middleware.md) for transport behavior such as retries, signing, logging, and request/response inspection.
 
 ## Adding Command Middleware
 
