@@ -14,6 +14,10 @@
 * Add generic PHPDoc return types to asynchronous service client APIs
 * Improve PHPDoc for command handler stacks, transformer callables, and concurrent command callbacks
 
+## 1.5.2 - 2026-07-08
+
+* Require `guzzlehttp/guzzle` ^7.13.3, `guzzlehttp/promises` ^2.5.1, and `guzzlehttp/psr7` ^2.12.4
+
 ## 1.5.1 - 2026-06-23
 
 * Require `guzzlehttp/guzzle` ^7.12.3 and `guzzlehttp/psr7` ^2.12.3
