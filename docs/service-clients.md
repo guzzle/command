@@ -153,8 +153,8 @@ It receives PSR-7 requests after a command has been transformed and before the
 request is sent.
 
 Use command middleware for operation-level concerns, such as adding command
-defaults or inspecting results. Use HTTP middleware for transport-level concerns,
-such as request signing, retries, or logging raw HTTP messages.
+defaults or inspecting results. Use HTTP middleware for transport-level
+concerns, such as request signing, retries, or logging raw HTTP messages.
 
 ## Related
 

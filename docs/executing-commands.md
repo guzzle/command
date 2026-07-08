@@ -108,8 +108,8 @@ $command = $client->getCommand('foo', [
 ]);
 ```
 
-When setting per-command HTTP options intentionally, only expose and validate the
-specific options your application needs:
+When setting per-command HTTP options intentionally, only expose and validate
+the specific options your application needs:
 
 ```php
 use GuzzleHttp\RequestOptions;

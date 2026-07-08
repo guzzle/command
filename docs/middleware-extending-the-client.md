@@ -5,15 +5,19 @@ implement additional behavior and customize the `Command`-to-`Result` and
 `Request`-to-`Response` lifecycles, respectively.
 
 Command middleware is added to the service client's handler stack and wraps
-commands before they are transformed into HTTP requests. Command handlers use the
-shape `callable(GuzzleHttp\Command\CommandInterface): GuzzleHttp\Promise\PromiseInterface<GuzzleHttp\Command\ResultInterface, mixed>`. HTTP middleware should be configured on the underlying Guzzle HTTP client instead.
+commands before they are transformed into HTTP requests. Command handlers use
+the shape `callable(GuzzleHttp\Command\CommandInterface): GuzzleHttp\Promise\PromiseInterface<GuzzleHttp\Command\ResultInterface, mixed>`.
+HTTP middleware should be configured on the underlying Guzzle HTTP client
+instead.
 
 The service client's command stack is separate from the underlying Guzzle HTTP
 client stack:
 
 - Command middleware receives commands and resolves to results.
 - HTTP middleware receives PSR-7 requests and resolves to PSR-7 responses.
-- Use [Guzzle HTTP middleware](https://github.com/guzzle/guzzle/blob/8.0/docs/middleware.md) for transport behavior such as retries, signing, logging, and request/response inspection.
+- Use [Guzzle HTTP middleware](https://github.com/guzzle/guzzle/blob/8.0/docs/middleware.md)
+  for transport behavior such as retries, signing, logging, and request/response
+  inspection.
 
 ## Adding Command Middleware
 
