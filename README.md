@@ -1,10 +1,18 @@
 # Guzzle Command
 
-Guzzle Command provides the foundation for building command-based web service clients on top of Guzzle. A command represents one service operation, and a result represents the processed response from that operation.
+Guzzle Command provides the foundation for building command-based web service
+clients on top of Guzzle. A command represents one service operation, and a
+result represents the processed response from that operation.
 
-Use this package when you are building an SDK-style client with named operations such as `listUsers()` or `createOrder()`. If you only need to send ordinary HTTP requests, install [`guzzlehttp/guzzle`](https://github.com/guzzle/guzzle/blob/8.0/README.md) instead.
+Use this package when you are building an SDK-style client with named operations
+such as `listUsers()` or `createOrder()`. If you only need to send ordinary HTTP
+requests, install
+[`guzzlehttp/guzzle`](https://github.com/guzzle/guzzle/blob/8.0/README.md)
+instead.
 
-For declarative service descriptions that define operations from API metadata, see [Guzzle Services](https://github.com/guzzle/guzzle-services/blob/2.0/README.md).
+For declarative service descriptions that define operations from API metadata,
+see
+[Guzzle Services](https://github.com/guzzle/guzzle-services/blob/2.0/README.md).
 
 ## Installation
 
@@ -54,7 +62,8 @@ $client = new ServiceClient(
 $result = $client->createUser(['name' => 'Ada']);
 ```
 
-The service client can also execute commands asynchronously and run many commands with a configurable concurrency limit.
+The service client can also execute commands asynchronously and run many
+commands with a configurable concurrency limit.
 
 ## Documentation
 
@@ -67,14 +76,25 @@ The service client can also execute commands asynchronously and run many command
 
 ## Security
 
-If you discover a security vulnerability within this package, please send an email to security@tidelift.com. All security vulnerabilities will be promptly addressed. Please do not disclose security-related issues publicly until a fix has been announced. Please see [Security Policy](https://github.com/guzzle/command/security/policy) for more information.
+If you discover a security vulnerability within this package, please send an
+email to security@tidelift.com. All security vulnerabilities will be promptly
+addressed. Please do not disclose security-related issues publicly until a fix
+has been announced. Please see
+[Security Policy](https://github.com/guzzle/command/security/policy) for more
+information.
 
 ## License
 
-Guzzle Command is made available under the MIT License (MIT). Please see [License File](LICENSE) for more information.
+Guzzle Command is made available under the MIT License (MIT). Please see
+[License File](LICENSE) for more information.
 
 ## For Enterprise
 
 Available as part of the Tidelift Subscription
 
-The maintainers of Guzzle and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. [Learn more.](https://tidelift.com/subscription/pkg/packagist-guzzlehttp-command?utm_source=packagist-guzzlehttp-command&utm_medium=referral&utm_campaign=enterprise&utm_term=repo)
+The maintainers of Guzzle and thousands of other packages are working with
+Tidelift to deliver commercial support and maintenance for the open source
+dependencies you use to build your applications. Save time, reduce risk, and
+improve code health, while paying the maintainers of the exact dependencies you
+use.
+[Learn more.](https://tidelift.com/subscription/pkg/packagist-guzzlehttp-command?utm_source=packagist-guzzlehttp-command&utm_medium=referral&utm_campaign=enterprise&utm_term=repo)
