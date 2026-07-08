@@ -49,6 +49,14 @@ or `ToArrayInterface` must update method signatures to remain compatible.
 
 Classes extending package classes should also update overridden method signatures.
 
+#### Command Exceptions
+
+Direct construction of `CommandException`, `CommandClientException`, and
+`CommandServerException` now accepts `?\Throwable` for the previous exception
+argument. Guzzle Command still wraps command execution failures through
+`CommandException::fromPrevious()` when service-client execution catches an
+`Exception`.
+
 #### Per-command HTTP Options
 
 `GuzzleHttp\Command\ServiceClient` still reserves the `@http` command parameter

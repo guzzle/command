@@ -10,7 +10,8 @@
 * Require service client response transformers to return `ResultInterface` values
 * Require command collections to be iterable and reject single commands in `executeAll()` and `executeAllAsync()`
 * Require custom middleware, transformers, and `executeAll()` callbacks to accept exact argument types instead of relying on scalar coercion
-* Preserve requests from PSR-18 request and network exceptions when wrapping command failures
+* Preserve requests from PSR-18 request and network exceptions and from Guzzle transfer exceptions when wrapping command failures
+* Allow command exception constructors to accept any previous `Throwable`
 * Improve PHPDoc for command handler stacks, transformer callables, and concurrent command callbacks
 
 ## 1.5.1 - 2026-06-23

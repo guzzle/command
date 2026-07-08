@@ -9,6 +9,7 @@ use GuzzleHttp\Command\Exception\CommandClientException;
 use GuzzleHttp\Command\Exception\CommandException;
 use GuzzleHttp\Command\Exception\CommandServerException;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\HandlerClosedException;
 use GuzzleHttp\Exception\ResponseException;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\RequestExceptionInterface;
@@ -61,6 +62,9 @@ class CommandExceptionTest extends TestCase
 
         $exception = CommandException::fromPrevious($command, $previous);
         $this->assertInstanceOf(CommandClientException::class, $exception);
+        $this->assertSame($request, $exception->getRequest());
+        $this->assertSame($response, $exception->getResponse());
+        $this->assertSame($previous, $exception->getPrevious());
     }
 
     public function testFactoryReturnsServerExceptionFor500LevelStatusCode(): void
@@ -73,6 +77,9 @@ class CommandExceptionTest extends TestCase
 
         $exception = CommandException::fromPrevious($command, $previous);
         $this->assertInstanceOf(CommandServerException::class, $exception);
+        $this->assertSame($request, $exception->getRequest());
+        $this->assertSame($response, $exception->getResponse());
+        $this->assertSame($previous, $exception->getPrevious());
     }
 
     public function testFactoryCopiesRequestFromNetworkException(): void
@@ -80,6 +87,18 @@ class CommandExceptionTest extends TestCase
         $command = $this->createMock(CommandInterface::class);
         $request = $this->createMock(RequestInterface::class);
         $previous = new ConnectException('error', $request);
+
+        $exception = CommandException::fromPrevious($command, $previous);
+        $this->assertSame($request, $exception->getRequest());
+        $this->assertNull($exception->getResponse());
+        $this->assertSame($previous, $exception->getPrevious());
+    }
+
+    public function testFactoryCopiesRequestFromGuzzleTransferException(): void
+    {
+        $command = $this->createMock(CommandInterface::class);
+        $request = $this->createMock(RequestInterface::class);
+        $previous = new HandlerClosedException('error', $request);
 
         $exception = CommandException::fromPrevious($command, $previous);
         $this->assertSame($request, $exception->getRequest());
