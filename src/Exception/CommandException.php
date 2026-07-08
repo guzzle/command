@@ -7,6 +7,7 @@ namespace GuzzleHttp\Command\Exception;
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\ResponseException;
+use GuzzleHttp\Exception\TransferException;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Client\RequestExceptionInterface;
 use Psr\Http\Message\RequestInterface;
@@ -32,7 +33,9 @@ class CommandException extends \RuntimeException implements GuzzleException
 
         // If the exception is request-aware, preserve the Request.
         $request = $response = null;
-        if ($prev instanceof RequestExceptionInterface || $prev instanceof NetworkExceptionInterface) {
+        if ($prev instanceof TransferException) {
+            $request = $prev->getRequest();
+        } elseif ($prev instanceof RequestExceptionInterface || $prev instanceof NetworkExceptionInterface) {
             $request = $prev->getRequest();
         }
 
