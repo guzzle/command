@@ -1,6 +1,9 @@
 # Async and Concurrency
 
-This page explains asynchronous command execution and concurrent command pools for Guzzle Command service clients. For promise chaining, waiting, cancellation, and rejection behavior, see the [Guzzle Promises quick start](https://github.com/guzzle/promises/blob/3.0/docs/promise-quick-start.md).
+This page explains asynchronous command execution and concurrent command pools
+for Guzzle Command service clients. For promise chaining, waiting, cancellation,
+and rejection behavior, see the
+[Guzzle Promises quick start](https://github.com/guzzle/promises/blob/3.0/docs/promise-quick-start.md).
 
 ## Asynchronous Commands
 
@@ -30,8 +33,8 @@ echo $result['fizz']; //> 'buzz'
 ```
 
 Magic methods may also be used asynchronously by appending `Async` to the
-operation name. For example, `fooAsync()` creates a `foo` command and executes it
-asynchronously:
+operation name. For example, `fooAsync()` creates a `foo` command and executes
+it asynchronously:
 
 ```php
 $promise = $client->fooAsync(['baz' => 'bar']);
@@ -42,7 +45,8 @@ If built-in execution fails, the promise is typically rejected with a
 `GuzzleHttp\Command\Exception\CommandException`. When HTTP errors are enabled,
 4xx and 5xx responses are represented by `CommandClientException` and
 `CommandServerException`, respectively, when the underlying Guzzle exception
-contains a response. Custom middleware and handlers may reject with other values.
+contains a response. Custom middleware and handlers may reject with other
+values.
 
 ## Concurrent Commands
 
@@ -79,9 +83,9 @@ $results = $client->executeAll($commands, [
 ]);
 ```
 
-`executeAllAsync()` returns a promise for the command pool instead of waiting for
-it immediately. It resolves with `null` after all commands have settled; it does
-not build a result array. Individual command results are delivered to the
+`executeAllAsync()` returns a promise for the command pool instead of waiting
+for it immediately. It resolves with `null` after all commands have settled; it
+does not build a result array. Individual command results are delivered to the
 `fulfilled` callback, and individual rejection reasons are delivered to the
 `rejected` callback. Fulfilled and rejected callbacks may also declare the
 aggregate promise as a third argument:
@@ -113,8 +117,8 @@ The supported options are:
   when an individual command succeeds. `executeAllAsync()` also passes the
   aggregate promise as a third argument.
 - `rejected`: Callable invoked as `rejected($reason, $key)` by `executeAll()`
-  when an individual command fails. `executeAllAsync()` also passes the aggregate
-  promise as a third argument.
+  when an individual command fails. `executeAllAsync()` also passes the
+  aggregate promise as a third argument.
 
 Choose a concurrency value that is appropriate for the remote service and your
 application. Very large command lists should generally be streamed with an
