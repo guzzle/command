@@ -298,6 +298,29 @@ class ServiceClientTest extends TestCase
         $client->executeAllAsync(new Command('capitalize', ['letter' => 'a']));
     }
 
+    public function testRejectsNativeSerialization(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(ServiceClient::class.' should never be serialized');
+
+        $client = $this->getServiceClient([]);
+        serialize($client);
+    }
+
+    public function testRejectsNativeUnserialization(): void
+    {
+        $payload = sprintf(
+            'O:%d:"%s":0:{}',
+            strlen(ServiceClient::class),
+            ServiceClient::class
+        );
+
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(ServiceClient::class.' should never be unserialized');
+
+        unserialize($payload);
+    }
+
     public function testExecuteAllAsyncCallbacksReceiveAggregatePromise(): void
     {
         $client = $this->getServiceClient([
