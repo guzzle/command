@@ -36,7 +36,6 @@ use GuzzleHttp\Command\Result;
 use GuzzleHttp\Command\ResultInterface;
 use GuzzleHttp\Command\ServiceClient;
 use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Utils;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -47,7 +46,7 @@ $client = new ServiceClient(
             'POST',
             '/' . rawurlencode($command->getName()),
             ['Content-Type' => 'application/json'],
-            Utils::jsonEncode($command->toArray())
+            \json_encode($command->toArray(), \JSON_THROW_ON_ERROR)
         );
     },
     function (
@@ -55,7 +54,7 @@ $client = new ServiceClient(
         RequestInterface $request,
         CommandInterface $command
     ): ResultInterface {
-        return new Result(Utils::jsonDecode((string) $response->getBody(), true));
+        return new Result(\json_decode((string) $response->getBody(), true, 512, \JSON_THROW_ON_ERROR));
     }
 );
 

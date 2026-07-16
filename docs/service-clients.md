@@ -67,7 +67,6 @@ use GuzzleHttp\Command\Result;
 use GuzzleHttp\Command\ResultInterface;
 use GuzzleHttp\Command\ServiceClient;
 use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Utils;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -78,7 +77,7 @@ $client = new ServiceClient(
             'POST',
             '/' . rawurlencode($command->getName()),
             ['Accept' => 'application/json', 'Content-Type' => 'application/json'],
-            Utils::jsonEncode($command->toArray())
+            \json_encode($command->toArray(), \JSON_THROW_ON_ERROR)
         );
     },
     function (
@@ -87,7 +86,7 @@ $client = new ServiceClient(
         CommandInterface $command
     ): ResultInterface {
         return new Result(
-            Utils::jsonDecode((string) $response->getBody(), true)
+            \json_decode((string) $response->getBody(), true, 512, \JSON_THROW_ON_ERROR)
         );
     }
 );
@@ -102,11 +101,10 @@ parameters:
 ```php
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Utils;
 use Psr\Http\Message\RequestInterface;
 
 $commandToRequest = function (CommandInterface $command): RequestInterface {
-    $body = Utils::jsonEncode($command->toArray());
+    $body = \json_encode($command->toArray(), \JSON_THROW_ON_ERROR);
     $path = '/commands/' . rawurlencode($command->getName());
 
     return new Request(
@@ -125,7 +123,6 @@ shape. It receives the response, request, and original command:
 use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Command\Result;
 use GuzzleHttp\Command\ResultInterface;
-use GuzzleHttp\Utils;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -137,7 +134,7 @@ $responseToResult = function (
     return new Result([
         'operation' => $command->getName(),
         'statusCode' => $response->getStatusCode(),
-        'data' => Utils::jsonDecode((string) $response->getBody(), true),
+        'data' => \json_decode((string) $response->getBody(), true, 512, \JSON_THROW_ON_ERROR),
     ]);
 };
 ```
