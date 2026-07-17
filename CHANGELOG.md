@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.5.3 - UPCOMING
+
+* Require `guzzlehttp/guzzle` ^7.15 and `guzzlehttp/psr7` ^2.13
+
 ## 1.5.2 - 2026-07-08
 
 * Require `guzzlehttp/guzzle` ^7.13.3, `guzzlehttp/promises` ^2.5.1, and `guzzlehttp/psr7` ^2.12.4
