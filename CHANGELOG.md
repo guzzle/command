@@ -4,6 +4,7 @@
 
 * Drop support for PHP 7.2 and 7.3
 * Require `guzzlehttp/guzzle` ^8.0, `guzzlehttp/promises` ^3.0, and `guzzlehttp/psr7` ^3.0
+* Escape unsafe command names and previous messages in generated command exceptions
 * Reject native PHP serialization of `ServiceClient`
 * Require custom implementations and subclasses of public command APIs to match native method signatures
 * Require service client response transformers to return `ResultInterface` values

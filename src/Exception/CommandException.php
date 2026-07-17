@@ -8,6 +8,7 @@ use GuzzleHttp\Command\CommandInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\ResponseException;
 use GuzzleHttp\Exception\TransferException;
+use GuzzleHttp\Psr7\DiagnosticValue;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Client\RequestExceptionInterface;
 use Psr\Http\Message\RequestInterface;
@@ -54,8 +55,7 @@ class CommandException extends \RuntimeException implements GuzzleException
         }
 
         // Prepare the message.
-        $message = 'There was an error executing the '.$command->getName()
-            .' command: '.$prev->getMessage();
+        $message = \sprintf('There was an error executing the %s command: %s', DiagnosticValue::escape($command->getName()), DiagnosticValue::escape($prev->getMessage()));
 
         // Create the exception.
         return new $class($message, $command, $prev, $request, $response);

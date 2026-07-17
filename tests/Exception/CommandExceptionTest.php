@@ -52,6 +52,23 @@ class CommandExceptionTest extends TestCase
         $this->assertSame($previous, $exception);
     }
 
+    public function testFactoryEscapesUnsafeCommandAndPreviousMessages(): void
+    {
+        $commandName = "command\xC2\x80";
+        $previousMessage = "failure\xFF";
+        $command = $this->createMock(CommandInterface::class);
+        $command->method('getName')->willReturn($commandName);
+        $previous = new \RuntimeException($previousMessage);
+
+        $exception = CommandException::fromPrevious($command, $previous);
+
+        $this->assertSame('There was an error executing the command\\x80 command: failure\\xFF', $exception->getMessage());
+        $this->assertSame($command, $exception->getCommand());
+        $this->assertSame($commandName, $command->getName());
+        $this->assertSame($previous, $exception->getPrevious());
+        $this->assertSame($previousMessage, $previous->getMessage());
+    }
+
     public function testFactoryReturnsClientExceptionFor400LevelStatusCode(): void
     {
         $command = $this->createMock(CommandInterface::class);
