@@ -10,6 +10,7 @@
 * Require service client response transformers to return `ResultInterface` values
 * Require command collections to be iterable and reject single commands in `executeAll()` and `executeAllAsync()`
 * Require custom middleware, transformers, and `executeAll()` callbacks to accept exact argument types instead of relying on scalar coercion
+* Redact credential-bearing command and HTTP arguments from PHP 8.2+ backtraces
 * Preserve requests from PSR-18 request and network exceptions and from Guzzle transfer exceptions when wrapping command failures
 * Allow command exception constructors to accept any previous `Throwable`
 * Add generic PHPDoc return types to asynchronous service client APIs
