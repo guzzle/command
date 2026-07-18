@@ -117,6 +117,18 @@ userland callbacks continue to work at runtime when PHP accepts them.
 `ServiceClient` no longer supports native PHP `serialize()` or `unserialize()`.
 Persist command names and parameter arrays instead of runtime client objects.
 
+#### Sensitive Parameters and Backtraces
+
+Guzzle Command 2.0 marks credential-bearing command, request, response, and
+exception parameters as sensitive. On PHP 8.2 and later, exception traces and
+backtraces replace those argument values with `SensitiveParameterValue`
+objects. PHP 7.4 through 8.1 retain the original trace arguments.
+
+This does not redact exception messages, application logs, HTTP traffic,
+properties, captured variables, return values, or the separate `$this` object
+in an explicit backtrace. Custom middleware and transformers must mark their
+own sensitive parameters.
+
 1.0 from 0.8
 ------------
 

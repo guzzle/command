@@ -67,21 +67,28 @@ class ServiceClient implements ServiceClientInterface
         return $this->handlerStack;
     }
 
-    public function getCommand(string $name, array $params = []): CommandInterface
-    {
+    public function getCommand(
+        string $name,
+        #[\SensitiveParameter]
+        array $params = []
+    ): CommandInterface {
         return new Command($name, $params, clone $this->handlerStack);
     }
 
-    public function execute(CommandInterface $command): ResultInterface
-    {
+    public function execute(
+        #[\SensitiveParameter]
+        CommandInterface $command
+    ): ResultInterface {
         return $this->executeAsync($command)->wait();
     }
 
     /**
      * @return PromiseInterface<ResultInterface, mixed>
      */
-    public function executeAsync(CommandInterface $command): PromiseInterface
-    {
+    public function executeAsync(
+        #[\SensitiveParameter]
+        CommandInterface $command
+    ): PromiseInterface {
         $stack = $command->getHandlerStack() ?: $this->handlerStack;
 
         /** @var callable(CommandInterface): PromiseInterface<ResultInterface, mixed> $handler */
@@ -103,8 +110,11 @@ class ServiceClient implements ServiceClientInterface
      *
      * @return array<array-key, mixed>
      */
-    public function executeAll(iterable $commands, array $options = []): array
-    {
+    public function executeAll(
+        #[\SensitiveParameter]
+        iterable $commands,
+        array $options = []
+    ): array {
         $fulfilled = $options['fulfilled'] ?? null;
         $rejected = $options['rejected'] ?? null;
 
@@ -145,8 +155,11 @@ class ServiceClient implements ServiceClientInterface
      *
      * @return PromiseInterface<mixed, mixed>
      */
-    public function executeAllAsync(iterable $commands, array $options = []): PromiseInterface
-    {
+    public function executeAllAsync(
+        #[\SensitiveParameter]
+        iterable $commands,
+        array $options = []
+    ): PromiseInterface {
         // A single command satisfies the iterable type but would be iterated
         // as a collection of its own parameters.
         if ($commands instanceof CommandInterface) {
@@ -183,8 +196,11 @@ class ServiceClient implements ServiceClientInterface
      *
      * @see ServiceClientInterface::getCommand
      */
-    public function __call(string $name, array $args)
-    {
+    public function __call(
+        string $name,
+        #[\SensitiveParameter]
+        array $args
+    ) {
         $args = isset($args[0]) ? $args[0] : [];
         if (str_ends_with($name, 'Async')) {
             $command = $this->getCommand(substr($name, 0, -5), $args);
@@ -202,7 +218,10 @@ class ServiceClient implements ServiceClientInterface
      */
     private function createCommandHandler(): callable
     {
-        return function (CommandInterface $command): PromiseInterface {
+        return function (
+            #[\SensitiveParameter]
+            CommandInterface $command
+        ): PromiseInterface {
             return Promise\Coroutine::of(function () use ($command): \Generator {
                 // Prepare the HTTP options.
                 $opts = $command['@http'] ?: [];
@@ -226,8 +245,10 @@ class ServiceClient implements ServiceClientInterface
     /**
      * Transforms a Command object into a Request object.
      */
-    private function transformCommandToRequest(CommandInterface $command): RequestInterface
-    {
+    private function transformCommandToRequest(
+        #[\SensitiveParameter]
+        CommandInterface $command
+    ): RequestInterface {
         $transform = $this->commandToRequestTransformer;
 
         return $transform($command);
@@ -238,8 +259,11 @@ class ServiceClient implements ServiceClientInterface
      * into a Result object.
      */
     private function transformResponseToResult(
+        #[\SensitiveParameter]
         ResponseInterface $response,
+        #[\SensitiveParameter]
         RequestInterface $request,
+        #[\SensitiveParameter]
         CommandInterface $command
     ): ResultInterface {
         $transform = $this->responseToResultTransformer;
