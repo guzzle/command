@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.0.0 - UPCOMING
+## 2.0.0 - 2026-07-20
 
 * Drop support for PHP 7.2 and 7.3
 * Require `guzzlehttp/guzzle` ^8.0, `guzzlehttp/promises` ^3.0, and `guzzlehttp/psr7` ^3.0
