@@ -24,8 +24,8 @@ composer require guzzlehttp/command
 
 | Version | Status       | PHP Version  |
 |---------|--------------|--------------|
-| 2.0     | Latest       | >=7.4,<8.6   |
-| 1.5     | Maintenance  | >=7.2.5,<8.6 |
+| 2.0     | Latest       | >=7.4,<8.7   |
+| 1.5     | Maintenance  | >=7.2.5,<8.7 |
 
 ## Quick Start
 
