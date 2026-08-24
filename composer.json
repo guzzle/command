@@ -26,9 +26,9 @@
     ],
     "require": {
         "php": "^7.4 || ^8.0",
-        "guzzlehttp/guzzle": "^8.0",
-        "guzzlehttp/promises": "^3.0",
-        "guzzlehttp/psr7": "^3.0",
+        "guzzlehttp/guzzle": "^8.1",
+        "guzzlehttp/promises": "^3.0.2",
+        "guzzlehttp/psr7": "^3.1",
         "psr/http-client": "^1.0",
         "symfony/polyfill-php80": "^1.25",
         "symfony/polyfill-php82": "^1.27"
