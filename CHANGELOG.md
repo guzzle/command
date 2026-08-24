@@ -1,8 +1,9 @@
 # CHANGELOG
 
-## 1.5.4 - UPCOMING
+## 1.5.4 - 2026-08-24
 
 * Add support for PHP 8.6
+* Require `guzzlehttp/guzzle` ^7.13.5, `guzzlehttp/promises` ^2.5.3, and `guzzlehttp/psr7` ^2.13.1
 
 ## 1.5.3 - 2026-07-17
 
