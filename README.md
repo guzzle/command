@@ -7,12 +7,12 @@ result represents the processed response from that operation.
 Use this package when you are building an SDK-style client with named operations
 such as `listUsers()` or `createOrder()`. If you only need to send ordinary HTTP
 requests, install
-[`guzzlehttp/guzzle`](https://github.com/guzzle/guzzle/blob/8.0/README.md)
+[`guzzlehttp/guzzle`](https://github.com/guzzle/guzzle/blob/9.0/README.md)
 instead.
 
 For declarative service descriptions that define operations from API metadata,
 see
-[Guzzle Services](https://github.com/guzzle/guzzle-services/blob/2.0/README.md).
+[Guzzle Services](https://github.com/guzzle/guzzle-services/blob/3.0/README.md).
 
 ## Installation
 
@@ -24,6 +24,7 @@ composer require guzzlehttp/command
 
 | Version | Status       | PHP Version  |
 |---------|--------------|--------------|
+| 3.0     | Experimental | >=8.0,<8.7   |
 | 2.0     | Latest       | >=7.4,<8.7   |
 | 1.5     | Maintenance  | >=7.2.5,<8.7 |
 

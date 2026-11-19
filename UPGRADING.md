@@ -1,6 +1,28 @@
 Guzzle Command Upgrade Guide
 ============================
 
+3.0 from 2.x
+------------
+
+Guzzle Command 3.0 is a major release that raises the minimum PHP version and
+updates the Guzzle dependency stack.
+
+#### PHP Version and Dependencies
+
+Guzzle Command 3.0 requires PHP `^8.0`. Guzzle Command 2.x supported PHP
+`^7.4 || ^8.0`.
+
+Guzzle Command 3.0 also requires
+[Guzzle 9.x](https://github.com/guzzle/guzzle/blob/9.0/UPGRADING.md),
+[Guzzle Promises 4.x](https://github.com/guzzle/promises/blob/4.0/UPGRADING.md),
+and [Guzzle PSR-7 4.x](https://github.com/guzzle/psr7/blob/4.0/UPGRADING.md).
+
+If your application still supports PHP 7.4, or still uses the Guzzle 8
+dependency stack, continue using Guzzle Command 2.x until your minimum PHP and
+dependency versions are raised.
+
+Guzzle Command 3.0 no longer requires `symfony/polyfill-php80`.
+
 2.0 from 1.x
 ------------
 

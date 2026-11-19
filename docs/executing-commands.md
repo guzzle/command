@@ -91,7 +91,7 @@ input directly into command arguments without filtering it first. If external
 input can include `@http`, that input may be able to influence the underlying
 HTTP request or transfer depending on the configured Guzzle client and handler.
 The `@http` value must be an array of [Guzzle request
-options](https://github.com/guzzle/guzzle/blob/8.0/docs/request-options.md). Be
+options](https://github.com/guzzle/guzzle/blob/9.0/docs/request-options.md). Be
 especially careful with options that affect the target URI, proxy, TLS
 verification, headers, body, response sink, redirects, or timeouts.
 
