@@ -13,7 +13,9 @@ use GuzzleHttp\Command\ServiceClient;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Promise\Utils;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
@@ -153,6 +155,34 @@ class ServiceClientTest extends TestCase
 
         $this->expectException(CommandException::class);
         $client->execute($client->getCommand('foo'));
+    }
+
+    public function testCancellingCommandPromiseCancelsRedirectedTransfer(): void
+    {
+        $cancelled = false;
+        $redirect = new Promise(null, function () use (&$cancelled): void {
+            $cancelled = true;
+        });
+        $client = new ServiceClient(
+            new HttpClient([
+                'handler' => HandlerStack::create(new MockHandler([
+                    new Response(302, ['Location' => 'http://example.com/bar']),
+                    $redirect,
+                ])),
+            ]),
+            function (CommandInterface $command): RequestInterface {
+                return new Request('GET', 'http://example.com/'.$command->getName());
+            },
+            function (): Result {
+                return new Result();
+            }
+        );
+
+        $promise = $client->executeAsync($client->getCommand('foo'));
+        Utils::queue()->run();
+        $promise->cancel();
+
+        $this->assertTrue($cancelled);
     }
 
     public function testExecuteMultipleCommands(): void
