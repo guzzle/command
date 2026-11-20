@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 3.0.0 - UPCOMING
+
+* Drop support for PHP 7
+* Require `guzzlehttp/guzzle` ^9.0, `guzzlehttp/promises` ^4.0, and `guzzlehttp/psr7` ^4.0
+
 ## 2.0.1 - 2026-08-24
 
 * Add support for PHP 8.6

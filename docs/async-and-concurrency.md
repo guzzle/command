@@ -3,13 +3,13 @@
 This page explains asynchronous command execution and concurrent command pools
 for Guzzle Command service clients. For promise chaining, waiting, cancellation,
 and rejection behavior, see the
-[Guzzle Promises quick start](https://github.com/guzzle/promises/blob/3.0/docs/promise-quick-start.md).
+[Guzzle Promises quick start](https://github.com/guzzle/promises/blob/4.0/docs/promise-quick-start.md).
 
 ## Asynchronous Commands
 
 Commands can be executed asynchronously using `executeAsync()`. This method
 returns a `GuzzleHttp\Promise\PromiseInterface<GuzzleHttp\Command\ResultInterface, mixed>`.
-See the [Guzzle Promises API](https://github.com/guzzle/promises/blob/3.0/docs/promise-api.md) for
+See the [Guzzle Promises API](https://github.com/guzzle/promises/blob/4.0/docs/promise-api.md) for
 promise helper details.
 
 ```php
