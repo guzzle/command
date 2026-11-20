@@ -34,8 +34,7 @@ trait HasDataTrait
         return array_key_exists($offset, $this->data);
     }
 
-    #[\ReturnTypeWillChange]
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         if ($offset === null) {
             $offset = '';
