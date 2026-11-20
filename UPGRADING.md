@@ -23,6 +23,16 @@ dependency versions are raised.
 
 Guzzle Command 3.0 no longer requires `symfony/polyfill-php80`.
 
+#### Asynchronous Commands
+
+`executeAsync()` and `executeAllAsync()` now return promises from Guzzle
+Promises 4.x. Cancelling a command promise now also cancels a redirected or
+retried HTTP transfer that is in flight. The `fulfilled` and `rejected`
+callbacks of `executeAll()` and `executeAllAsync()` can run in a different order
+for commands whose transfers were redirected or retried; the array
+`executeAll()` returns is unchanged. Code using Guzzle Promises directly should
+account for its 4.0 behavior changes.
+
 2.0 from 1.x
 ------------
 
