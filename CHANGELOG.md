@@ -4,6 +4,7 @@
 
 * Drop support for PHP 7
 * Require `guzzlehttp/guzzle` ^9.0, `guzzlehttp/promises` ^4.0, and `guzzlehttp/psr7` ^4.0
+* Add a native `mixed` return type to `offsetGet()`
 
 ## 2.0.1 - 2026-08-24
 

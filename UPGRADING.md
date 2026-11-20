@@ -4,8 +4,9 @@ Guzzle Command Upgrade Guide
 3.0 from 2.x
 ------------
 
-Guzzle Command 3.0 is a major release that raises the minimum PHP version and
-updates the Guzzle dependency stack.
+Guzzle Command 3.0 is a major release that raises the minimum PHP version,
+updates the Guzzle dependency stack, and declares a native return type on
+`offsetGet()`.
 
 #### PHP Version and Dependencies
 
@@ -22,6 +23,19 @@ dependency stack, continue using Guzzle Command 2.x until your minimum PHP and
 dependency versions are raised.
 
 Guzzle Command 3.0 no longer requires `symfony/polyfill-php80`.
+
+#### Native Signatures
+
+`HasDataTrait::offsetGet()`, which `Command` and `Result` use, now declares a
+native `mixed` return type in place of the `#[\ReturnTypeWillChange]` attribute.
+Classes that extend `Command`, `Result`, or any other class that takes
+`offsetGet()` from the trait, and override it, must add a return type, such as
+`mixed`, to the override to remain compatible. Without one, PHP stops with a
+fatal error when the class is loaded, even if the override carries
+`#[\ReturnTypeWillChange]`.
+
+Custom implementations of `CommandInterface` and `ResultInterface` that do not
+use the trait are not affected.
 
 #### Asynchronous Commands
 
